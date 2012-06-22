@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    <FrameLayout 
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_weight="0.5"
+	    android:layout_margin="5dp"
+        android:background="@drawable/panel_border">
+	    <fragment 
+	        android:id="@+id/listview_left"
+	        class="org.kvj.sierra5.ui.fragment.ListViewFragment"
+	        android:layout_width="match_parent"
+	        android:layout_height="match_parent"/>
+    </FrameLayout>
+    <FrameLayout 
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_weight="0.5"
+	    android:layout_margin="5dp"
+        android:background="@drawable/panel_border">
+	    <fragment 
+	        android:id="@+id/listview_right"
+	        class="org.kvj.sierra5.ui.fragment.EditorViewFragment"
+	        android:layout_width="match_parent"
+	        android:layout_height="match_parent"/>
+    </FrameLayout>    
+
+</LinearLayout>
