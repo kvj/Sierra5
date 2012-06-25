@@ -142,8 +142,8 @@ public class Controller {
 				n.textPath = new ArrayList<String>();
 				if (null != parent.textPath) { // Parent is text
 					n.textPath.addAll(parent.textPath);
-					n.textPath.add(n.text);
 				}
+				n.textPath.add(n.text);
 				parents.push(n);
 				// Log.i(TAG, "Line: " + n.text + ", " + n.level + ", "
 				// + parent.text);
@@ -242,5 +242,90 @@ public class Controller {
 		node.text = file.getName();
 		node.type = file.isDirectory() ? Node.TYPE_FOLDER : Node.TYPE_FILE;
 		return node;
+	}
+
+	public static class SearchNodeResult {
+		public boolean found = false;
+		public Node node = null;
+		public int index = 0;
+	}
+
+	private List<String> findPath(File root, File file) {
+		File f = file;
+		List<String> result = new ArrayList<String>();
+		do {
+			if (root.equals(f)) { // Files are same
+				return result;
+			}
+			result.add(f.getName());
+			f = f.getParentFile();
+			if (null == f) { // FS root reached
+				return null;
+			}
+		} while (f != null);
+		return null;
+	}
+
+	public SearchNodeResult searchInNode(Node root, String file, String[] path) {
+		File thisFile = new File(file);
+		File rootFile = new File(root.file);
+		if (!thisFile.exists() || !rootFile.exists()) { // Invalid file
+			Log.w(TAG, "File(s) not exists: " + thisFile.exists() + ", "
+					+ rootFile.exists());
+			return null;
+		}
+		List<String> pathToRoot = findPath(rootFile, thisFile);
+		if (null == pathToRoot) { // Different trees
+			Log.w(TAG, "Different trees: " + root.file + " - " + file);
+			return null;
+		}
+		List<String> pathToSearch = new ArrayList<String>();
+		// Copy path
+		for (int i = pathToRoot.size() - 1; i >= 0; i--) { // Invert path
+			pathToSearch.add(pathToRoot.get(i));
+		}
+		if (null != path) { // Have path
+			Log.i(TAG, "Path: " + path.length);
+			for (String p : path) { // Copy path
+				Log.i(TAG, "Add path: " + p + ", " + pathToSearch.size());
+				pathToSearch.add(p);
+			}
+		}
+		int index = 0; // Index of found item in tree
+		Node n = root;
+		Log.i(TAG, "Before search: " + pathToSearch + ", " + path);
+		for (int depth = 0; depth < pathToSearch.size(); depth++) {
+			// For every item
+			if (!expand(n, true, null)) { // Expand failed
+				Log.w(TAG, "Expand failed: " + n.file + ", " + n.textPath);
+				return null;
+			}
+			boolean found = false;
+			for (int i = 0; i < n.children.size(); i++) { // Search child
+				Node ch = n.children.get(i);
+				if (ch.text.equals(pathToSearch.get(depth))) {
+					// From end - found
+					n = ch;
+					index += i + 1;
+					found = true;
+					break;
+				}
+			}
+			if (!found) { // Item not found - return partial result
+				SearchNodeResult result = new SearchNodeResult();
+				result.index = index;
+				result.node = n;
+				return result;
+			}
+		}
+		if (!expand(n, true, null)) { // Force expand last item
+			Log.w(TAG, "Expand failed: " + n.file + ", " + n.textPath);
+			return null;
+		}
+		SearchNodeResult result = new SearchNodeResult();
+		result.index = index;
+		result.node = n;
+		result.found = true;
+		return result;
 	}
 }

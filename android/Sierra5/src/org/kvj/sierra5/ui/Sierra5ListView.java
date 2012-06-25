@@ -23,7 +23,7 @@ public class Sierra5ListView extends FragmentActivity implements
 	Bundle data = null;
 
 	@Override
-	protected void onCreate(Bundle data) {
+	protected void onCreate(final Bundle data) {
 		super.onCreate(data);
 		if (null != data) { // Have data - restore state
 			this.data = data;
@@ -32,7 +32,7 @@ public class Sierra5ListView extends FragmentActivity implements
 				// Have data in Intent
 				this.data = getIntent().getExtras();
 			} else { // No data - empty
-				data = new Bundle();
+				this.data = new Bundle();
 			}
 		}
 		setContentView(R.layout.listview2);
@@ -68,5 +68,13 @@ public class Sierra5ListView extends FragmentActivity implements
 	protected void onStop() {
 		super.onStop();
 		conn.disconnectController();
+	}
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		if (null != listViewFragment) { // Have list
+			listViewFragment.onSaveState(outState);
+		}
 	}
 }

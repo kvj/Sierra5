@@ -175,4 +175,8 @@ public class ListViewAdapter implements ListAdapter {
 		selectedIndex = index;
 	}
 
+	public boolean isShowRoot() {
+		return showRoot;
+	}
+
 }
