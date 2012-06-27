@@ -5,7 +5,6 @@ import org.kvj.sierra5.data.Node;
 
 import android.content.Context;
 import android.database.DataSetObserver;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -105,8 +104,7 @@ public class ListViewAdapter implements ListAdapter {
 		if (null == node) { // Error case
 			return null;
 		}
-		Log.i(TAG, "getView: " + index + ", " + node);
-		// TODO Auto-generated method stub
+		// Log.i(TAG, "getView: " + index + ", " + node);
 		customize(view, node, index == selectedIndex);
 		return view;
 	}

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <PreferenceCategory android:title="Location and format" >
+
+        <Preference
+            android:key="@string/rootFolder"
+            android:summary="Select root folder"
+            android:title="Root folder" />
+
+        <CheckBoxPreference
+            android:key="@string/expandTabs"
+            android:summary="Expand tabs with spaces"
+            android:title="Expand tabs" />
+
+        <ListPreference
+            android:defaultValue="@string/tabSizeDefault"
+            android:entries="@array/tabSizeCaptions"
+            android:entryValues="@array/tabSizeVals"
+            android:key="@string/tabSize"
+            android:summary="Tab size, in characters"
+            android:title="Tab size" />
+
+        <CheckBoxPreference
+            android:key="@string/useCRLF"
+            android:summary="Use Windows-style line breaks (CRLF)"
+            android:title="Windows style line break" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Look and Feel" >
+        <ListPreference
+            android:defaultValue="@string/themeDefault"
+            android:entries="@array/themeCaptions"
+            android:entryValues="@array/themeVals"
+            android:key="@string/theme"
+            android:summary="Theme for outline list"
+            android:title="Theme" />
+        <ListPreference
+            android:defaultValue="@string/docFontDefault"
+            android:entries="@array/docFontSizes"
+            android:entryValues="@array/docFontSizesVals"
+            android:key="@string/docFont"
+            android:summary="Text size for outline list"
+            android:title="Text size" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

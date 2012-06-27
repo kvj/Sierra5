@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="expandTabs">expandTabs</string>
+    <string name="tabSize">tabSize</string>
+    <string name="tabSizeDefault">4</string>
+
+    <string-array name="tabSizeCaptions">
+        <item>1</item>
+        <item>2</item>
+        <item>4</item>
+        <item>8</item>
+    </string-array>
+    <string-array name="tabSizeVals">
+        <item>1</item>
+        <item>2</item>
+        <item>4</item>
+        <item>8</item>
+    </string-array>
+
+    <string name="useCRLF">useCRLF</string>
+    <string name="rootFolder">rootFolder</string>
+    <string name="theme">theme</string>
+    <string name="themeDefault">black</string>
+
+    <string-array name="themeCaptions">
+        <item>Black (default)</item>
+        <item>White</item>
+        <item>Monochrome</item>
+    </string-array>
+    <string-array name="themeVals">
+        <item>black</item>
+        <item>white</item>
+        <item>mono</item>
+    </string-array>
+
+    <string name="docFont">docFont</string>
+    <string name="docFontDefault">16</string>
+
+    <string-array name="docFontSizes">
+        <item>12</item>
+        <item>14</item>
+        <item>16</item>
+        <item>18</item>
+        <item>20</item>
+        <item>22</item>
+        <item>24</item>
+        <item>26</item>
+        <item>28</item>
+        <item>30</item>
+    </string-array>
+    <string-array name="docFontSizesVals">
+        <item>12</item>
+        <item>14</item>
+        <item>16</item>
+        <item>18</item>
+        <item>20</item>
+        <item>22</item>
+        <item>24</item>
+        <item>26</item>
+        <item>28</item>
+        <item>30</item>
+    </string-array>
+
+</resources>

@@ -8,21 +8,32 @@
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    
+
     <application
         android:icon="@drawable/ic_launcher"
-        android:label="@string/app_name" 
+        android:label="@string/app_name"
         android:name=".App"
-        android:theme="@style/Theme.ActionBar">
-        <service android:name=".data.ControllerService" 
-            android:exported="true">
+        android:theme="@style/Theme.ActionBar" >
+        <service
+            android:exported="true"
+            android:name=".data.ControllerService" >
         </service>
+
         <activity
+            android:label="File Dialog"
+            android:name="com.lamerman.FileDialog" >
+        </activity>
+        <activity
+            android:label="Configuration"
+            android:name=".ui.ConfigurationView" >
+        </activity>
+        <activity
+            android:configChanges="keyboardHidden"
             android:label="@string/app_name"
-            android:name=".ui.Sierra5ListView"
-            android:configChanges="keyboardHidden">
+            android:name=".ui.Sierra5ListView" >
             <intent-filter >
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

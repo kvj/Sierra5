@@ -1,9 +1,13 @@
 package org.kvj.sierra5.data;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -38,7 +42,12 @@ public class Controller {
 	private int writeOneNode(int index, int removeLeft, Node node,
 			LineEater eater) {
 		StringBuilder spaces = new StringBuilder();
-		String[] lines = node.text.split("\n");
+		String[] lines = null;
+		if (null != node.raw) { // Have raw data
+			lines = node.raw.split("\n");
+		} else { // Not changed
+			lines = new String[] { node.text };
+		}
 		for (int i = 0; i < node.left.length() - removeLeft; i++) {
 			// Add spaces
 			spaces.append(' ');
@@ -49,18 +58,31 @@ public class Controller {
 			if (TextUtils.isEmpty(line)) { // Empty line - write as empty
 				eater.eat(result, node, "", "");
 			} else {
-				String leftSpaces = this.left.matcher(line).group(0);
+				Matcher m = this.left.matcher(line);
+				String leftSpaces = "";
+				if (m.find()) { // Have spaces
+					leftSpaces = m.group(0);
+				}
 				eater.eat(result, node, spaces.toString() + leftSpaces,
 						line.trim());
 			}
 			result++;
 		}
-		if (!node.raw && null != node.children) {
+		if (null == node.raw && null != node.children) {
 			// Process children
 			for (int i = 0; i < node.children.size(); i++) {
 				// Write every child
 				result = writeOneNode(result, removeLeft, node.children.get(i),
 						eater);
+			}
+		}
+		if (null != node.raw) { //
+			node.raw = null;
+			node.text = lines[0];
+			if (null != node.textPath && node.textPath.size() > 0) {
+				// Replace last textPath
+				node.textPath.remove(node.textPath.size() - 1);
+				node.textPath.add(node.text);
 			}
 		}
 		return result;
@@ -88,6 +110,33 @@ public class Controller {
 			}
 		});
 		return buffer.toString();
+	}
+
+	public boolean saveFile(Node node) {
+		try { // Catch save errors
+			final String crlf = "\r\n";
+			File file = new File(node.file);
+			final BufferedWriter writer = new BufferedWriter(
+					new OutputStreamWriter(new FileOutputStream(file), "utf-8"));
+			writeNode(node, new LineEater() {
+
+				@Override
+				public void eat(int index, Node node, String left, String line) {
+					if (index > 0) { // Skip first line - file
+						try {
+							writer.write(left + line + crlf);
+						} catch (IOException e) {
+							Log.e(TAG, "Error writing file:", e);
+						}
+					}
+				}
+			});
+			writer.close();
+			return true;
+		} catch (Exception e) {
+			Log.e(TAG, "Error saving file:", e);
+		}
+		return false; // Not implemented
 	}
 
 	private boolean parseFile(Node node) {

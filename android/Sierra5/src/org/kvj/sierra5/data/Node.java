@@ -17,7 +17,7 @@ public class Node {
 	public boolean collapsed = true;
 
 	public String text = "";
-	public boolean raw = false;
+	public String raw = null;
 
 	public int type = TYPE_FOLDER;
 	public int level = 0;
