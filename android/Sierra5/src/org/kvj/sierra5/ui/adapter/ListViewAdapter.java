@@ -1,10 +1,23 @@
 package org.kvj.sierra5.ui.adapter;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.kvj.bravo7.format.PlainTextFormatter;
+import org.kvj.bravo7.format.TextFormatter;
+import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
 import org.kvj.sierra5.data.Node;
+import org.kvj.sierra5.ui.adapter.theme.DarkTheme;
 
 import android.content.Context;
 import android.database.DataSetObserver;
+import android.graphics.Typeface;
+import android.text.SpannableStringBuilder;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
+import android.util.Log;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,7 +27,7 @@ import android.widget.TextView;
 public class ListViewAdapter implements ListAdapter {
 
 	public static interface ListViewAdapterListener {
-
+		public void itemSelected(int selected);
 	}
 
 	private static final String TAG = "Adapter";
@@ -23,8 +36,40 @@ public class ListViewAdapter implements ListAdapter {
 	private boolean showRoot = false;
 	private DataSetObserver observer = null;
 	private int selectedIndex = -1;
+	private ListViewAdapterListener listener = null;
+	private int textSize = 0;
+	private PlainTextFormatter<Node> textFormatter = null;
 
-	public ListViewAdapter() {
+	private DarkTheme theme = null;
+
+	class DefaultTextFormatter implements NodeTextFormatter {
+
+		@Override
+		public Pattern getPattern(Node note, boolean selected) {
+			if (Node.TYPE_TEXT == note.type) { // Text - skip
+				return null;
+			}
+			return TextFormatter.eatAll;
+		}
+
+		@Override
+		public void format(Node note, SpannableStringBuilder sb, Matcher m,
+				String text, boolean selected) {
+			int color = Node.TYPE_FOLDER == note.type ? theme.cbLYellow
+					: theme.ccLBlue;
+			PlainTextFormatter.addSpan(sb, m.group(0), new ForegroundColorSpan(
+					color));
+		}
+
+	}
+
+	@SuppressWarnings("unchecked")
+	public ListViewAdapter(ListViewAdapterListener listener, DarkTheme theme) {
+		this.listener = listener;
+		this.theme = theme;
+		textSize = App.getInstance().getIntPreference(R.string.docFont,
+				R.string.docFontDefault);
+		textFormatter = new PlainTextFormatter<Node>(new DefaultTextFormatter());
 	}
 
 	private static class SearchInTreeResult {
@@ -38,6 +83,10 @@ public class ListViewAdapter implements ListAdapter {
 			result.foundNode = node;
 		}
 		if (node.collapsed) { // Collapsed - no children
+			return result;
+		}
+		if (null == node.children) { // No children
+			Log.w(TAG, "Expanded wout children: " + node.text);
 			return result;
 		}
 		for (Node child : node.children) { // Every children
@@ -68,6 +117,9 @@ public class ListViewAdapter implements ListAdapter {
 
 	@Override
 	public Node getItem(int index) {
+		if (-1 == index) { // Out of bounds
+			return null;
+		}
 		SearchInTreeResult r = moveThru(root, showRoot ? index : index + 1);
 		return r.foundNode;
 	}
@@ -85,11 +137,19 @@ public class ListViewAdapter implements ListAdapter {
 	public void customize(View view, Node node, boolean selected) {
 		TextView textView = (TextView) view
 				.findViewById(R.id.listview_item_text);
-		StringBuilder text = new StringBuilder();
+		textView.setTextColor(theme.colorText);
+		textView.setBackgroundColor(theme.colorBackground);
+		textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, textSize);
+		SpannableStringBuilder text = new SpannableStringBuilder();
 		for (int i = 0; i < node.level; i++) { // Append level chars first
-			text.append(selected ? "**" : "  ");
+			text.append(" ");
 		}
-		text.append(node.text);
+		textFormatter.writePlainText(node, text, theme.colorText, node.text,
+				selected);
+		if (selected) {
+			text.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, text.length(),
+					0);
+		}
 		textView.setText(text);
 	}
 
@@ -171,6 +231,9 @@ public class ListViewAdapter implements ListAdapter {
 
 	public void setSelectedIndex(int index) {
 		selectedIndex = index;
+		if (null != listener) { // Have listener
+			listener.itemSelected(selectedIndex);
+		}
 	}
 
 	public boolean isShowRoot() {

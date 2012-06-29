@@ -8,17 +8,19 @@ import org.kvj.sierra5.R;
 import org.kvj.sierra5.data.Controller;
 import org.kvj.sierra5.data.ControllerService;
 import org.kvj.sierra5.data.Node;
+import org.kvj.sierra5.ui.adapter.theme.DarkTheme;
 import org.kvj.sierra5.ui.fragment.EditorViewFragment;
 import org.kvj.sierra5.ui.fragment.EditorViewFragment.EditorViewFragmentListener;
 import org.kvj.sierra5.ui.fragment.ListViewFragment;
+import org.kvj.sierra5.ui.fragment.ListViewFragment.EditType;
 import org.kvj.sierra5.ui.fragment.ListViewFragment.ListViewFragmentListener;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 
 public class Sierra5ListView extends FragmentActivity implements
 		ControllerReceiver<Controller>, ListViewFragmentListener,
@@ -32,6 +34,8 @@ public class Sierra5ListView extends FragmentActivity implements
 	private ListViewFragment listViewFragment = null;
 	private EditorViewFragment editorViewFragment = null;
 	Bundle data = null;
+
+	public static final int RESULT_DONE = 102;
 
 	@Override
 	protected void onCreate(final Bundle inData) {
@@ -51,6 +55,11 @@ public class Sierra5ListView extends FragmentActivity implements
 			setContentView(R.layout.listview_edit_only);
 		} else {
 			setContentView(R.layout.listview);
+		}
+		DarkTheme theme = DarkTheme.getTheme();
+		ViewGroup root = (ViewGroup) findViewById(R.id.listview_root);
+		if (null != root) { // Have root
+			root.setBackgroundColor(theme.colorBackground);
 		}
 		listViewFragment = (ListViewFragment) getSupportFragmentManager()
 				.findFragmentById(R.id.listview_left);
@@ -102,7 +111,7 @@ public class Sierra5ListView extends FragmentActivity implements
 	public void open(Node node) {
 		Intent intent = new Intent(this, Sierra5ListView.class);
 		intent.putExtra(ListViewFragment.KEY_ROOT, node.file);
-		startActivityFromFragment(listViewFragment, intent, 0);
+		startActivityForResult(intent, RESULT_DONE);
 	}
 
 	private void ifEditorNotChanged(Runnable ok) {
@@ -116,7 +125,11 @@ public class Sierra5ListView extends FragmentActivity implements
 	}
 
 	@Override
-	public void edit(final Node node) {
+	public void edit(final Node node, final EditType editType) {
+		if (EditType.Remove == editType) { // Do remove
+			removeNode(node);
+			return;
+		}
 		if (null != editorViewFragment) { // Double pane - load
 			ifEditorNotChanged(new Runnable() {
 
@@ -125,28 +138,70 @@ public class Sierra5ListView extends FragmentActivity implements
 					editorViewFragment.loadNode(
 							node.file,
 							node.textPath == null ? null : node.textPath
-									.toArray(new String[0]), false);
+									.toArray(new String[0]),
+							editType == EditType.Add);
 				}
 			});
 		} else { // Single pane - new Activity
 			Intent intent = new Intent(this, Sierra5ListView.class);
 			intent.putExtra(KEY_EDITOR, true);
 			intent.putExtra(EditorViewFragment.KEY_FILE, node.file);
+			intent.putExtra(EditorViewFragment.KEY_ADD,
+					editType == EditType.Add);
 			if (null != node.textPath) { // Have textPath
 				intent.putExtra(EditorViewFragment.KEY_ITEM,
 						node.textPath.toArray(new String[0]));
 			}
-			startActivityFromFragment(listViewFragment, intent, 0);
+			startActivityForResult(intent, RESULT_DONE);
 		}
+	}
+
+	@Override
+	protected void onActivityResult(int request, int result, Intent intent) {
+		if (result == RESULT_OK) { // Done
+			if (listViewFragment != null) { // Have list - refresh
+				listViewFragment.refresh();
+			}
+			setResult(RESULT_OK);
+		}
+	}
+
+	private void removeNode(final Node node) {
+		if (null == node || node.type != Node.TYPE_TEXT) { // Invalid node
+			return;
+		}
+		SuperActivity.showQuestionDialog(this, "Remove?", "Remove item ["
+				+ node.text + "]?", new Runnable() {
+
+			@Override
+			public void run() {
+				Node[] actual = controller.actualizeNode(node);
+				if (2 != actual.length) { // Not a full result
+					SuperActivity.notifyUser(Sierra5ListView.this,
+							"Item not found");
+					return;
+				}
+				if (!controller.removeNode(actual[0], actual[1])) { // Error
+																	// removing
+					SuperActivity.notifyUser(Sierra5ListView.this,
+							"Error removing item");
+					return;
+				}
+				if (null != listViewFragment) { // Reload list
+					listViewFragment.selectNode(actual[1]);
+				}
+			}
+		});
 	}
 
 	@Override
 	public void saved(Node node) {
 		if (null != listViewFragment) { // Have list - update selection
-			Log.i(TAG, "Reselect " + node.file + ", " + node.text + ", "
-					+ node.textPath);
+			// Log.i(TAG, "Reselect " + node.file + ", " + node.text + ", "
+			// + node.textPath);
 			listViewFragment.selectNode(node);
 		}
+		setResult(RESULT_OK);
 	}
 
 	@Override

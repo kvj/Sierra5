@@ -16,6 +16,9 @@ import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.kvj.sierra5.App;
+import org.kvj.sierra5.R;
+
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -37,15 +40,25 @@ public class Controller {
 	public static interface LineEater {
 
 		public void eat(int index, Node node, String left, String line);
+
+		public boolean filter(int index, Node node);
 	}
 
 	private int writeOneNode(int index, int removeLeft, Node node,
 			LineEater eater) {
 		StringBuilder spaces = new StringBuilder();
 		String[] lines = null;
+		if (!eater.filter(index, node)) { // Filtered out
+			return index;
+		}
+		boolean skipFirstLine = false;
 		if (null != node.raw) { // Have raw data
 			lines = node.raw.split("\n");
 		} else { // Not changed
+			if (node.type == Node.TYPE_FILE) {
+				// Don't write first line - it's file name
+				skipFirstLine = true;
+			}
 			lines = new String[] { node.text };
 		}
 		for (int i = 0; i < node.left.length() - removeLeft; i++) {
@@ -54,6 +67,9 @@ public class Controller {
 		}
 		int result = index;
 		for (int i = 0; i < lines.length; i++) { // For every line
+			if (i == 0 && skipFirstLine) { // Skip line
+				continue;
+			}
 			String line = lines[i];
 			if (TextUtils.isEmpty(line)) { // Empty line - write as empty
 				eater.eat(result, node, "", "");
@@ -76,7 +92,8 @@ public class Controller {
 						eater);
 			}
 		}
-		if (null != node.raw) { //
+		if (null != node.raw && node.type == Node.TYPE_TEXT) {
+			// Have raw data and it's text - update text
 			node.raw = null;
 			node.text = lines[0];
 			if (null != node.textPath && node.textPath.size() > 0) {
@@ -98,23 +115,40 @@ public class Controller {
 
 			@Override
 			public void eat(int index, Node node, String left, String line) {
-				if (index == 0 && parent.type == Node.TYPE_FILE) {
-					// Writing file and first line - skip
-					return;
-				}
-				if (buffer.length() > 0) { // Have data - CR
+				if (index > 0) { // Have data - CR
 					buffer.append('\n');
 				}
 				buffer.append(left);
 				buffer.append(line);
 			}
+
+			@Override
+			public boolean filter(int index, Node node) {
+				return true;
+			}
 		});
 		return buffer.toString();
 	}
 
-	public boolean saveFile(Node node) {
+	public boolean saveFile(Node node, final Node remove) {
 		try { // Catch save errors
-			final String crlf = "\r\n";
+			final String crlf = App.getInstance().getBooleanPreference(
+					R.string.useCRLF, false) ? "\r\n" : "\n";
+			final boolean expandTab = App.getInstance().getBooleanPreference(
+					R.string.expandTabs, false);
+			final String tabRepl;
+			if (!expandTab) { // Replace spaces with tab
+				int tabSize = App.getInstance().getIntPreference(
+						R.string.tabSize, R.string.tabSizeDefault);
+				StringBuilder sb = new StringBuilder();
+				for (int i = 0; i < tabSize; i++) {
+					// Add spaces
+					sb.append(' ');
+				}
+				tabRepl = sb.toString();
+			} else {
+				tabRepl = null;
+			}
 			File file = new File(node.file);
 			final BufferedWriter writer = new BufferedWriter(
 					new OutputStreamWriter(new FileOutputStream(file), "utf-8"));
@@ -122,13 +156,23 @@ public class Controller {
 
 				@Override
 				public void eat(int index, Node node, String left, String line) {
-					if (index > 0) { // Skip first line - file
-						try {
-							writer.write(left + line + crlf);
-						} catch (IOException e) {
-							Log.e(TAG, "Error writing file:", e);
+					try {
+						if (!expandTab) {
+							// Need tabs
+							left = left.replace(tabRepl, "\t");
 						}
+						writer.write(left + line + crlf);
+					} catch (IOException e) {
+						Log.e(TAG, "Error writing file:", e);
 					}
+				}
+
+				@Override
+				public boolean filter(int index, Node node) {
+					if (node == remove) { // We need to remove it - skip
+						return false;
+					}
+					return true;
 				}
 			});
 			writer.close();
@@ -141,7 +185,8 @@ public class Controller {
 
 	private boolean parseFile(Node node) {
 		try { // Catch all stream errors
-			int spacesInTab = 4;
+			int spacesInTab = App.getInstance().getIntPreference(
+					R.string.tabSize, R.string.tabSizeDefault);
 			StringBuilder tabReplacement = new StringBuilder();
 			for (int i = 0; i < spacesInTab; i++) { // Add spaces
 				tabReplacement.append(' ');
@@ -151,15 +196,11 @@ public class Controller {
 					new FileInputStream(node.file), "utf-8"));
 			node.children = new ArrayList<Node>(); // Reset children
 			Stack<Node> parents = new Stack<Node>();
-			Node last = null;
 			String line = null;
 			while ((line = br.readLine()) != null) {
-				if (TextUtils.isEmpty(line)) { // Empty line
-					if (null != last) { // Have last - append to text
-						last.text += '\n';
-					} else { // First line - silently ignore
-					}
-					continue;
+				if (TextUtils.isEmpty(line.trim())) {
+					// Line is empty - no left chars
+					line = "";
 				}
 				String leftChars = "";
 				Matcher m = left.matcher(line);
@@ -174,6 +215,9 @@ public class Controller {
 				n.text = line.trim();
 				n.type = Node.TYPE_TEXT;
 				Node parent = null;
+				boolean fromParents = false;
+				// Log.i(TAG, "Search parent: " + n.text + ", " +
+				// parents.size());
 				do { // Search for parent
 					if (parents.isEmpty()) {
 						// No more parents - parent is file
@@ -181,8 +225,12 @@ public class Controller {
 						break;
 					}
 					parent = parents.pop();
+					// Log.i(TAG, "Parse " + parent.text + " and " + n.text +
+					// ", "
+					// + parent.left.length() + ", " + n.left.length());
 					if (parent.left.length() < n.left.length()) {
 						// Real parent
+						fromParents = true;
 						break;
 					}
 				} while (true);
@@ -193,10 +241,12 @@ public class Controller {
 					n.textPath.addAll(parent.textPath);
 				}
 				n.textPath.add(n.text);
+				if (fromParents) { // Return parent back
+					parents.push(parent);
+				}
 				parents.push(n);
 				// Log.i(TAG, "Line: " + n.text + ", " + n.level + ", "
 				// + parent.text);
-				last = n;
 			}
 			br.close();
 			return true;
@@ -236,6 +286,9 @@ public class Controller {
 			}
 			File[] files = folder.listFiles();
 			List<Node> nodes = new ArrayList<Node>();
+			Log.i(TAG,
+					"Load dir: " + files.length + ", "
+							+ folder.getAbsolutePath());
 			for (File file : files) { // For every file/folder in folder
 				Node child = new Node();
 				child.level = node.level + 1;
@@ -315,6 +368,17 @@ public class Controller {
 		return null;
 	}
 
+	public int getNodeSize(Node n) {
+		if (n.collapsed || null == n.children) { // Collapsed
+			return 1;
+		}
+		int result = 1;
+		for (int i = 0; i < n.children.size(); i++) { // Every children
+			result += getNodeSize(n.children.get(i));
+		}
+		return result;
+	}
+
 	public SearchNodeResult searchInNode(Node root, String file, String[] path) {
 		File thisFile = new File(file);
 		File rootFile = new File(root.file);
@@ -350,14 +414,17 @@ public class Controller {
 				return null;
 			}
 			boolean found = false;
+			int siblingSize = 0;
 			for (int i = 0; i < n.children.size(); i++) { // Search child
 				Node ch = n.children.get(i);
 				if (ch.text.equals(pathToSearch.get(depth))) {
 					// From end - found
 					n = ch;
-					index += i + 1;
+					index += siblingSize + 1;
 					found = true;
 					break;
+				} else {
+					siblingSize += getNodeSize(ch);
 				}
 			}
 			if (!found) { // Item not found - return partial result
@@ -376,5 +443,23 @@ public class Controller {
 		result.node = n;
 		result.found = true;
 		return result;
+	}
+
+	public Node[] actualizeNode(Node node) {
+		if (null == node || null == node.file) { // Invalid node
+			return new Node[0];
+		}
+		Node parent = nodeFromPath(node.file);
+		SearchNodeResult res = searchInNode(parent, node.file,
+				node.textPath != null ? node.textPath.toArray(new String[0])
+						: null);
+		if (null == res || !res.found) { // Not found - parent only
+			return new Node[] { parent };
+		}
+		return new Node[] { parent, res.node }; // All done
+	}
+
+	public boolean removeNode(Node file, Node removeMe) {
+		return saveFile(file, removeMe);
 	}
 }

@@ -4,16 +4,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.kvj.bravo7.SuperActivity;
+import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
 import org.kvj.sierra5.data.Controller;
 import org.kvj.sierra5.data.Controller.SearchNodeResult;
 import org.kvj.sierra5.data.Node;
 import org.kvj.sierra5.ui.ConfigurationView;
 import org.kvj.sierra5.ui.adapter.ListViewAdapter;
+import org.kvj.sierra5.ui.adapter.ListViewAdapter.ListViewAdapterListener;
+import org.kvj.sierra5.ui.adapter.theme.DarkTheme;
 
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -29,13 +32,18 @@ import android.widget.ListView;
 
 import com.markupartist.android.widget.ActionBar;
 
-public class ListViewFragment extends Fragment {
+public class ListViewFragment extends Fragment implements
+		ListViewAdapterListener {
+
+	public enum EditType {
+		Edit, Add, Remove
+	};
 
 	public static interface ListViewFragmentListener {
 
 		public void open(Node node);
 
-		public void edit(Node node);
+		public void edit(Node node, EditType editType);
 	}
 
 	class MenuItemInfo<T> {
@@ -73,7 +81,7 @@ public class ListViewFragment extends Fragment {
 		View view = inflater.inflate(R.layout.listview_fragment, container,
 				false);
 		listView = (ListView) view.findViewById(R.id.listview);
-		adapter = new ListViewAdapter();
+		adapter = new ListViewAdapter(this, DarkTheme.getTheme());
 		listView.setAdapter(adapter);
 		listView.setOnItemClickListener(new OnItemClickListener() {
 
@@ -108,9 +116,9 @@ public class ListViewFragment extends Fragment {
 		}
 	}
 
-	private void editItem(Node node) {
-		if (null != listener) { // Have listener
-			listener.edit(node);
+	private void editItem(Node node, boolean addNew) {
+		if (null != listener && null != node) { // Have listener
+			listener.edit(node, addNew ? EditType.Add : EditType.Edit);
 		}
 	}
 
@@ -166,10 +174,18 @@ public class ListViewFragment extends Fragment {
 				rootFile = adapter.getRoot().file;
 			}
 		} else { // No file - show root
-			rootSet = adapter.setRoot(
-					controller.nodeFromPath("/mnt/sdcard/Documents"), false);
+			String rootFolderParam = getActivity().getResources().getString(
+					R.string.rootFolder);
+			String sdCardPath = Environment.getExternalStorageDirectory()
+					.getAbsolutePath();
+			String rootFolder = App.getInstance().getStringPreference(
+					rootFolderParam, sdCardPath);
+			Log.i(TAG, "Root folder: " + rootFolder + ", " + sdCardPath);
+			rootSet = adapter.setRoot(controller.nodeFromPath(rootFolder),
+					false);
 		}
 		Log.i(TAG, "rootSet: " + rootSet);
+		adapter.setSelectedIndex(-1);
 		if (rootSet) { // Root set - expand root
 			actionBar.setTitle(adapter.getRoot().text);
 			expandTree(adapter.getRoot(), data.getString(KEY_FILE),
@@ -195,66 +211,39 @@ public class ListViewFragment extends Fragment {
 	}
 
 	private void collapseExpand(final Node node, final Boolean forceExpand) {
-		AsyncTask<Void, Void, String> task = new AsyncTask<Void, Void, String>() {
-
-			@Override
-			protected String doInBackground(Void... params) {
-				if (null == controller) { // No controller - no refresh
-					return null;
-				}
-				controller.expand(node, forceExpand, null);
-				return null;
-			}
-
-			@Override
-			protected void onPostExecute(String result) {
-				super.onPostExecute(result);
-				if (result == null) { // State changed - notify adapter
-					adapter.dataChanged();
-				} else {
-					SuperActivity.notifyUser(getActivity(), result);
-				}
-			}
-		};
-		task.execute();
+		if (null == controller) { // No controller - no refresh
+			return;
+		}
+		controller.expand(node, forceExpand, null);
+		adapter.dataChanged();
 	}
 
 	private void expandTree(final Node node, final String file,
 			final String[] path) {
-		AsyncTask<Void, Void, Integer> task = new AsyncTask<Void, Void, Integer>() {
-
-			@Override
-			protected Integer doInBackground(Void... params) {
-				if (null == controller) { // No controller - no refresh
-					return -1;
-				}
-				if (null == file) { // Don't need to search
-					controller.expand(node, true, null);
-					return -1;
-				}
-				SearchNodeResult res = controller
-						.searchInNode(node, file, path);
-				if (null == res) { // Error expand
-					return -1;
-				}
-				return res.index;
+		if (null == controller) { // No controller - no refresh
+			return;
+		}
+		Integer result = null;
+		if (null == file) { // Don't need to search
+			controller.expand(node, true, null);
+			result = -1;
+		} else {
+			SearchNodeResult res = controller.searchInNode(node, file, path);
+			if (null == res) { // Error expand
+				result = -1;
+			} else {
+				result = res.index;
 			}
-
-			@Override
-			protected void onPostExecute(Integer result) {
-				super.onPostExecute(result);
-				if (result != null) { // State changed - notify adapter
-					if (-1 != result) { // Not expanded
-						adapter.setSelectedIndex(adapter.isShowRoot() ? result
-								: result - 1);
-					}
-					adapter.dataChanged();
-				} else {
-					SuperActivity.notifyUser(getActivity(), "Item not found");
-				}
+		}
+		if (result != null) { // State changed - notify adapter
+			if (-1 != result) { // Not expanded
+				adapter.setSelectedIndex(adapter.isShowRoot() ? result
+						: result - 1);
 			}
-		};
-		task.execute();
+			adapter.dataChanged();
+		} else {
+			SuperActivity.notifyUser(getActivity(), "Item not found");
+		}
 	}
 
 	@Override
@@ -282,12 +271,15 @@ public class ListViewFragment extends Fragment {
 			openNewList(item.data);
 			break;
 		case MENU_EDIT: // Edit item
-			editItem(item.data);
+			editItem(item.data, false);
 			break;
 		}
 	}
 
 	public void selectNode(Node node) {
+		if (null == node) { // Nothing
+			return;
+		}
 		if (null != adapter.getRoot()) { // Have root - expand
 			SearchNodeResult res = controller.searchInNode(
 					adapter.getRoot(),
@@ -307,7 +299,26 @@ public class ListViewFragment extends Fragment {
 		case R.id.menu_config: // Show configuration
 			showConfiguration();
 			break;
+		case R.id.menu_add: // Start add
+			editItem(adapter.getItem(adapter.getSelectedIndex()), true);
+			break;
+		case R.id.menu_remove: // Remove
+			removeItem(adapter.getItem(adapter.getSelectedIndex()));
+			break;
+		case R.id.menu_reload:
+			refresh();
+			break;
 		}
+	}
+
+	private void removeItem(Node item) {
+		if (null != item && null != listener) { // Both item and listener here
+			listener.edit(item, EditType.Remove);
+		}
+	}
+
+	public void refresh() {
+		selectNode(adapter.getItem(adapter.getSelectedIndex()));
 	}
 
 	private void showConfiguration() {
@@ -315,4 +326,13 @@ public class ListViewFragment extends Fragment {
 		getActivity().startActivity(intent);
 	}
 
+	@Override
+	public void itemSelected(int selected) {
+		Node node = adapter.getItem(selected);
+		boolean canAdd = null != node
+				&& (Node.TYPE_FILE == node.type || Node.TYPE_TEXT == node.type);
+		boolean canRemove = null != node && Node.TYPE_TEXT == node.type;
+		actionBar.findAction(R.id.menu_add).setVisible(canAdd);
+		actionBar.findAction(R.id.menu_remove).setVisible(canRemove);
+	}
 }
