@@ -76,6 +76,9 @@ public class EditorViewFragment extends Fragment {
 	}
 
 	private void editNode(Node n, String text) {
+		if (null == actionBar || null == editText) {
+			return;
+		}
 		node = n;
 		if (isAdding) { // Create new Node, switch to this node
 			saveMe = node.createChild(Node.TYPE_TEXT, "");

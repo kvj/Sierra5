@@ -21,6 +21,7 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.TextView;
 
@@ -137,8 +138,11 @@ public class ListViewAdapter implements ListAdapter {
 	public void customize(View view, Node node, boolean selected) {
 		TextView textView = (TextView) view
 				.findViewById(R.id.listview_item_text);
+		ImageView menuIcon = (ImageView) view
+				.findViewById(R.id.listview_item_menu_icon);
+		menuIcon.setVisibility(selected ? View.VISIBLE : View.GONE);
 		textView.setTextColor(theme.colorText);
-		textView.setBackgroundColor(theme.colorBackground);
+		// textView.setBackgroundColor(theme.colorBackground);
 		textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, textSize);
 		SpannableStringBuilder text = new SpannableStringBuilder();
 		for (int i = 0; i < node.level; i++) { // Append level chars first
@@ -146,9 +150,11 @@ public class ListViewAdapter implements ListAdapter {
 		}
 		textFormatter.writePlainText(node, text, theme.colorText, node.text,
 				selected);
+		if (node.collapsed) {
+			text.setSpan(new StyleSpan(Typeface.ITALIC), 0, text.length(), 0);
+		}
 		if (selected) {
-			text.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, text.length(),
-					0);
+			text.setSpan(new StyleSpan(Typeface.BOLD), 0, text.length(), 0);
 		}
 		textView.setText(text);
 	}

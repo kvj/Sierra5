@@ -3,12 +3,11 @@
     android:id="@+id/listview_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal" >
+    android:orientation="horizontal">
     <FrameLayout 
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_weight="0.5"
-	    android:layout_margin="5dp"
         android:background="@drawable/panel_border">
 	    <fragment 
 	        android:id="@+id/listview_left"
@@ -20,7 +19,7 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_weight="0.5"
-	    android:layout_margin="5dp"
+	    android:layout_marginLeft="2dp"
         android:background="@drawable/panel_border">
 	    <fragment 
 	        android:id="@+id/listview_right"

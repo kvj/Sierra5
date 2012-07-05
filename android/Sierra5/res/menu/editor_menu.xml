@@ -3,7 +3,7 @@
 
     <item
         android:id="@+id/menu_save"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@drawable/a_save"
         android:showAsAction="always"
         android:title="Save"/>
 

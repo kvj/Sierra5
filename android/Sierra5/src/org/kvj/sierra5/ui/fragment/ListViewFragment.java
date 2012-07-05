@@ -81,6 +81,11 @@ public class ListViewFragment extends Fragment implements
 		View view = inflater.inflate(R.layout.listview_fragment, container,
 				false);
 		listView = (ListView) view.findViewById(R.id.listview);
+		if (null != listView) {
+			DarkTheme theme = DarkTheme.getTheme();
+			listView.setBackgroundColor(theme.colorBackground);
+
+		}
 		adapter = new ListViewAdapter(this, DarkTheme.getTheme());
 		listView.setAdapter(adapter);
 		listView.setOnItemClickListener(new OnItemClickListener() {

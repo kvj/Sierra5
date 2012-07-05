@@ -3,25 +3,25 @@
 
     <item
         android:id="@+id/menu_reload"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@drawable/a_reload"
         android:showAsAction="always"
         android:title="Reload"/>
 
     <item
         android:id="@+id/menu_add"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@drawable/a_add"
         android:showAsAction="ifRoom"
         android:title="Add item"/>
 
     <item
         android:id="@+id/menu_remove"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@drawable/a_remove"
         android:showAsAction="ifRoom"
         android:title="Remove item"/>
 
     <item
         android:id="@+id/menu_config"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@drawable/a_config"
         android:showAsAction="always"
         android:title="Configuration"/>
 

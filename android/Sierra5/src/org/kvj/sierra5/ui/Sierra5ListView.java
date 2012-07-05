@@ -8,7 +8,6 @@ import org.kvj.sierra5.R;
 import org.kvj.sierra5.data.Controller;
 import org.kvj.sierra5.data.ControllerService;
 import org.kvj.sierra5.data.Node;
-import org.kvj.sierra5.ui.adapter.theme.DarkTheme;
 import org.kvj.sierra5.ui.fragment.EditorViewFragment;
 import org.kvj.sierra5.ui.fragment.EditorViewFragment.EditorViewFragmentListener;
 import org.kvj.sierra5.ui.fragment.ListViewFragment;
@@ -20,7 +19,6 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.view.KeyEvent;
 import android.view.MenuItem;
-import android.view.ViewGroup;
 
 public class Sierra5ListView extends FragmentActivity implements
 		ControllerReceiver<Controller>, ListViewFragmentListener,
@@ -56,15 +54,16 @@ public class Sierra5ListView extends FragmentActivity implements
 		} else {
 			setContentView(R.layout.listview);
 		}
-		DarkTheme theme = DarkTheme.getTheme();
-		ViewGroup root = (ViewGroup) findViewById(R.id.listview_root);
-		if (null != root) { // Have root
-			root.setBackgroundColor(theme.colorBackground);
-		}
 		listViewFragment = (ListViewFragment) getSupportFragmentManager()
 				.findFragmentById(R.id.listview_left);
+		if (null != listViewFragment && !listViewFragment.isInLayout()) {
+			listViewFragment = null;
+		}
 		editorViewFragment = (EditorViewFragment) getSupportFragmentManager()
 				.findFragmentById(R.id.listview_right);
+		if (null != editorViewFragment && !editorViewFragment.isInLayout()) {
+			editorViewFragment = null;
+		}
 	}
 
 	@Override
