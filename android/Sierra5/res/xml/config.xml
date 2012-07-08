@@ -25,7 +25,17 @@
             android:key="@string/useCRLF"
             android:summary="Use Windows-style line breaks (CRLF)"
             android:title="Windows style line break" />
-    </PreferenceCategory>
+        <EditTextPreference 
+            android:key="@string/filePattern"
+            android:title="Global file pattern"
+            android:summary="Name pattern applied to file names"
+            android:defaultValue="@string/filePatternDefault"/>
+        <EditTextPreference 
+            android:key="@string/folderPattern"
+            android:title="Global folder pattern"
+            android:summary="Name pattern applied to folder names"
+            android:defaultValue="@string/folderPatternDefault"/>
+        </PreferenceCategory>
 
     <PreferenceCategory android:title="Look and Feel" >
         <ListPreference

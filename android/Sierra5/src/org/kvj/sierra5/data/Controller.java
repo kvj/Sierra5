@@ -16,9 +16,16 @@ import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.kvj.bravo7.ipc.RemoteServicesCollector;
 import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
+import org.kvj.sierra5.common.Constants;
+import org.kvj.sierra5.common.plugin.Plugin;
+import org.kvj.sierra5.common.root.Root;
 
+import android.os.Environment;
+import android.os.IBinder;
+import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -33,8 +40,30 @@ public class Controller {
 
 	private static final String TAG = "Controller";
 	private Pattern left = Pattern.compile("^\\s*");
+	private RemoteServicesCollector<Plugin> plugins = null;
 
 	public Controller() {
+		plugins = new RemoteServicesCollector<Plugin>(App.getInstance(),
+				Constants.PLUGIN_NS) {
+
+			@Override
+			public Plugin castAIDL(IBinder binder) {
+				return Plugin.Stub.asInterface(binder);
+			}
+
+			@Override
+			public void onChange() {
+				List<Plugin> list = getPlugins();
+				Log.i(TAG, "Plugins: " + list.size());
+				try {
+					for (Plugin plugin : list) {
+						Log.i(TAG, "Plugin: " + plugin.getName());
+					}
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+			}
+		};
 	}
 
 	public static interface LineEater {
@@ -256,6 +285,40 @@ public class Controller {
 		return false; // Not implemented
 	}
 
+	class ItemPattern {
+		boolean inverted = false;
+		Pattern pattern = null;
+	}
+
+	private static Pattern mask = Pattern
+			.compile("\\*|\\?|(\\$\\{[a-zA-Z:\\+\\-0-9]\\})");
+
+	private ItemPattern parsePattern(String text) {
+		StringBuffer pattern = new StringBuffer('^');
+		ItemPattern res = new ItemPattern();
+		if (text.charAt(0) == '!') {
+			text = text.substring(1);
+			res.inverted = true;
+		}
+		Matcher m = mask.matcher(text);
+		while (m.find()) {
+			String repl = "";
+			String found = m.group();
+			if ("*".equals(found)) {
+				repl = ".*";
+			}
+			if ("?".equals(found)) {
+				repl = ".";
+			}
+			m.appendReplacement(pattern, repl);
+		}
+		m.appendTail(pattern);
+		pattern.append('$');
+		res.pattern = Pattern.compile(pattern.toString(),
+				Pattern.CASE_INSENSITIVE);
+		return res;
+	}
+
 	/**
 	 * Expands or collapses Node
 	 * 
@@ -284,12 +347,25 @@ public class Controller {
 				node.children = null;
 				return true; // Done
 			}
+			ItemPattern filePattern = parsePattern(App.getInstance()
+					.getStringPreference(R.string.filePattern,
+							R.string.filePatternDefault));
+			ItemPattern folderPattern = parsePattern(App.getInstance()
+					.getStringPreference(R.string.folderPattern,
+							R.string.folderPatternDefault));
+
 			File[] files = folder.listFiles();
 			List<Node> nodes = new ArrayList<Node>();
-			Log.i(TAG,
-					"Load dir: " + files.length + ", "
-							+ folder.getAbsolutePath());
+			// Log.i(TAG,
+			// "Load dir: " + files.length + ", "
+			// + folder.getAbsolutePath());
 			for (File file : files) { // For every file/folder in folder
+				ItemPattern patt = file.isDirectory() ? folderPattern
+						: filePattern;
+				boolean matches = patt.pattern.matcher(file.getName()).find();
+				if ((matches && patt.inverted) || (!matches && !patt.inverted)) {
+					continue;
+				}
 				Node child = new Node();
 				child.level = node.level + 1;
 				child.file = file.getAbsolutePath();
@@ -461,5 +537,28 @@ public class Controller {
 
 	public boolean removeNode(Node file, Node removeMe) {
 		return saveFile(file, removeMe);
+	}
+
+	public String getRootFolder() {
+		String rootFolderParam = App.getInstance().getResources()
+				.getString(R.string.rootFolder);
+		String sdCardPath = Environment.getExternalStorageDirectory()
+				.getAbsolutePath();
+		String rootFolder = App.getInstance().getStringPreference(
+				rootFolderParam, sdCardPath);
+		return rootFolder;
+
+	}
+
+	private Root.Stub stub = new Root.Stub() {
+
+		@Override
+		public String getRoot() throws RemoteException {
+			return getRootFolder();
+		}
+	};
+
+	public Root.Stub getRootService() {
+		return stub;
 	}
 }

@@ -18,7 +18,14 @@
             android:exported="true"
             android:name=".data.ControllerService" >
         </service>
-
+        <service
+            android:exported="true"
+            android:name=".data.RootService" >
+            <intent-filter >
+                <action android:name="org.kvj.sierra5.INTERFACE" />
+            </intent-filter>
+        </service>
+            
         <activity
             android:label="File Dialog"
             android:name="com.lamerman.FileDialog" >

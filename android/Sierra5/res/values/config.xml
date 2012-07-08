@@ -61,5 +61,9 @@
         <item>28</item>
         <item>30</item>
     </string-array>
-
+    <string name="filePattern">filePattern</string>
+    <string name="filePatternDefault">*</string>
+    <string name="folderPattern">folderPattern</string>
+    <string name="folderPatternDefault">*</string>
+        
 </resources>
