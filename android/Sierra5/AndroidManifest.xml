@@ -25,7 +25,7 @@
                 <action android:name="org.kvj.sierra5.INTERFACE" />
             </intent-filter>
         </service>
-            
+
         <activity
             android:label="File Dialog"
             android:name="com.lamerman.FileDialog" >
@@ -36,12 +36,31 @@
         </activity>
         <activity
             android:configChanges="keyboardHidden"
+            android:exported="true"
+            android:icon="@drawable/logo"
             android:label="@string/app_name"
             android:name=".ui.Sierra5ListView" >
             <intent-filter >
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter >
+                <action android:name="org.kvj.sierra5.SHOW_EDIT_ITEM" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:configChanges="keyboardHidden|orientation|keyboard"
+            android:exported="true"
+            android:icon="@drawable/logo"
+            android:label="Select item"
+            android:name=".ui.SelectItemView" >
+            <intent-filter >
+                <action android:name="org.kvj.sierra5.SELECT_ITEM" />
+
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
     </application>

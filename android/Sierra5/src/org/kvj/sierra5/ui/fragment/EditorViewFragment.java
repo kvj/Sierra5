@@ -3,9 +3,10 @@ package org.kvj.sierra5.ui.fragment;
 import org.kvj.bravo7.SuperActivity;
 import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
+import org.kvj.sierra5.common.Constants;
+import org.kvj.sierra5.common.data.Node;
 import org.kvj.sierra5.data.Controller;
 import org.kvj.sierra5.data.Controller.SearchNodeResult;
-import org.kvj.sierra5.data.Node;
 import org.kvj.sierra5.ui.adapter.theme.DarkTheme;
 
 import android.os.Bundle;
@@ -21,10 +22,7 @@ import com.markupartist.android.widget.ActionBar;
 
 public class EditorViewFragment extends Fragment {
 
-	public static final String KEY_FILE = "edit_file";
-	public static final String KEY_ITEM = "edit_item";
 	public static final String KEY_TEXT = "edit_text";
-	public static final String KEY_ADD = "edit_add";
 	public static final String KEY_TEXT_ORIG = "edit_text_orig";
 	private static final String TAG = "EditorFragment";
 
@@ -66,13 +64,14 @@ public class EditorViewFragment extends Fragment {
 			EditorViewFragmentListener listener) {
 		this.listener = listener;
 		this.controller = controller;
-		String file = data.getString(KEY_FILE);
+		String file = data.getString(Constants.EDITOR_INTENT_FILE);
 		oldText = data.getString(KEY_TEXT_ORIG);
-		isAdding = data.getBoolean(KEY_ADD, false);
+		isAdding = data.getBoolean(Constants.EDITOR_INTENT_ADD, false);
 		if (null == file) { // No file - empty editor
 			return;
 		}
-		loadNode(file, data.getStringArray(KEY_ITEM), isAdding);
+		loadNode(file, data.getStringArray(Constants.EDITOR_INTENT_ITEM),
+				isAdding);
 	}
 
 	private void editNode(Node n, String text) {
@@ -81,7 +80,11 @@ public class EditorViewFragment extends Fragment {
 		}
 		node = n;
 		if (isAdding) { // Create new Node, switch to this node
-			saveMe = node.createChild(Node.TYPE_TEXT, "");
+			saveMe = node.createChild(
+					Node.TYPE_TEXT,
+					"",
+					App.getInstance().getIntPreference(R.string.tabSize,
+							R.string.tabSizeDefault));
 		} else { // Existing Node
 			saveMe = n;
 		}
@@ -103,14 +106,14 @@ public class EditorViewFragment extends Fragment {
 
 	public void onSaveState(Bundle outState) {
 		if (null != node) { // Have node
-			outState.putString(KEY_FILE, node.file);
+			outState.putString(Constants.EDITOR_INTENT_FILE, node.file);
 			if (null != node.textPath) { // Have text path
-				outState.putStringArray(KEY_ITEM,
+				outState.putStringArray(Constants.EDITOR_INTENT_ITEM,
 						node.textPath.toArray(new String[0]));
 			}
 			outState.putString(KEY_TEXT, editText.getText().toString());
 			outState.putString(KEY_TEXT_ORIG, oldText);
-			outState.putBoolean(KEY_ADD, isAdding);
+			outState.putBoolean(Constants.EDITOR_INTENT_ADD, isAdding);
 		}
 	}
 

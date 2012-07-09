@@ -7,7 +7,7 @@ import org.kvj.bravo7.format.PlainTextFormatter;
 import org.kvj.bravo7.format.TextFormatter;
 import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
-import org.kvj.sierra5.data.Node;
+import org.kvj.sierra5.common.data.Node;
 import org.kvj.sierra5.ui.adapter.theme.DarkTheme;
 
 import android.content.Context;

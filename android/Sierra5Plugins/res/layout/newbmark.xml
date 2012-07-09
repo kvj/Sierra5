@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="File:" />
+
+    <EditText
+        android:id="@+id/bmark_file"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:inputType="textShortMessage" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Text path:" />
+
+    <EditText
+        android:id="@+id/bmark_item"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:inputType="textShortMessage" />
+
+    <Button
+        android:id="@+id/bmark_select"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select item" />
+
+    <RadioGroup
+        android:id="@+id/bmark_type"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <RadioButton
+            android:id="@+id/bmark_type_show"
+            android:text="Show" />
+
+        <RadioButton
+            android:id="@+id/bmark_type_edit"
+            android:text="Edit" />
+
+        <RadioButton
+            android:id="@+id/bmark_type_add"
+            android:text="Append to" />
+    </RadioGroup>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Bookmark name:" />
+
+    <EditText
+        android:id="@+id/bmark_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:inputType="textShortMessage" />
+
+    <Button
+        android:id="@+id/bmark_save"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save" />
+
+</LinearLayout>

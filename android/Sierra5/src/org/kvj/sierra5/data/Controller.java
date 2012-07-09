@@ -20,6 +20,7 @@ import org.kvj.bravo7.ipc.RemoteServicesCollector;
 import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
 import org.kvj.sierra5.common.Constants;
+import org.kvj.sierra5.common.data.Node;
 import org.kvj.sierra5.common.plugin.Plugin;
 import org.kvj.sierra5.common.root.Root;
 
@@ -236,13 +237,6 @@ public class Controller {
 				if (m.find()) { // Have space
 					leftChars = m.group(0).replace("\t", tabReplacement);
 				}
-				Node n = new Node();
-				n.collapsed = false; // All files are expanded by default
-				n.children = new ArrayList<Node>();
-				n.file = node.file; // Copy from file node
-				n.left = leftChars;
-				n.text = line.trim();
-				n.type = Node.TYPE_TEXT;
 				Node parent = null;
 				boolean fromParents = false;
 				// Log.i(TAG, "Search parent: " + n.text + ", " +
@@ -257,19 +251,15 @@ public class Controller {
 					// Log.i(TAG, "Parse " + parent.text + " and " + n.text +
 					// ", "
 					// + parent.left.length() + ", " + n.left.length());
-					if (parent.left.length() < n.left.length()) {
+					if (parent.left.length() < leftChars.length()) {
 						// Real parent
 						fromParents = true;
 						break;
 					}
 				} while (true);
-				parent.children.add(n);
-				n.level = parent.level + 1; // Level found
-				n.textPath = new ArrayList<String>();
-				if (null != parent.textPath) { // Parent is text
-					n.textPath.addAll(parent.textPath);
-				}
-				n.textPath.add(n.text);
+				Node n = parent.createChild(Node.TYPE_TEXT, line.trim(), 0);
+				n.collapsed = false; // All files are expanded by default
+				n.left = leftChars;
 				if (fromParents) { // Return parent back
 					parents.push(parent);
 				}
@@ -366,12 +356,10 @@ public class Controller {
 				if ((matches && patt.inverted) || (!matches && !patt.inverted)) {
 					continue;
 				}
-				Node child = new Node();
-				child.level = node.level + 1;
+				Node child = node.createChild(
+						file.isDirectory() ? Node.TYPE_FOLDER : Node.TYPE_FILE,
+						file.getName(), 0);
 				child.file = file.getAbsolutePath();
-				child.text = file.getName();
-				child.type = file.isDirectory() ? Node.TYPE_FOLDER
-						: Node.TYPE_FILE;
 				nodes.add(child);
 			}
 			Collections.sort(nodes, new Comparator<Node>() {

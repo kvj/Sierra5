@@ -1,10 +1,7 @@
-package org.kvj.sierra5.data;
+package org.kvj.sierra5.common.data;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import org.kvj.sierra5.App;
-import org.kvj.sierra5.R;
 
 public class Node {
 
@@ -26,12 +23,12 @@ public class Node {
 	public int type = TYPE_FOLDER;
 	public int level = 0;
 
-	public Node createChild(int childType, String childText) {
-		int tabSize = App.getInstance().getIntPreference(R.string.tabSize,
-				R.string.tabSizeDefault);
+	public Node createChild(int childType, String childText, int tabSize) {
 		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < tabSize; i++) { // Add spaces
-			sb.append(' ');
+		if (type == Node.TYPE_TEXT) { // Padding only for text
+			for (int i = 0; i < tabSize; i++) { // Add spaces
+				sb.append(' ');
+			}
 		}
 		Node child = new Node();
 		child.file = file;

@@ -5,9 +5,10 @@ import org.kvj.bravo7.ControllerConnector.ControllerReceiver;
 import org.kvj.bravo7.SuperActivity;
 import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
+import org.kvj.sierra5.common.Constants;
+import org.kvj.sierra5.common.data.Node;
 import org.kvj.sierra5.data.Controller;
 import org.kvj.sierra5.data.ControllerService;
-import org.kvj.sierra5.data.Node;
 import org.kvj.sierra5.ui.fragment.EditorViewFragment;
 import org.kvj.sierra5.ui.fragment.EditorViewFragment.EditorViewFragmentListener;
 import org.kvj.sierra5.ui.fragment.ListViewFragment;
@@ -23,8 +24,6 @@ import android.view.MenuItem;
 public class Sierra5ListView extends FragmentActivity implements
 		ControllerReceiver<Controller>, ListViewFragmentListener,
 		EditorViewFragmentListener {
-
-	public static final String KEY_EDITOR = "force_editor";
 
 	private static final String TAG = "ListView";
 	ControllerConnector<App, Controller, ControllerService> conn = null;
@@ -48,7 +47,7 @@ public class Sierra5ListView extends FragmentActivity implements
 				this.data = new Bundle();
 			}
 		}
-		boolean isEditor = data.getBoolean(KEY_EDITOR, false);
+		boolean isEditor = data.getBoolean(Constants.LIST_FORCE_EDITOR, false);
 		if (isEditor) { // Only editor
 			setContentView(R.layout.listview_edit_only);
 		} else {
@@ -73,7 +72,7 @@ public class Sierra5ListView extends FragmentActivity implements
 		}
 		this.controller = controller;
 		if (null != listViewFragment) { // Have left part
-			listViewFragment.setController(data, controller, this);
+			listViewFragment.setController(data, controller, this, false);
 		}
 		if (null != editorViewFragment) { // Have right part
 			editorViewFragment.setController(data, controller, this);
@@ -97,7 +96,8 @@ public class Sierra5ListView extends FragmentActivity implements
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
-		outState.putBoolean(KEY_EDITOR, listViewFragment == null);
+		outState.putBoolean(Constants.LIST_FORCE_EDITOR,
+				listViewFragment == null);
 		if (null != listViewFragment) { // Have list
 			listViewFragment.onSaveState(outState);
 		}
@@ -109,7 +109,7 @@ public class Sierra5ListView extends FragmentActivity implements
 	@Override
 	public void open(Node node) {
 		Intent intent = new Intent(this, Sierra5ListView.class);
-		intent.putExtra(ListViewFragment.KEY_ROOT, node.file);
+		intent.putExtra(Constants.LIST_INTENT_ROOT, node.file);
 		startActivityForResult(intent, RESULT_DONE);
 	}
 
@@ -143,12 +143,12 @@ public class Sierra5ListView extends FragmentActivity implements
 			});
 		} else { // Single pane - new Activity
 			Intent intent = new Intent(this, Sierra5ListView.class);
-			intent.putExtra(KEY_EDITOR, true);
-			intent.putExtra(EditorViewFragment.KEY_FILE, node.file);
-			intent.putExtra(EditorViewFragment.KEY_ADD,
+			intent.putExtra(Constants.LIST_FORCE_EDITOR, true);
+			intent.putExtra(Constants.EDITOR_INTENT_FILE, node.file);
+			intent.putExtra(Constants.EDITOR_INTENT_ADD,
 					editType == EditType.Add);
 			if (null != node.textPath) { // Have textPath
-				intent.putExtra(EditorViewFragment.KEY_ITEM,
+				intent.putExtra(Constants.EDITOR_INTENT_ITEM,
 						node.textPath.toArray(new String[0]));
 			}
 			startActivityForResult(intent, RESULT_DONE);

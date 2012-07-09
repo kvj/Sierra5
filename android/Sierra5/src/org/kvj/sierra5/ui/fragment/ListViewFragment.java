@@ -6,9 +6,10 @@ import java.util.List;
 import org.kvj.bravo7.SuperActivity;
 import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
+import org.kvj.sierra5.common.Constants;
+import org.kvj.sierra5.common.data.Node;
 import org.kvj.sierra5.data.Controller;
 import org.kvj.sierra5.data.Controller.SearchNodeResult;
-import org.kvj.sierra5.data.Node;
 import org.kvj.sierra5.ui.ConfigurationView;
 import org.kvj.sierra5.ui.adapter.ListViewAdapter;
 import org.kvj.sierra5.ui.adapter.ListViewAdapter.ListViewAdapterListener;
@@ -59,10 +60,6 @@ public class ListViewFragment extends Fragment implements
 		T data = null;
 	}
 
-	public static final String KEY_ROOT = "list_root";
-	public static final String KEY_FILE = "list_file";
-	public static final String KEY_ITEM = "list_item";
-
 	private static final int MENU_EDIT = 0;
 	private static final int MENU_OPEN = 1;
 
@@ -74,6 +71,7 @@ public class ListViewFragment extends Fragment implements
 	List<MenuItemInfo<Node>> contextMenu = new ArrayList<MenuItemInfo<Node>>();
 	ListViewFragmentListener listener = null;
 	private ActionBar actionBar = null;
+	private boolean selectMode = false;
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -110,8 +108,6 @@ public class ListViewFragment extends Fragment implements
 			}
 		});
 		actionBar = (ActionBar) view.findViewById(R.id.actionbar);
-		getActivity().getMenuInflater().inflate(R.menu.list_menu,
-				actionBar.asMenu());
 		return view;
 	}
 
@@ -128,6 +124,10 @@ public class ListViewFragment extends Fragment implements
 	}
 
 	private void onLongClick(Node node) {
+		if (selectMode && null != listener) { // Have listener and select mode
+			listener.open(node);
+			return;
+		}
 		contextMenu.clear();
 		if (Node.TYPE_FILE == node.type || Node.TYPE_TEXT == node.type) {
 			// File or text - edit
@@ -150,15 +150,15 @@ public class ListViewFragment extends Fragment implements
 	public void onSaveState(Bundle outState) {
 		// Save root, if have, file, +path
 		if (null != rootFile) { // Save root
-			outState.putString(KEY_ROOT, rootFile);
+			outState.putString(Constants.LIST_INTENT_ROOT, rootFile);
 		}
 		int selectedIndex = adapter.getSelectedIndex();
 		Log.i(TAG, "onSaveInstanceState: " + rootFile + ", " + selectedIndex);
 		if (-1 != selectedIndex) { // Have selected
 			Node n = adapter.getItem(selectedIndex);
-			outState.putString(KEY_FILE, n.file);
+			outState.putString(Constants.LIST_INTENT_FILE, n.file);
 			if (null != n.textPath) { // Have path - text selected
-				outState.putStringArray(KEY_ITEM,
+				outState.putStringArray(Constants.LIST_INTENT_ITEM,
 						n.textPath.toArray(new String[0]));
 			}
 		}
@@ -168,10 +168,15 @@ public class ListViewFragment extends Fragment implements
 	 * Loads data
 	 */
 	public void setController(Bundle data, Controller controller,
-			ListViewFragmentListener listener) {
+			ListViewFragmentListener listener, boolean selectMode) {
+		this.selectMode = selectMode;
+		if (!selectMode) { // Create toolbar
+			getActivity().getMenuInflater().inflate(R.menu.list_menu,
+					actionBar.asMenu());
+		}
 		this.listener = listener;
 		this.controller = controller;
-		String file = data.getString(KEY_ROOT);
+		String file = data.getString(Constants.LIST_INTENT_ROOT);
 		boolean rootSet = false;
 		if (null != file) { // Have file in Activity parameters
 			rootSet = adapter.setRoot(controller.nodeFromPath(file), true);
@@ -193,8 +198,9 @@ public class ListViewFragment extends Fragment implements
 		adapter.setSelectedIndex(-1);
 		if (rootSet) { // Root set - expand root
 			actionBar.setTitle(adapter.getRoot().text);
-			expandTree(adapter.getRoot(), data.getString(KEY_FILE),
-					data.getStringArray(KEY_ITEM));
+			expandTree(adapter.getRoot(),
+					data.getString(Constants.LIST_INTENT_FILE),
+					data.getStringArray(Constants.LIST_INTENT_ITEM));
 		} else {
 			SuperActivity.notifyUser(getActivity(), "Invalid file/folder");
 		}
@@ -333,6 +339,9 @@ public class ListViewFragment extends Fragment implements
 
 	@Override
 	public void itemSelected(int selected) {
+		if (selectMode) { // Skip
+			return;
+		}
 		Node node = adapter.getItem(selected);
 		boolean canAdd = null != node
 				&& (Node.TYPE_FILE == node.type || Node.TYPE_TEXT == node.type);
