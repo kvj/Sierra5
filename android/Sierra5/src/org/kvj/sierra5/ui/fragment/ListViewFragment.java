@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.kvj.bravo7.SuperActivity;
-import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
 import org.kvj.sierra5.common.Constants;
 import org.kvj.sierra5.common.data.Node;
@@ -17,7 +16,6 @@ import org.kvj.sierra5.ui.adapter.theme.DarkTheme;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -184,13 +182,7 @@ public class ListViewFragment extends Fragment implements
 				rootFile = adapter.getRoot().file;
 			}
 		} else { // No file - show root
-			String rootFolderParam = getActivity().getResources().getString(
-					R.string.rootFolder);
-			String sdCardPath = Environment.getExternalStorageDirectory()
-					.getAbsolutePath();
-			String rootFolder = App.getInstance().getStringPreference(
-					rootFolderParam, sdCardPath);
-			Log.i(TAG, "Root folder: " + rootFolder + ", " + sdCardPath);
+			String rootFolder = controller.getRootFolder();
 			rootSet = adapter.setRoot(controller.nodeFromPath(rootFolder),
 					false);
 		}

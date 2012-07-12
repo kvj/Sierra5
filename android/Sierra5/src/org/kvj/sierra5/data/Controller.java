@@ -8,10 +8,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -65,6 +68,7 @@ public class Controller {
 				}
 			}
 		};
+		parsePattern("/xx/?.xml/w${w+2d}/w${dd}");
 	}
 
 	public static interface LineEater {
@@ -278,13 +282,23 @@ public class Controller {
 	class ItemPattern {
 		boolean inverted = false;
 		Pattern pattern = null;
+
+		boolean matches(String text) {
+			boolean matches = pattern.matcher(text).find();
+			if ((matches && inverted) || (!matches && !inverted)) {
+				return false;
+			}
+			return true;
+		}
 	}
 
 	private static Pattern mask = Pattern
-			.compile("\\*|\\?|(\\$\\{[a-zA-Z:\\+\\-0-9]\\})");
+			.compile("\\*|\\?|(\\$\\{([a-zA-Z]+)((\\+|\\-)(\\d{1,3})(h|d|w|m|y))?\\})");
+
+	// 2: dd 3: +2d 4: + 5: 2
 
 	private ItemPattern parsePattern(String text) {
-		StringBuffer pattern = new StringBuffer('^');
+		StringBuffer pattern = new StringBuffer();
 		ItemPattern res = new ItemPattern();
 		if (text.charAt(0) == '!') {
 			text = text.substring(1);
@@ -296,15 +310,35 @@ public class Controller {
 			String found = m.group();
 			if ("*".equals(found)) {
 				repl = ".*";
-			}
-			if ("?".equals(found)) {
+			} else if ("?".equals(found)) {
 				repl = ".";
+			} else {
+				// Date replacement
+				Calendar c = Calendar.getInstance();
+				if (null != m.group(3)) { // Have date modifier
+					int mul = "+".equals(m.group(4)) ? 1 : -1;
+					int value = Integer.parseInt(m.group(5), 10);
+					if ("h".equals(m.group(6))) { // Hour
+						c.add(Calendar.HOUR, mul * value);
+					} else if ("d".equals(m.group(6))) { // Day
+						c.add(Calendar.DAY_OF_YEAR, mul * value);
+					} else if ("w".equals(m.group(6))) { // Week
+						c.add(Calendar.DAY_OF_YEAR, mul * value * 7);
+					} else if ("m".equals(m.group(6))) { // Month
+						c.add(Calendar.MONTH, mul * value);
+					} else if ("y".equals(m.group(6))) { // Year
+						c.add(Calendar.YEAR, mul * value);
+					}
+				}
+				SimpleDateFormat dt = new SimpleDateFormat(m.group(2),
+						Locale.ENGLISH);
+				repl = dt.format(c.getTime());
 			}
 			m.appendReplacement(pattern, repl);
 		}
 		m.appendTail(pattern);
 		pattern.append('$');
-		res.pattern = Pattern.compile(pattern.toString(),
+		res.pattern = Pattern.compile("^" + pattern.toString(),
 				Pattern.CASE_INSENSITIVE);
 		return res;
 	}
@@ -319,8 +353,8 @@ public class Controller {
 	public boolean expand(Node node, Boolean forceExpand, Node restoreExpand) {
 		boolean newStateCollapsed = null != forceExpand ? !forceExpand
 				: !node.collapsed;
-		Log.i(TAG, "expand " + node.text + ", " + node.collapsed + ", "
-				+ node.type);
+		// Log.i(TAG, "expand " + node.text + ", " + node.collapsed + ", "
+		// + node.type);
 		if (Node.TYPE_TEXT == node.type) { // Text - just change flag
 			node.collapsed = newStateCollapsed;
 			return true; // Done
@@ -399,15 +433,19 @@ public class Controller {
 		if (TextUtils.isEmpty(path)) { // Invalid path
 			return null;
 		}
-		File file = new File(path);
+		File file = new File(getRootFolder());
 		if (!file.exists()) { // Not exists
 			return null;
 		}
 		Node node = new Node();
-		node.file = path;
+		node.file = file.getAbsolutePath();
 		node.text = file.getName();
 		node.type = file.isDirectory() ? Node.TYPE_FOLDER : Node.TYPE_FILE;
-		return node;
+		SearchNodeResult result = searchInNode(node, path, null);
+		if (null == result || !result.found) { // Not found
+			return null;
+		}
+		return result.node;
 	}
 
 	public static class SearchNodeResult {
@@ -416,20 +454,18 @@ public class Controller {
 		public int index = 0;
 	}
 
-	private List<String> findPath(File root, File file) {
-		File f = file;
+	private List<String> findPath(String root, String file) {
+		if (!file.startsWith(root)) { // Not a same tree
+			return null;
+		}
 		List<String> result = new ArrayList<String>();
-		do {
-			if (root.equals(f)) { // Files are same
-				return result;
+		String[] parts = file.substring(root.length()).split(File.separator);
+		for (String part : parts) { // Copy parts
+			if (!TextUtils.isEmpty(part)) { // Not empty - add to result
+				result.add(part);
 			}
-			result.add(f.getName());
-			f = f.getParentFile();
-			if (null == f) { // FS root reached
-				return null;
-			}
-		} while (f != null);
-		return null;
+		}
+		return result;
 	}
 
 	public int getNodeSize(Node n) {
@@ -444,21 +480,20 @@ public class Controller {
 	}
 
 	public SearchNodeResult searchInNode(Node root, String file, String[] path) {
-		File thisFile = new File(file);
 		File rootFile = new File(root.file);
-		if (!thisFile.exists() || !rootFile.exists()) { // Invalid file
-			Log.w(TAG, "File(s) not exists: " + thisFile.exists() + ", "
-					+ rootFile.exists());
+		if (!rootFile.exists()) { // Invalid file
+			Log.w(TAG,
+					"Root not exists: " + root.file + " " + rootFile.exists());
 			return null;
 		}
-		List<String> pathToRoot = findPath(rootFile, thisFile);
+		List<String> pathToRoot = findPath(root.file, file);
 		if (null == pathToRoot) { // Different trees
 			Log.w(TAG, "Different trees: " + root.file + " - " + file);
 			return null;
 		}
 		List<String> pathToSearch = new ArrayList<String>();
 		// Copy path
-		for (int i = pathToRoot.size() - 1; i >= 0; i--) { // Invert path
+		for (int i = 0; i < pathToRoot.size(); i++) { // Copy
 			pathToSearch.add(pathToRoot.get(i));
 		}
 		if (null != path) { // Have path
@@ -479,9 +514,11 @@ public class Controller {
 			}
 			boolean found = false;
 			int siblingSize = 0;
+			ItemPattern ip = parsePattern(pathToSearch.get(depth));
+			// Log.i(TAG, "Pattern: " + ip.pattern.pattern());
 			for (int i = 0; i < n.children.size(); i++) { // Search child
 				Node ch = n.children.get(i);
-				if (ch.text.equals(pathToSearch.get(depth))) {
+				if (ip.matches(ch.text)) {
 					// From end - found
 					n = ch;
 					index += siblingSize + 1;
