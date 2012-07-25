@@ -138,7 +138,7 @@ public class Sierra5ListView extends FragmentActivity implements
 							node.file,
 							node.textPath == null ? null : node.textPath
 									.toArray(new String[0]),
-							editType == EditType.Add);
+							editType == EditType.Add, null);
 				}
 			});
 		} else { // Single pane - new Activity

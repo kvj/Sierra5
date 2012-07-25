@@ -279,9 +279,10 @@ public class Controller {
 		return false; // Not implemented
 	}
 
-	class ItemPattern {
-		boolean inverted = false;
-		Pattern pattern = null;
+	public class ItemPattern {
+		public boolean inverted = false;
+		public String converted = null;
+		public Pattern pattern = null;
 
 		boolean matches(String text) {
 			boolean matches = pattern.matcher(text).find();
@@ -297,10 +298,17 @@ public class Controller {
 
 	// 2: dd 3: +2d 4: + 5: 2
 
-	private ItemPattern parsePattern(String text) {
+	public ItemPattern parsePattern(String text) {
+		return parsePattern(text, true);
+	}
+
+	public ItemPattern parsePattern(String text, boolean regexp) {
 		StringBuffer pattern = new StringBuffer();
+		if (regexp) { // Add begin
+			pattern.append('^');
+		}
 		ItemPattern res = new ItemPattern();
-		if (text.charAt(0) == '!') {
+		if (text.charAt(0) == '!' && regexp) {
 			text = text.substring(1);
 			res.inverted = true;
 		}
@@ -310,8 +318,14 @@ public class Controller {
 			String found = m.group();
 			if ("*".equals(found)) {
 				repl = ".*";
+				if (!regexp) { // Revert
+					repl = "*";
+				}
 			} else if ("?".equals(found)) {
 				repl = ".";
+				if (!regexp) { // Revert
+					repl = "?";
+				}
 			} else {
 				// Date replacement
 				Calendar c = Calendar.getInstance();
@@ -337,9 +351,14 @@ public class Controller {
 			m.appendReplacement(pattern, repl);
 		}
 		m.appendTail(pattern);
-		pattern.append('$');
-		res.pattern = Pattern.compile("^" + pattern.toString(),
-				Pattern.CASE_INSENSITIVE);
+		if (regexp) { // Add end
+			pattern.append('$');
+		}
+		res.converted = pattern.toString();
+		if (regexp) { // Compile pattern
+			res.pattern = Pattern.compile(res.converted,
+					Pattern.CASE_INSENSITIVE);
+		}
 		return res;
 	}
 

@@ -14,11 +14,13 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.TextView;
 
 public class NewBookmarkView extends Activity {
 
-	TextView fileEdit = null, itemEdit = null, nameEdit = null;
+	TextView fileEdit = null, itemEdit = null, nameEdit = null,
+			templateEdit = null;
 	Button selectButton = null, saveButton = null;
 	RadioGroup typeGroup = null;
 	RadioButton typeShow = null, typeEdit = null, typeAdd = null;
@@ -37,6 +39,7 @@ public class NewBookmarkView extends Activity {
 		typeShow = (RadioButton) findViewById(R.id.bmark_type_show);
 		typeEdit = (RadioButton) findViewById(R.id.bmark_type_edit);
 		typeAdd = (RadioButton) findViewById(R.id.bmark_type_add);
+		templateEdit = (TextView) findViewById(R.id.bmark_template);
 		selectButton.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -51,6 +54,17 @@ public class NewBookmarkView extends Activity {
 				saveBookmark();
 			}
 		});
+		typeGroup.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+
+			@Override
+			public void onCheckedChanged(RadioGroup group, int checkedId) {
+				boolean templateEnabled = false;
+				if (checkedId == R.id.bmark_type_add) { // Only for add
+					templateEnabled = true;
+				}
+				templateEdit.setEnabled(templateEnabled);
+			}
+		});
 		setNodeType(-1);
 	}
 
@@ -62,6 +76,7 @@ public class NewBookmarkView extends Activity {
 		int selectedType = typeGroup.getCheckedRadioButtonId();
 		String file = fileEdit.getText().toString().trim();
 		String[] items = itemEdit.getText().toString().trim().split("/");
+		String template = templateEdit.getText().toString().trim();
 		if (items.length == 1 && TextUtils.isEmpty(items[0])) {
 			// arr with empty str
 			items = new String[0];
@@ -81,6 +96,10 @@ public class NewBookmarkView extends Activity {
 				launchIntent.putExtra(Constants.EDITOR_INTENT_ITEM, items);
 			}
 			launchIntent.putExtra(Constants.EDITOR_INTENT_ADD, true);
+			if (!TextUtils.isEmpty(template)) { // Have template
+				launchIntent.putExtra(Constants.EDITOR_INTENT_ADD_TEMPLATE,
+						template);
+			}
 			icon = Intent.ShortcutIconResource.fromContext(this,
 					R.drawable.file_add);
 			break;
@@ -138,27 +157,27 @@ public class NewBookmarkView extends Activity {
 		boolean showEnabled = false;
 		boolean saveEnabled = false;
 		this.type = nodeType;
+		int selected = R.id.bmark_type_show;
 		switch (nodeType) {
 		case Node.TYPE_FILE: // Show, Save, Add, Edit
 			showEnabled = true;
 			saveEnabled = true;
 			addEnabled = true;
 			editEnabled = true;
-			typeShow.setSelected(true);
 			break;
 		case Node.TYPE_FOLDER: // Show, Save
 			showEnabled = true;
 			saveEnabled = true;
-			typeShow.setSelected(true);
 			break;
 		case Node.TYPE_TEXT: // Show, Save, Add, Edit
 			showEnabled = true;
-			saveEnabled = true;
 			addEnabled = true;
 			editEnabled = true;
-			typeEdit.setSelected(true);
+			saveEnabled = true;
+			selected = R.id.bmark_type_edit;
 			break;
 		}
+		typeGroup.check(selected);
 		typeShow.setEnabled(showEnabled);
 		typeEdit.setEnabled(editEnabled);
 		typeAdd.setEnabled(addEnabled);

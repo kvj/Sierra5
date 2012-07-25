@@ -6,6 +6,7 @@ import org.kvj.sierra5.R;
 import org.kvj.sierra5.common.Constants;
 import org.kvj.sierra5.common.data.Node;
 import org.kvj.sierra5.data.Controller;
+import org.kvj.sierra5.data.Controller.ItemPattern;
 import org.kvj.sierra5.data.Controller.SearchNodeResult;
 import org.kvj.sierra5.ui.adapter.theme.DarkTheme;
 
@@ -71,10 +72,10 @@ public class EditorViewFragment extends Fragment {
 			return;
 		}
 		loadNode(file, data.getStringArray(Constants.EDITOR_INTENT_ITEM),
-				isAdding);
+				isAdding, data.getString(Constants.EDITOR_INTENT_ADD_TEMPLATE));
 	}
 
-	private void editNode(Node n, String text) {
+	private void editNode(Node n, String template) {
 		if (null == actionBar || null == editText) {
 			return;
 		}
@@ -93,15 +94,28 @@ public class EditorViewFragment extends Fragment {
 		} else { // Existing item
 			actionBar.setTitle(n.text);
 		}
-		if (null == text) { // Load from Node
-			if (isAdding) { // Text is empty
-				text = "";
-			} else {
-				text = controller.getEditableContents(node);
+		String text = "";
+		int cursorPos = -1;
+		if (null != template) { // Have template - convert
+			ItemPattern pattern = controller.parsePattern(template, false);
+			text = pattern.converted;
+			int cursorIndex = text.indexOf("${|}");
+			if (-1 != cursorIndex) { // Found cursor position
+				cursorPos = cursorIndex;
+				text = text.replace("${|}", "");
 			}
-			oldText = text;
 		}
+		// Log.i(TAG, "Edit node: " + text + ", " + template + ", " +
+		// cursorPos);
+		if (!isAdding) { // Text is empty
+			text = controller.getEditableContents(node);
+		}
+		oldText = text;
 		editText.setText(text);
+		if (-1 == cursorPos) { // Don't have position - move to the end
+			cursorPos = text.length();
+		}
+		editText.setSelection(cursorPos);
 	}
 
 	public void onSaveState(Bundle outState) {
@@ -146,7 +160,8 @@ public class EditorViewFragment extends Fragment {
 		}
 	}
 
-	public void loadNode(String file, String[] path, boolean newNode) {
+	public void loadNode(String file, String[] path, boolean newNode,
+			String template) {
 		final Node n = controller.nodeFromPath(file); // File found
 		if (null == n) { // Invalid file
 			SuperActivity.notifyUser(getActivity(), "File not found");
@@ -173,7 +188,7 @@ public class EditorViewFragment extends Fragment {
 		}
 		parent = n;
 		isAdding = newNode;
-		editNode(res.node, null);
+		editNode(res.node, template);
 	}
 
 	public static boolean stringChanged(String s1, String s2,

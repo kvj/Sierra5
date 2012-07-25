@@ -3,7 +3,10 @@ package org.kvj.sierra5.common.data;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Node {
+import android.os.Parcel;
+import android.os.Parcelable;
+
+public class Node implements Parcelable {
 
 	public static final int TYPE_FOLDER = 0;
 	public static final int TYPE_FILE = 1;
@@ -49,6 +52,29 @@ public class Node {
 		}
 		children.add(child);
 		return child;
+	}
+
+	@Override
+	public int describeContents() {
+		return 0;
+	}
+
+	public static final Parcelable.Creator<Node> CREATOR = new Creator<Node>() {
+
+		@Override
+		public Node[] newArray(int size) {
+			return new Node[size];
+		}
+
+		@Override
+		public Node createFromParcel(Parcel arg0) {
+			Node node = new Node();
+			return node;
+		}
+	};
+
+	@Override
+	public void writeToParcel(Parcel p, int flags) {
 	}
 
 }

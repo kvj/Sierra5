@@ -19,4 +19,5 @@ public class Constants {
 	public static final String EDITOR_INTENT_FILE = "edit_file";
 	public static final String EDITOR_INTENT_ITEM = "edit_item";
 	public static final String EDITOR_INTENT_ADD = "edit_add";
+	public static final String EDITOR_INTENT_ADD_TEMPLATE = "edit_add_template";
 }
