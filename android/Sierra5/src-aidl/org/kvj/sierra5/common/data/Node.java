@@ -55,6 +55,19 @@ public class Node implements Parcelable {
 	}
 
 	@Override
+	public void writeToParcel(Parcel p, int flags) {
+		p.writeString(file); // file
+		p.writeStringList(textPath); // textPath
+		p.writeString(left); // left
+		p.writeList(children);
+		p.writeByte((byte) (collapsed ? 1 : 0));
+		p.writeString(text);
+		p.writeString(raw);
+		p.writeInt(type);
+		p.writeInt(level);
+	}
+
+	@Override
 	public int describeContents() {
 		return 0;
 	}
@@ -67,14 +80,21 @@ public class Node implements Parcelable {
 		}
 
 		@Override
-		public Node createFromParcel(Parcel arg0) {
+		public Node createFromParcel(Parcel p) {
 			Node node = new Node();
+			node.file = p.readString();
+			node.textPath = new ArrayList<String>();
+			p.readStringList(node.textPath);
+			node.left = p.readString();
+			node.children = new ArrayList<Node>();
+			p.readList(node.children, null);
+			node.collapsed = p.readByte() == 1;
+			node.text = p.readString();
+			node.raw = p.readString();
+			node.type = p.readInt();
+			node.level = p.readInt();
 			return node;
 		}
 	};
-
-	@Override
-	public void writeToParcel(Parcel p, int flags) {
-	}
 
 }

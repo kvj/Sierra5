@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="File:" />
+
+    <EditText
+        android:id="@+id/bmark_file"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textShortMessage"
+        android:singleLine="true" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Text path:" />
+
+    <EditText
+        android:id="@+id/bmark_item"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textShortMessage"
+        android:singleLine="true" />
+
+    <Button
+        android:id="@+id/bmark_select"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select item" />
+
+</LinearLayout>

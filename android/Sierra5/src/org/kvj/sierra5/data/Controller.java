@@ -600,6 +600,12 @@ public class Controller {
 		public String getRoot() throws RemoteException {
 			return getRootFolder();
 		}
+
+		@Override
+		public Node getNode(String file, String[] path, boolean template)
+				throws RemoteException {
+			return null;
+		}
 	};
 
 	public Root.Stub getRootService() {
