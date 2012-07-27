@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.kvj.bravo7.SuperActivity;
+import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
 import org.kvj.sierra5.common.Constants;
 import org.kvj.sierra5.common.data.Node;
@@ -77,12 +78,14 @@ public class ListViewFragment extends Fragment implements
 		View view = inflater.inflate(R.layout.listview_fragment, container,
 				false);
 		listView = (ListView) view.findViewById(R.id.listview);
+		String themeName = App.getInstance().getStringPreference(
+				R.string.theme, R.string.themeDefault);
+		DarkTheme theme = DarkTheme.getTheme(themeName);
 		if (null != listView) {
-			DarkTheme theme = DarkTheme.getTheme();
 			listView.setBackgroundColor(theme.colorBackground);
 
 		}
-		adapter = new ListViewAdapter(this, DarkTheme.getTheme());
+		adapter = new ListViewAdapter(this, theme);
 		listView.setAdapter(adapter);
 		listView.setOnItemClickListener(new OnItemClickListener() {
 
@@ -217,7 +220,7 @@ public class ListViewFragment extends Fragment implements
 		if (null == controller) { // No controller - no refresh
 			return;
 		}
-		controller.expand(node, forceExpand, null);
+		controller.expand(node, forceExpand, false);
 		adapter.dataChanged();
 	}
 
@@ -228,7 +231,7 @@ public class ListViewFragment extends Fragment implements
 		}
 		Integer result = null;
 		if (null == file) { // Don't need to search
-			controller.expand(node, true, null);
+			controller.expand(node, true, false);
 			result = -1;
 		} else {
 			SearchNodeResult res = controller.searchInNode(node, file, path);

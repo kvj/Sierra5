@@ -57,9 +57,9 @@ public class Node implements Parcelable {
 	@Override
 	public void writeToParcel(Parcel p, int flags) {
 		p.writeString(file); // file
-		p.writeStringList(textPath); // textPath
+		p.writeStringList(textPath == null ? new ArrayList<String>() : textPath); // textPath
 		p.writeString(left); // left
-		p.writeList(children);
+		p.writeList(children == null ? new ArrayList<Node>() : children);
 		p.writeByte((byte) (collapsed ? 1 : 0));
 		p.writeString(text);
 		p.writeString(raw);
@@ -87,7 +87,7 @@ public class Node implements Parcelable {
 			p.readStringList(node.textPath);
 			node.left = p.readString();
 			node.children = new ArrayList<Node>();
-			p.readList(node.children, null);
+			p.readList(node.children, Node.class.getClassLoader());
 			node.collapsed = p.readByte() == 1;
 			node.text = p.readString();
 			node.raw = p.readString();

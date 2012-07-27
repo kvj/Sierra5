@@ -58,7 +58,6 @@
             android:label="Widgets"
             android:name=".ui.widget.WidgetConfigListPane" />
         <activity
-            android:exported="true"
             android:configChanges="keyboardHidden|orientation"
             android:label="Show widget config"
             android:name=".ui.widget.show.ShowWidgetConfigPane" >
@@ -76,7 +75,7 @@
 
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/show_widget" />
+                android:resource="@xml/show_widget_info" />
         </receiver>
     </application>
 

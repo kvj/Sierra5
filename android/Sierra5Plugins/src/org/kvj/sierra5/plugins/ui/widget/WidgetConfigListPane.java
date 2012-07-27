@@ -5,6 +5,7 @@ import org.kvj.bravo7.widget.WidgetList.WidgetInfo;
 import org.kvj.bravo7.widget.WidgetPreferenceActivity;
 import org.kvj.bravo7.widget.WidgetPreferences;
 import org.kvj.sierra5.plugins.App;
+import org.kvj.sierra5.plugins.ui.widget.show.ShowWidgetConfigPane;
 
 public class WidgetConfigListPane extends WidgetPreferences {
 
@@ -15,7 +16,9 @@ public class WidgetConfigListPane extends WidgetPreferences {
 	@Override
 	protected Class<? extends WidgetPreferenceActivity> getConfigActivity(
 			WidgetInfo info) {
-		// TODO Auto-generated method stub
+		if ("show".equals(info.type)) { // Show plugin
+			return ShowWidgetConfigPane.class;
+		}
 		return null;
 	}
 

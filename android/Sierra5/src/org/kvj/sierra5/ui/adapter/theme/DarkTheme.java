@@ -1,8 +1,5 @@
 package org.kvj.sierra5.ui.adapter.theme;
 
-import org.kvj.sierra5.App;
-import org.kvj.sierra5.R;
-
 import android.graphics.Color;
 
 public class DarkTheme {
@@ -29,9 +26,7 @@ public class DarkTheme {
 	public DarkTheme() {
 	}
 
-	public static DarkTheme getTheme() {
-		String theme = App.getInstance().getStringPreference(R.string.theme,
-				R.string.themeDefault);
+	public static DarkTheme getTheme(String theme) {
 		if ("white".equals(theme)) { // Light theme
 			return new LightTheme();
 		}

@@ -3,6 +3,6 @@
     android:minWidth="180dp"
     android:minHeight="180dp"
     android:updatePeriodMillis="3600000"
-    android:configure=".ui.widget.show.ShowWidgetConfigPane"
+    android:configure="org.kvj.sierra5.plugins.ui.widget.show.ShowWidgetConfigPane"
     android:initialLayout="@layout/show_widget"
     android:resizeMode="horizontal|vertical"/>

@@ -30,6 +30,7 @@ public class WidgetController {
 				try {
 					Log.i(TAG, "Root interface connected: "
 							+ root.getRemote().getRoot());
+					App.getInstance().updateWidgets(-1);
 				} catch (RemoteException e) {
 					e.printStackTrace();
 				}
@@ -58,6 +59,10 @@ public class WidgetController {
 			return "Link plugin";
 		}
 	};
+
+	public Root getRootService() {
+		return root.getRemote();
+	}
 
 	public Plugin.Stub getWidgetPlugin() {
 		return widgetPlugin;

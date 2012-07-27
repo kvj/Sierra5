@@ -23,6 +23,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
+import android.widget.RemoteViews;
 import android.widget.TextView;
 
 public class ListViewAdapter implements ListAdapter {
@@ -244,6 +245,27 @@ public class ListViewAdapter implements ListAdapter {
 
 	public boolean isShowRoot() {
 		return showRoot;
+	}
+
+	public static RemoteViews renderRemote(Node node, String left,
+			String themeName) {
+		RemoteViews result = new RemoteViews(
+				App.getInstance().getPackageName(), R.layout.listview_item);
+		DarkTheme theme = DarkTheme.getTheme(themeName);
+		ListViewAdapter instance = new ListViewAdapter(null, theme);
+		SpannableStringBuilder text = new SpannableStringBuilder();
+		if (null != left) { // Have left
+			text.append(left);
+		} else {
+			for (int i = 0; i < node.level; i++) { // Append level chars first
+				text.append(" ");
+			}
+		}
+		instance.textFormatter.writePlainText(node, text, theme.colorText,
+				node.text, false);
+		result.setViewVisibility(R.id.listview_item_menu_icon, View.GONE);
+		result.setTextViewText(R.id.listview_item_text, text);
+		return result;
 	}
 
 }

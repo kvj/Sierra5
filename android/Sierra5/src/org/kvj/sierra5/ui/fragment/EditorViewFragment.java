@@ -47,7 +47,9 @@ public class EditorViewFragment extends Fragment {
 		View view = inflater.inflate(R.layout.editorview_fragment, container,
 				false);
 		editText = (EditText) view.findViewById(R.id.editorview);
-		DarkTheme theme = DarkTheme.getTheme();
+		String themeName = App.getInstance().getStringPreference(
+				R.string.theme, R.string.themeDefault);
+		DarkTheme theme = DarkTheme.getTheme(themeName);
 		editText.setTextColor(theme.colorText);
 		editText.setBackgroundColor(theme.colorBackground);
 		editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, App.getInstance()

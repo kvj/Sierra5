@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/outline_widget_root"
+    android:id="@+id/show_widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/panel_border"
     android:layout_margin="@dimen/widget_margin">
 	<LinearLayout
 	    android:padding="5dp"
-	    android:id="@+id/outline_widget_list"
+	    android:id="@+id/show_widget_list"
 	    android:layout_width="match_parent"
 	    android:layout_height="match_parent"
+	    android:gravity="top|left"
 	    android:orientation="vertical"
 	    android:background="@drawable/opacity1"/>
 </FrameLayout>

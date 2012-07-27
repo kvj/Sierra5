@@ -26,12 +26,14 @@ import org.kvj.sierra5.common.Constants;
 import org.kvj.sierra5.common.data.Node;
 import org.kvj.sierra5.common.plugin.Plugin;
 import org.kvj.sierra5.common.root.Root;
+import org.kvj.sierra5.ui.adapter.ListViewAdapter;
 
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.RemoteViews;
 
 /**
  * Holds all controller methods. All views and services have and access to
@@ -369,7 +371,7 @@ public class Controller {
 	 * @param forceExpand
 	 * @param restoreExpand
 	 */
-	public boolean expand(Node node, Boolean forceExpand, Node restoreExpand) {
+	public boolean expand(Node node, Boolean forceExpand, boolean expandAll) {
 		boolean newStateCollapsed = null != forceExpand ? !forceExpand
 				: !node.collapsed;
 		// Log.i(TAG, "expand " + node.text + ", " + node.collapsed + ", "
@@ -431,6 +433,11 @@ public class Controller {
 				}
 			});
 			node.children = nodes;
+			if (forceExpand) { // Expand children
+				for (Node ch : nodes) { // Expand
+					expand(ch, forceExpand, true);
+				}
+			}
 			return true;
 		}
 		if (Node.TYPE_FILE == node.type) { // File - not implemented yet
@@ -527,7 +534,7 @@ public class Controller {
 		Log.i(TAG, "Before search: " + pathToSearch + ", " + path);
 		for (int depth = 0; depth < pathToSearch.size(); depth++) {
 			// For every item
-			if (!expand(n, true, null)) { // Expand failed
+			if (!expand(n, true, false)) { // Expand failed
 				Log.w(TAG, "Expand failed: " + n.file + ", " + n.textPath);
 				return null;
 			}
@@ -554,7 +561,7 @@ public class Controller {
 				return result;
 			}
 		}
-		if (!expand(n, true, null)) { // Force expand last item
+		if (!expand(n, true, false)) { // Force expand last item
 			Log.w(TAG, "Expand failed: " + n.file + ", " + n.textPath);
 			return null;
 		}
@@ -604,7 +611,21 @@ public class Controller {
 		@Override
 		public Node getNode(String file, String[] path, boolean template)
 				throws RemoteException {
-			return null;
+			SearchNodeResult result = searchInNode(
+					nodeFromPath(getRootFolder()), file, path);
+			if (null == result || !result.found) { // Error searching
+				return null;
+			}
+			if (result.node.collapsed) { // Collapsed - expand
+				expand(result.node, null, true);
+			}
+			return result.node;
+		}
+
+		@Override
+		public RemoteViews render(Node node, String left, String theme)
+				throws RemoteException {
+			return ListViewAdapter.renderRemote(node, left, theme);
 		}
 	};
 
