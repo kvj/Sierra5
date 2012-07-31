@@ -54,6 +54,14 @@ public class Node implements Parcelable {
 		return child;
 	}
 
+	public void setText(String text) {
+		this.text = text;
+		if (TYPE_TEXT == type) { // Replace last text
+			textPath.remove(textPath.size() - 1);
+			textPath.add(text);
+		}
+	}
+
 	@Override
 	public void writeToParcel(Parcel p, int flags) {
 		p.writeString(file); // file
@@ -72,6 +80,21 @@ public class Node implements Parcelable {
 		return 0;
 	}
 
+	public void readFromParcel(Parcel p) {
+		file = p.readString();
+		textPath = new ArrayList<String>();
+		p.readStringList(textPath);
+		left = p.readString();
+		children = new ArrayList<Node>();
+		p.readList(children, Node.class.getClassLoader());
+		collapsed = p.readByte() == 1;
+		text = p.readString();
+		raw = p.readString();
+		type = p.readInt();
+		level = p.readInt();
+
+	}
+
 	public static final Parcelable.Creator<Node> CREATOR = new Creator<Node>() {
 
 		@Override
@@ -82,17 +105,7 @@ public class Node implements Parcelable {
 		@Override
 		public Node createFromParcel(Parcel p) {
 			Node node = new Node();
-			node.file = p.readString();
-			node.textPath = new ArrayList<String>();
-			p.readStringList(node.textPath);
-			node.left = p.readString();
-			node.children = new ArrayList<Node>();
-			p.readList(node.children, Node.class.getClassLoader());
-			node.collapsed = p.readByte() == 1;
-			node.text = p.readString();
-			node.raw = p.readString();
-			node.type = p.readInt();
-			node.level = p.readInt();
+			node.readFromParcel(p);
 			return node;
 		}
 	};

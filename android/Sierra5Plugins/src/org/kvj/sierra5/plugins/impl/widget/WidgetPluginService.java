@@ -1,4 +1,4 @@
-package org.kvj.sierra5.plugins.service;
+package org.kvj.sierra5.plugins.impl.widget;
 
 import org.kvj.bravo7.ipc.RemotelyBindableService;
 import org.kvj.sierra5.plugins.App;

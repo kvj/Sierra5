@@ -1,5 +1,7 @@
 package org.kvj.sierra5.ui.adapter;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -8,7 +10,12 @@ import org.kvj.bravo7.format.TextFormatter;
 import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
 import org.kvj.sierra5.common.data.Node;
-import org.kvj.sierra5.ui.adapter.theme.DarkTheme;
+import org.kvj.sierra5.common.plugin.FormatSpan;
+import org.kvj.sierra5.common.plugin.Plugin;
+import org.kvj.sierra5.common.plugin.PluginInfo;
+import org.kvj.sierra5.common.theme.Theme;
+import org.kvj.sierra5.data.Controller;
+import org.kvj.sierra5.ui.adapter.theme.ThemeProvider;
 
 import android.content.Context;
 import android.database.DataSetObserver;
@@ -40,9 +47,10 @@ public class ListViewAdapter implements ListAdapter {
 	private int selectedIndex = -1;
 	private ListViewAdapterListener listener = null;
 	private int textSize = 0;
+	DefaultTextFormatter defaultTextFormatter = new DefaultTextFormatter();
 	private PlainTextFormatter<Node> textFormatter = null;
 
-	private DarkTheme theme = null;
+	private Theme theme = null;
 
 	class DefaultTextFormatter implements NodeTextFormatter {
 
@@ -66,12 +74,13 @@ public class ListViewAdapter implements ListAdapter {
 	}
 
 	@SuppressWarnings("unchecked")
-	public ListViewAdapter(ListViewAdapterListener listener, DarkTheme theme) {
+	public ListViewAdapter(ListViewAdapterListener listener, Theme theme) {
 		this.listener = listener;
 		this.theme = theme;
 		textSize = App.getInstance().getIntPreference(R.string.docFont,
 				R.string.docFontDefault);
-		textFormatter = new PlainTextFormatter<Node>(new DefaultTextFormatter());
+
+		textFormatter = new PlainTextFormatter<Node>(defaultTextFormatter);
 	}
 
 	private static class SearchInTreeResult {
@@ -171,7 +180,8 @@ public class ListViewAdapter implements ListAdapter {
 		if (null == node) { // Error case
 			return null;
 		}
-		// Log.i(TAG, "getView: " + index + ", " + node);
+		view.setMinimumHeight((int) (28 * view.getContext().getResources()
+				.getDisplayMetrics().density));
 		customize(view, node, index == selectedIndex);
 		return view;
 	}
@@ -219,6 +229,19 @@ public class ListViewAdapter implements ListAdapter {
 		}
 	}
 
+	public void setController(Controller controller) {
+		List<NodeTextFormatter> formatters = new ArrayList<NodeTextFormatter>();
+		List<Plugin> plugins = controller
+				.getPlugins(PluginInfo.PLUGIN_CAN_FORMAT);
+		// Log.i(TAG, "setController: plugins: " + plugins.size());
+		for (Plugin plugin : plugins) { // Create formatters for every plugin
+			formatters.addAll(formattersFromPlugin(plugin));
+		}
+		formatters.add(defaultTextFormatter);
+		textFormatter.setFormatters(formatters
+				.toArray(new NodeTextFormatter[0]));
+	}
+
 	public boolean setRoot(Node node, boolean showRoot) {
 		if (node == null) { // Invalid node
 			return false;
@@ -247,12 +270,13 @@ public class ListViewAdapter implements ListAdapter {
 		return showRoot;
 	}
 
-	public static RemoteViews renderRemote(Node node, String left,
-			String themeName) {
+	public static RemoteViews renderRemote(Controller controller, Node node,
+			String left, String themeName) {
 		RemoteViews result = new RemoteViews(
 				App.getInstance().getPackageName(), R.layout.listview_item);
-		DarkTheme theme = DarkTheme.getTheme(themeName);
+		Theme theme = ThemeProvider.getTheme(themeName);
 		ListViewAdapter instance = new ListViewAdapter(null, theme);
+		instance.setController(controller);
 		SpannableStringBuilder text = new SpannableStringBuilder();
 		if (null != left) { // Have left
 			text.append(left);
@@ -265,6 +289,68 @@ public class ListViewAdapter implements ListAdapter {
 				node.text, false);
 		result.setViewVisibility(R.id.listview_item_menu_icon, View.GONE);
 		result.setTextViewText(R.id.listview_item_text, text);
+		return result;
+	}
+
+	class PluginFormatter implements NodeTextFormatter {
+
+		private Plugin plugin;
+		private int index;
+
+		public PluginFormatter(Plugin plugin, int index) {
+			this.plugin = plugin;
+			this.index = index;
+		}
+
+		@Override
+		public Pattern getPattern(Node note, boolean selected) {
+			try { // Remote errors
+				String pattern = plugin.getPattern(index, note, selected);
+				// Log.i(TAG, "getPattern: " + note.text + ", " + pattern);
+				if (null == pattern) { // Not needed
+					return null;
+				}
+				return Pattern.compile(pattern);
+			} catch (Exception e) {
+				// Log.w(TAG, "Error getting pattern", e);
+			}
+			return null;
+		}
+
+		@Override
+		public void format(Node note, SpannableStringBuilder sb, Matcher m,
+				String text, boolean selected) {
+			try { // Remote errors
+				FormatSpan[] spans = plugin.format(index, theme, note,
+						m.group(), selected);
+				if (null == spans) { // No spans
+					// Log.i(TAG, "No format");
+					return;
+				}
+				// Log.i(TAG, "format: " + text + ", " + spans.length);
+				for (FormatSpan span : spans) { // Have span
+					PlainTextFormatter.addSpan(sb, span.getText(),
+							span.getSpans());
+				}
+			} catch (Exception e) {
+				// Log.w(TAG, "Error formatting");
+			}
+		}
+
+	}
+
+	private List<NodeTextFormatter> formattersFromPlugin(Plugin plugin) {
+		List<NodeTextFormatter> result = new ArrayList<NodeTextFormatter>();
+		try { // Remote errors
+			int formatters = plugin.getFormatterCount();
+			// Log.i(TAG, "formattersFromPlugin: " + formatters + ", " +
+			// plugin);
+			for (int i = 0; i < formatters; i++) { // Create new Formatter
+				result.add(new PluginFormatter(plugin, i));
+			}
+		} catch (Exception e) {
+			Log.e(TAG, "Error creating plugin formatter", e);
+		}
 		return result;
 	}
 

@@ -4,8 +4,12 @@ import org.kvj.bravo7.ipc.RemoteServiceConnector;
 import org.kvj.sierra5.common.Constants;
 import org.kvj.sierra5.common.plugin.Plugin;
 import org.kvj.sierra5.common.root.Root;
+import org.kvj.sierra5.plugins.impl.check.CheckboxPlugin;
+import org.kvj.sierra5.plugins.impl.link.LinkPlugin;
+import org.kvj.sierra5.plugins.impl.widget.WidgetPlugin;
 
 import android.content.Context;
+import android.os.Binder;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
@@ -44,21 +48,11 @@ public class WidgetController {
 		};
 	}
 
-	private Plugin.Stub widgetPlugin = new Plugin.Stub() {
+	private Plugin.Stub widgetPlugin = new WidgetPlugin();
 
-		@Override
-		public String getName() throws RemoteException {
-			return "Widget plugin";
-		}
-	};
+	private Plugin.Stub linkPlugin = new LinkPlugin();
 
-	private Plugin.Stub linkPlugin = new Plugin.Stub() {
-
-		@Override
-		public String getName() throws RemoteException {
-			return "Link plugin";
-		}
-	};
+	private Plugin.Stub checkboxPlugin = new CheckboxPlugin(this);
 
 	public Root getRootService() {
 		return root.getRemote();
@@ -70,5 +64,9 @@ public class WidgetController {
 
 	public Plugin.Stub getLinkPlugin() {
 		return linkPlugin;
+	}
+
+	public Binder getCheckboxPlugin() {
+		return checkboxPlugin;
 	}
 }

@@ -19,7 +19,7 @@
         <service android:name=".service.UIService" />
         <service
             android:exported="true"
-            android:name=".service.LinkPluginService" >
+            android:name=".impl.link.LinkPluginService" >
             <intent-filter >
                 <action android:name="org.kvj.sierra5.PLUGIN" />
 
@@ -28,7 +28,16 @@
         </service>
         <service
             android:exported="true"
-            android:name=".service.WidgetPluginService" >
+            android:name=".impl.check.CheckboxPluginService" >
+            <intent-filter >
+                <action android:name="org.kvj.sierra5.PLUGIN" />
+
+                <category android:name="org.kvj.sierra5.plugin.CHECKBOX" />
+            </intent-filter>
+        </service>
+            <service
+            android:exported="true"
+            android:name=".impl.widget.WidgetPluginService" >
             <intent-filter >
                 <action android:name="org.kvj.sierra5.PLUGIN" />
 
@@ -45,7 +54,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:label="Configuration"
+            android:label="Sierra5 plugins"
             android:name=".ui.PluginsConfiguration" >
             <intent-filter >
                 <action android:name="android.intent.action.MAIN" />

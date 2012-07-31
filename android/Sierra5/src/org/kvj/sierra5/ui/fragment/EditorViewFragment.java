@@ -5,11 +5,13 @@ import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
 import org.kvj.sierra5.common.Constants;
 import org.kvj.sierra5.common.data.Node;
+import org.kvj.sierra5.common.theme.Theme;
 import org.kvj.sierra5.data.Controller;
 import org.kvj.sierra5.data.Controller.ItemPattern;
 import org.kvj.sierra5.data.Controller.SearchNodeResult;
-import org.kvj.sierra5.ui.adapter.theme.DarkTheme;
+import org.kvj.sierra5.ui.adapter.theme.ThemeProvider;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.TypedValue;
@@ -40,6 +42,7 @@ public class EditorViewFragment extends Fragment {
 	private EditText editText = null;
 	private ActionBar actionBar = null;
 	private String oldText = null;
+	int progressCount = 0;
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -49,7 +52,7 @@ public class EditorViewFragment extends Fragment {
 		editText = (EditText) view.findViewById(R.id.editorview);
 		String themeName = App.getInstance().getStringPreference(
 				R.string.theme, R.string.themeDefault);
-		DarkTheme theme = DarkTheme.getTheme(themeName);
+		Theme theme = ThemeProvider.getTheme(themeName);
 		editText.setTextColor(theme.colorText);
 		editText.setBackgroundColor(theme.colorBackground);
 		editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, App.getInstance()
@@ -73,8 +76,11 @@ public class EditorViewFragment extends Fragment {
 		if (null == file) { // No file - empty editor
 			return;
 		}
+		boolean useTemplatePath = data.getBoolean(Constants.INTENT_TEMPLATE,
+				false);
 		loadNode(file, data.getStringArray(Constants.EDITOR_INTENT_ITEM),
-				isAdding, data.getString(Constants.EDITOR_INTENT_ADD_TEMPLATE));
+				isAdding, data.getString(Constants.EDITOR_INTENT_ADD_TEMPLATE),
+				useTemplatePath);
 	}
 
 	private void editNode(Node n, String template) {
@@ -138,20 +144,38 @@ public class EditorViewFragment extends Fragment {
 			SuperActivity.notifyUser(getActivity(), "No item loaded");
 			return;
 		}
-		String text = editText.getText().toString();
-		saveMe.raw = text;
-		if (!controller.saveFile(parent, null)) { // Save failed
-			SuperActivity.notifyUser(getActivity(), "Save failed");
-			return; // Save failed
-		}
-		SuperActivity.notifyUser(getActivity(), "Saved");
-		oldText = text; // To detect changes
-		isAdding = false; // Edit existing from now
-		node = saveMe; // Save this
-		actionBar.setTitle(node.text);
-		if (null != listener) { // Report saved
-			listener.saved(node);
-		}
+		toggleProgress(true);
+		final String text = editText.getText().toString();
+		AsyncTask<Void, Void, Boolean> task = new AsyncTask<Void, Void, Boolean>() {
+
+			@Override
+			protected Boolean doInBackground(Void... params) {
+				saveMe.raw = text;
+				if (!controller.saveFile(parent, null)) { // Save failed
+					return false; // Save failed
+				}
+				return true;
+			}
+
+			@Override
+			protected void onPostExecute(Boolean result) {
+				toggleProgress(false);
+				if (!result) { // Save failed
+					SuperActivity.notifyUser(getActivity(), "Save failed");
+					return; // Save failed
+				}
+				SuperActivity.notifyUser(getActivity(), "Saved");
+				oldText = text; // To detect changes
+				isAdding = false; // Edit existing from now
+				node = saveMe; // Save this
+				actionBar.setTitle(node.text);
+				if (null != listener) { // Report saved
+					listener.saved(node);
+				}
+			}
+
+		};
+		task.execute();
 	}
 
 	public void onMenuSelected(MenuItem item) {
@@ -163,13 +187,15 @@ public class EditorViewFragment extends Fragment {
 	}
 
 	public void loadNode(String file, String[] path, boolean newNode,
-			String template) {
-		final Node n = controller.nodeFromPath(file); // File found
+			String template, boolean useTemplatePath) {
+		final Node n = controller.nodeFromPath(file, useTemplatePath);
+		// File found
 		if (null == n) { // Invalid file
 			SuperActivity.notifyUser(getActivity(), "File not found");
 			return;
 		}
-		SearchNodeResult res = controller.searchInNode(n, file, path);
+		SearchNodeResult res = controller.searchInNode(n, file, path,
+				useTemplatePath);
 		if (null == res || !res.found) { // Text not found
 			SuperActivity.showQuestionDialog(getActivity(), "Append to file?",
 					"Text not found. Append to file?", new Runnable() {
@@ -222,4 +248,17 @@ public class EditorViewFragment extends Fragment {
 		return false;
 	}
 
+	synchronized void toggleProgress(boolean start) {
+		if (start) { // Inc counter
+			progressCount++;
+		} else { // Dec counter
+			progressCount--;
+		}
+		if (start && progressCount == 1) { // Just started
+			actionBar.setProgressBarVisibility(View.VISIBLE);
+		}
+		if (!start && progressCount == 0) { // Just stopped
+			actionBar.setProgressBarVisibility(View.GONE);
+		}
+	}
 }

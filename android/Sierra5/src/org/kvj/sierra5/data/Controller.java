@@ -25,6 +25,7 @@ import org.kvj.sierra5.R;
 import org.kvj.sierra5.common.Constants;
 import org.kvj.sierra5.common.data.Node;
 import org.kvj.sierra5.common.plugin.Plugin;
+import org.kvj.sierra5.common.plugin.PluginInfo;
 import org.kvj.sierra5.common.root.Root;
 import org.kvj.sierra5.ui.adapter.ListViewAdapter;
 
@@ -70,7 +71,6 @@ public class Controller {
 				}
 			}
 		};
-		parsePattern("/xx/?.xml/w${w+2d}/w${dd}");
 	}
 
 	public static interface LineEater {
@@ -131,12 +131,7 @@ public class Controller {
 		if (null != node.raw && node.type == Node.TYPE_TEXT) {
 			// Have raw data and it's text - update text
 			node.raw = null;
-			node.text = lines[0];
-			if (null != node.textPath && node.textPath.size() > 0) {
-				// Replace last textPath
-				node.textPath.remove(node.textPath.size() - 1);
-				node.textPath.add(node.text);
-			}
+			node.setText(lines[0]);
 		}
 		return result;
 	}
@@ -221,6 +216,7 @@ public class Controller {
 
 	private boolean parseFile(Node node) {
 		try { // Catch all stream errors
+			List<Plugin> plugins = getPlugins(PluginInfo.PLUGIN_CAN_PARSE);
 			int spacesInTab = App.getInstance().getIntPreference(
 					R.string.tabSize, R.string.tabSizeDefault);
 			StringBuilder tabReplacement = new StringBuilder();
@@ -266,6 +262,14 @@ public class Controller {
 				Node n = parent.createChild(Node.TYPE_TEXT, line.trim(), 0);
 				n.collapsed = false; // All files are expanded by default
 				n.left = leftChars;
+				try { // Remote errors
+					for (Plugin plugin : plugins) {
+						// Call parse of every plugin
+						plugin.parse(n, null);
+					}
+				} catch (Exception e) {
+					Log.w(TAG, "Error remote parsing: ", e);
+				}
 				if (fromParents) { // Return parent back
 					parents.push(parent);
 				}
@@ -299,10 +303,6 @@ public class Controller {
 			.compile("\\*|\\?|(\\$\\{([a-zA-Z]+)((\\+|\\-)(\\d{1,3})(h|d|w|m|y))?\\})");
 
 	// 2: dd 3: +2d 4: + 5: 2
-
-	public ItemPattern parsePattern(String text) {
-		return parsePattern(text, true);
-	}
 
 	public ItemPattern parsePattern(String text, boolean regexp) {
 		StringBuffer pattern = new StringBuffer();
@@ -375,7 +375,7 @@ public class Controller {
 		boolean newStateCollapsed = null != forceExpand ? !forceExpand
 				: !node.collapsed;
 		// Log.i(TAG, "expand " + node.text + ", " + node.collapsed + ", "
-		// + node.type);
+		// + node.type + ", " + forceExpand + ", " + expandAll);
 		if (Node.TYPE_TEXT == node.type) { // Text - just change flag
 			node.collapsed = newStateCollapsed;
 			return true; // Done
@@ -392,14 +392,18 @@ public class Controller {
 				node.children = null;
 				return true; // Done
 			}
-			ItemPattern filePattern = parsePattern(App.getInstance()
-					.getStringPreference(R.string.filePattern,
-							R.string.filePatternDefault));
-			ItemPattern folderPattern = parsePattern(App.getInstance()
-					.getStringPreference(R.string.folderPattern,
-							R.string.folderPatternDefault));
+			ItemPattern filePattern = parsePattern(
+					App.getInstance().getStringPreference(R.string.filePattern,
+							R.string.filePatternDefault), true);
+			ItemPattern folderPattern = parsePattern(
+					App.getInstance().getStringPreference(
+							R.string.folderPattern,
+							R.string.folderPatternDefault), true);
 
 			File[] files = folder.listFiles();
+			if (null == files) { // Empty dir
+				files = new File[0];
+			}
 			List<Node> nodes = new ArrayList<Node>();
 			// Log.i(TAG,
 			// "Load dir: " + files.length + ", "
@@ -433,7 +437,7 @@ public class Controller {
 				}
 			});
 			node.children = nodes;
-			if (forceExpand) { // Expand children
+			if (expandAll) { // Expand children
 				for (Node ch : nodes) { // Expand
 					expand(ch, forceExpand, true);
 				}
@@ -454,7 +458,7 @@ public class Controller {
 	/**
 	 * Constructs Node by file path
 	 */
-	public Node nodeFromPath(String path) {
+	public Node nodeFromPath(String path, boolean expectTemplate) {
 		// Log.i(TAG, "nodeFromPath: " + path);
 		if (TextUtils.isEmpty(path)) { // Invalid path
 			return null;
@@ -467,7 +471,7 @@ public class Controller {
 		node.file = file.getAbsolutePath();
 		node.text = file.getName();
 		node.type = file.isDirectory() ? Node.TYPE_FOLDER : Node.TYPE_FILE;
-		SearchNodeResult result = searchInNode(node, path, null);
+		SearchNodeResult result = searchInNode(node, path, null, expectTemplate);
 		if (null == result || !result.found) { // Not found
 			return null;
 		}
@@ -505,7 +509,8 @@ public class Controller {
 		return result;
 	}
 
-	public SearchNodeResult searchInNode(Node root, String file, String[] path) {
+	public SearchNodeResult searchInNode(Node root, String file, String[] path,
+			boolean template) {
 		File rootFile = new File(root.file);
 		if (!rootFile.exists()) { // Invalid file
 			Log.w(TAG,
@@ -540,11 +545,12 @@ public class Controller {
 			}
 			boolean found = false;
 			int siblingSize = 0;
-			ItemPattern ip = parsePattern(pathToSearch.get(depth));
+			ItemPattern ip = parsePattern(pathToSearch.get(depth), template);
 			// Log.i(TAG, "Pattern: " + ip.pattern.pattern());
 			for (int i = 0; i < n.children.size(); i++) { // Search child
 				Node ch = n.children.get(i);
-				if (ip.matches(ch.text)) {
+				if ((template && ip.matches(ch.text))
+						|| (!template && ip.converted.equals(ch.text))) {
 					// From end - found
 					n = ch;
 					index += siblingSize + 1;
@@ -572,14 +578,21 @@ public class Controller {
 		return result;
 	}
 
+	private <T> T[] list2array(List<T> list, T[] zero) {
+		if (null == list) { // Empty
+			return zero;
+		}
+		return list.toArray(zero);
+	}
+
 	public Node[] actualizeNode(Node node) {
 		if (null == node || null == node.file) { // Invalid node
 			return new Node[0];
 		}
-		Node parent = nodeFromPath(node.file);
+		Node parent = nodeFromPath(node.file, false);
 		SearchNodeResult res = searchInNode(parent, node.file,
 				node.textPath != null ? node.textPath.toArray(new String[0])
-						: null);
+						: null, false);
 		if (null == res || !res.found) { // Not found - parent only
 			return new Node[] { parent };
 		}
@@ -612,7 +625,8 @@ public class Controller {
 		public Node getNode(String file, String[] path, boolean template)
 				throws RemoteException {
 			SearchNodeResult result = searchInNode(
-					nodeFromPath(getRootFolder()), file, path);
+					nodeFromPath(getRootFolder(), template), file, path,
+					template);
 			if (null == result || !result.found) { // Error searching
 				return null;
 			}
@@ -625,11 +639,64 @@ public class Controller {
 		@Override
 		public RemoteViews render(Node node, String left, String theme)
 				throws RemoteException {
-			return ListViewAdapter.renderRemote(node, left, theme);
+			return ListViewAdapter.renderRemote(Controller.this, node, left,
+					theme);
+		}
+
+		@Override
+		public boolean update(Node node, String text, String raw)
+				throws RemoteException {
+			try { // Write errors
+				Node file = getNode(node.file, null, false);
+				if (null == file) { // File not found
+					throw new IOException("File not found: " + node.file);
+				}
+				SearchNodeResult result = searchInNode(file, node.file,
+						list2array(node.textPath, new String[0]), false);
+				if (null == result || !result.found) { // Item not found
+					throw new RuntimeException("Item not found");
+				}
+				if (null != text) { // Change text
+					result.node.text = text;
+				}
+				result.node.raw = raw;
+				if (!saveFile(file, null)) {
+					throw new RuntimeException("Error saving");
+				}
+				return true;
+			} catch (Exception e) {
+				Log.e(TAG, "Error updating", e);
+			}
+			return false;
 		}
 	};
 
 	public Root.Stub getRootService() {
 		return stub;
+	}
+
+	public List<Plugin> getPlugins(int type) {
+		List<Plugin> result = new ArrayList<Plugin>();
+		List<Plugin> pls = plugins.getPlugins();
+		for (Plugin plugin : pls) {
+			// Get capabilities of each plugin
+			try { // Remote errors
+				int[] caps = plugin.getCapabilities();
+				boolean found = false;
+				for (int cap : caps) {
+					// Search for capability
+					if (cap == type) { // Found
+						found = true;
+						break;
+					}
+				}
+				if (found) { // Plugin is OK
+					result.add(plugin);
+				}
+			} catch (Exception e) {
+				// Ignore remote errors
+			}
+		}
+		return result;
 	}
 }

@@ -113,6 +113,7 @@ public class NewBookmarkView extends Activity {
 					R.drawable.file_edit);
 			break;
 		}
+		launchIntent.putExtra(Constants.INTENT_TEMPLATE, true);
 		intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, launchIntent);
 		intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, nameEdit.getText()
 				.toString().trim());

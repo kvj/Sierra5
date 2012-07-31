@@ -8,14 +8,19 @@ import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
 import org.kvj.sierra5.common.Constants;
 import org.kvj.sierra5.common.data.Node;
+import org.kvj.sierra5.common.plugin.MenuItemInfo;
+import org.kvj.sierra5.common.plugin.Plugin;
+import org.kvj.sierra5.common.plugin.PluginInfo;
+import org.kvj.sierra5.common.theme.Theme;
 import org.kvj.sierra5.data.Controller;
 import org.kvj.sierra5.data.Controller.SearchNodeResult;
 import org.kvj.sierra5.ui.ConfigurationView;
 import org.kvj.sierra5.ui.adapter.ListViewAdapter;
 import org.kvj.sierra5.ui.adapter.ListViewAdapter.ListViewAdapterListener;
-import org.kvj.sierra5.ui.adapter.theme.DarkTheme;
+import org.kvj.sierra5.ui.adapter.theme.ThemeProvider;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -46,9 +51,9 @@ public class ListViewFragment extends Fragment implements
 		public void edit(Node node, EditType editType);
 	}
 
-	class MenuItemInfo<T> {
+	class MenuItemRecord<T> {
 
-		public MenuItemInfo(int type, String title, T data) {
+		public MenuItemRecord(int type, String title, T data) {
 			this.type = type;
 			this.title = title;
 			this.data = data;
@@ -59,6 +64,20 @@ public class ListViewFragment extends Fragment implements
 		T data = null;
 	}
 
+	class PluginMenuRecord extends MenuItemRecord<Node> {
+
+		private Plugin plugin;
+		private MenuItemInfo info;
+
+		public PluginMenuRecord(int index, Node node, Plugin plugin,
+				MenuItemInfo info) {
+			super(index, info.getText(), node);
+			this.plugin = plugin;
+			this.info = info;
+		}
+
+	}
+
 	private static final int MENU_EDIT = 0;
 	private static final int MENU_OPEN = 1;
 
@@ -67,10 +86,11 @@ public class ListViewFragment extends Fragment implements
 	private ListViewAdapter adapter = null;
 	protected Controller controller = null;
 	private String rootFile = null;
-	List<MenuItemInfo<Node>> contextMenu = new ArrayList<MenuItemInfo<Node>>();
+	List<MenuItemRecord<Node>> contextMenu = new ArrayList<MenuItemRecord<Node>>();
 	ListViewFragmentListener listener = null;
 	private ActionBar actionBar = null;
 	private boolean selectMode = false;
+	int progressCount = 0;
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -80,7 +100,7 @@ public class ListViewFragment extends Fragment implements
 		listView = (ListView) view.findViewById(R.id.listview);
 		String themeName = App.getInstance().getStringPreference(
 				R.string.theme, R.string.themeDefault);
-		DarkTheme theme = DarkTheme.getTheme(themeName);
+		Theme theme = ThemeProvider.getTheme(themeName);
 		if (null != listView) {
 			listView.setBackgroundColor(theme.colorBackground);
 
@@ -104,7 +124,7 @@ public class ListViewFragment extends Fragment implements
 				if (null == node) { // Node not found - strange
 					return true;
 				}
-				onLongClick(node);
+				onLongClick(null, node, index);
 				return true;
 			}
 		});
@@ -124,28 +144,76 @@ public class ListViewFragment extends Fragment implements
 		}
 	}
 
-	private void onLongClick(Node node) {
+	private void onLongClick(final PluginMenuRecord parent, final Node node,
+			final int index) {
 		if (selectMode && null != listener) { // Have listener and select mode
 			listener.open(node);
 			return;
 		}
 		contextMenu.clear();
-		if (Node.TYPE_FILE == node.type || Node.TYPE_TEXT == node.type) {
-			// File or text - edit
-			contextMenu.add(new MenuItemInfo<Node>(MENU_EDIT, "Edit", node));
-		}
-		if (Node.TYPE_FILE == node.type || Node.TYPE_FOLDER == node.type) {
-			// File or folder - open
-			contextMenu.add(new MenuItemInfo<Node>(MENU_OPEN, "Open", node));
-		}
-		if (1 == contextMenu.size()) {
-			onContextMenu(contextMenu.get(0));
-		}
-		if (contextMenu.size() > 1) { // Show menu
-			registerForContextMenu(listView);
-			getActivity().openContextMenu(listView);
-			unregisterForContextMenu(listView);
-		}
+		toggleProgress(true);
+		AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>() {
+
+			@Override
+			protected Void doInBackground(Void... params) {
+				if (Node.TYPE_FILE == node.type || Node.TYPE_TEXT == node.type) {
+					// File or text - edit
+					contextMenu.add(new MenuItemRecord<Node>(MENU_EDIT, "Edit",
+							node));
+				}
+				if (Node.TYPE_FILE == node.type
+						|| Node.TYPE_FOLDER == node.type) {
+					// File or folder - open
+					contextMenu.add(new MenuItemRecord<Node>(MENU_OPEN, "Open",
+							node));
+				}
+				if (adapter.getSelectedIndex() == index) { // Menu on selected
+															// index
+					try { // Get menus from plugins
+						int menuIndex = 2;
+						// Log.i(TAG, "Getting menu from plugins");
+						for (Plugin plugin : controller
+								.getPlugins(PluginInfo.PLUGIN_HAVE_MENU)) {
+							// menu from every plugin
+							MenuItemInfo[] menus = plugin.getMenu(
+									null != parent ? parent.info.getId() : -1,
+									node);
+							if (null == menus) { // No menus
+								// Log.i(TAG, "Plugin: " + menuIndex +
+								// " no menus");
+								continue;
+							}
+							// Log.i(TAG, "Plugin: " + menuIndex + " menus: "
+							// + menus.length);
+							for (MenuItemInfo info : menus) { // Add menus
+								contextMenu.add(new PluginMenuRecord(
+										menuIndex++, node, plugin, info));
+								// Log.i(TAG, "Plugin: " + menuIndex + " menu: "
+								// + info.getText());
+							}
+						}
+					} catch (Exception e) {
+						Log.w(TAG, "Error getting menus", e);
+					}
+				}
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(Void result) {
+				if (1 == contextMenu.size()) {
+					onContextMenu(contextMenu.get(0));
+				}
+				if (contextMenu.size() > 1) { // Show menu
+					registerForContextMenu(listView);
+					getActivity().openContextMenu(listView);
+					unregisterForContextMenu(listView);
+				}
+				toggleProgress(false);
+			}
+
+		};
+		task.execute();
 	}
 
 	public void onSaveState(Bundle outState) {
@@ -177,25 +245,30 @@ public class ListViewFragment extends Fragment implements
 		}
 		this.listener = listener;
 		this.controller = controller;
+		boolean useTemplatePath = data.getBoolean(Constants.INTENT_TEMPLATE,
+				false);
 		String file = data.getString(Constants.LIST_INTENT_ROOT);
 		boolean rootSet = false;
+		adapter.setController(controller);
 		if (null != file) { // Have file in Activity parameters
-			rootSet = adapter.setRoot(controller.nodeFromPath(file), true);
+			rootSet = adapter.setRoot(
+					controller.nodeFromPath(file, useTemplatePath), true);
 			if (rootSet) { // Result = OK - save
 				rootFile = adapter.getRoot().file;
 			}
 		} else { // No file - show root
 			String rootFolder = controller.getRootFolder();
-			rootSet = adapter.setRoot(controller.nodeFromPath(rootFolder),
-					false);
+			rootSet = adapter.setRoot(
+					controller.nodeFromPath(rootFolder, false), false);
 		}
-		Log.i(TAG, "rootSet: " + rootSet);
+		// Log.i(TAG, "rootSet: " + rootSet);
 		adapter.setSelectedIndex(-1);
 		if (rootSet) { // Root set - expand root
 			actionBar.setTitle(adapter.getRoot().text);
 			expandTree(adapter.getRoot(),
 					data.getString(Constants.LIST_INTENT_FILE),
-					data.getStringArray(Constants.LIST_INTENT_ITEM));
+					data.getStringArray(Constants.LIST_INTENT_ITEM),
+					useTemplatePath);
 		} else {
 			SuperActivity.notifyUser(getActivity(), "Invalid file/folder");
 		}
@@ -220,36 +293,67 @@ public class ListViewFragment extends Fragment implements
 		if (null == controller) { // No controller - no refresh
 			return;
 		}
-		controller.expand(node, forceExpand, false);
-		adapter.dataChanged();
+		toggleProgress(true);
+		AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>() {
+
+			@Override
+			protected Void doInBackground(Void... params) {
+				controller.expand(node, forceExpand, false);
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(Void result) {
+				adapter.dataChanged();
+				toggleProgress(false);
+			}
+
+		};
+		task.execute();
 	}
 
 	private void expandTree(final Node node, final String file,
-			final String[] path) {
+			final String[] path, final boolean useTemplate) {
 		if (null == controller) { // No controller - no refresh
 			return;
 		}
-		Integer result = null;
-		if (null == file) { // Don't need to search
-			controller.expand(node, true, false);
-			result = -1;
-		} else {
-			SearchNodeResult res = controller.searchInNode(node, file, path);
-			if (null == res) { // Error expand
-				result = -1;
-			} else {
-				result = res.index;
+		toggleProgress(true);
+		AsyncTask<Void, Void, Integer> task = new AsyncTask<Void, Void, Integer>() {
+
+			@Override
+			protected Integer doInBackground(Void... params) {
+				Integer result = null;
+				if (null == file) { // Don't need to search
+					boolean exp = controller.expand(node, true, false);
+					result = -1;
+				} else {
+					SearchNodeResult res = controller.searchInNode(node, file,
+							path, useTemplate);
+					if (null == res) { // Error expand
+						result = -1;
+					} else {
+						result = res.index;
+					}
+				}
+				return result;
 			}
-		}
-		if (result != null) { // State changed - notify adapter
-			if (-1 != result) { // Not expanded
-				adapter.setSelectedIndex(adapter.isShowRoot() ? result
-						: result - 1);
+
+			@Override
+			protected void onPostExecute(Integer result) {
+				if (result != null) { // State changed - notify adapter
+					if (-1 != result) { // Not expanded
+						adapter.setSelectedIndex(adapter.isShowRoot() ? result
+								: result - 1);
+					}
+					adapter.dataChanged();
+				} else {
+					SuperActivity.notifyUser(getActivity(), "Item not found");
+				}
+				toggleProgress(false);
 			}
-			adapter.dataChanged();
-		} else {
-			SuperActivity.notifyUser(getActivity(), "Item not found");
-		}
+
+		};
+		task.execute();
 	}
 
 	@Override
@@ -257,7 +361,7 @@ public class ListViewFragment extends Fragment implements
 			ContextMenuInfo menuInfo) {
 		menu.clear();
 		for (int i = 0; i < contextMenu.size(); i++) {
-			MenuItemInfo info = contextMenu.get(i);
+			MenuItemRecord info = contextMenu.get(i);
 			menu.add(0, i, i, info.title);
 		}
 	}
@@ -271,33 +375,87 @@ public class ListViewFragment extends Fragment implements
 		return true;
 	}
 
-	private void onContextMenu(MenuItemInfo<Node> item) {
+	private void onContextMenu(MenuItemRecord<Node> item) {
+		// Log.i(TAG, "Context menu: " + item.type + ", " + item);
 		switch (item.type) {
 		case MENU_OPEN: // Open new Activity
 			openNewList(item.data);
-			break;
+			return;
 		case MENU_EDIT: // Edit item
 			editItem(item.data, false);
-			break;
+			return;
+		}
+		if (item instanceof PluginMenuRecord) { // Plugin menu
+			int index = adapter.getSelectedIndex();
+			final Node node = adapter.getItem(index);
+			final PluginMenuRecord pitem = (PluginMenuRecord) item;
+			if (pitem.info.getType() == MenuItemInfo.MENU_ITEM_SUBMENU) {
+				// This is submenu
+				onLongClick(pitem, node, index);
+				return;
+			}
+			// Execute action
+			AsyncTask<Void, Void, Boolean> task = new AsyncTask<Void, Void, Boolean>() {
+
+				@Override
+				protected Boolean doInBackground(Void... params) {
+					try { // Remote errors
+							// Log.i(TAG, "Before exec: " + node.text);
+						return pitem.plugin.executeAction(pitem.info.getId(),
+								node);
+					} catch (Exception e) {
+						Log.w(TAG, "Error executing action: " + pitem.title, e);
+					}
+					return false;
+				}
+
+				@Override
+				protected void onPostExecute(Boolean result) {
+					if (!result) { // Execute failed
+						SuperActivity.notifyUser(getActivity(),
+								"Error in action");
+					} else {
+						// Update selection
+						// Log.i(TAG, "After exec: " + node.text);
+						refresh();
+					}
+				}
+			};
+			task.execute();
 		}
 	}
 
-	public void selectNode(Node node) {
+	public void selectNode(final Node node) {
 		if (null == node) { // Nothing
 			return;
 		}
-		if (null != adapter.getRoot()) { // Have root - expand
-			SearchNodeResult res = controller.searchInNode(
-					adapter.getRoot(),
-					node.file,
-					node.textPath != null ? node.textPath
-							.toArray(new String[0]) : null);
-			if (null != res) { // Found
-				adapter.setSelectedIndex(adapter.isShowRoot() ? res.index
-						: res.index - 1);
-			}
-			adapter.dataChanged();
+		if (null == adapter.getRoot()) { // Dont' have root - stop
+			return;
 		}
+		toggleProgress(true);
+		AsyncTask<Void, Void, SearchNodeResult> task = new AsyncTask<Void, Void, Controller.SearchNodeResult>() {
+
+			@Override
+			protected SearchNodeResult doInBackground(Void... params) {
+				return controller.searchInNode(
+						adapter.getRoot(),
+						node.file,
+						node.textPath != null ? node.textPath
+								.toArray(new String[0]) : null, false);
+			}
+
+			@Override
+			protected void onPostExecute(SearchNodeResult res) {
+				if (null != res) { // Found
+					adapter.setSelectedIndex(adapter.isShowRoot() ? res.index
+							: res.index - 1);
+				}
+				adapter.dataChanged();
+				toggleProgress(false);
+			}
+
+		};
+		task.execute();
 	}
 
 	public void onMenuSelected(MenuItem item) {
@@ -343,5 +501,19 @@ public class ListViewFragment extends Fragment implements
 		boolean canRemove = null != node && Node.TYPE_TEXT == node.type;
 		actionBar.findAction(R.id.menu_add).setVisible(canAdd);
 		actionBar.findAction(R.id.menu_remove).setVisible(canRemove);
+	}
+
+	synchronized void toggleProgress(boolean start) {
+		if (start) { // Inc counter
+			progressCount++;
+		} else { // Dec counter
+			progressCount--;
+		}
+		if (start && progressCount == 1) { // Just started
+			actionBar.setProgressBarVisibility(View.VISIBLE);
+		}
+		if (!start && progressCount == 0) { // Just stopped
+			actionBar.setProgressBarVisibility(View.GONE);
+		}
 	}
 }

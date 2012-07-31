@@ -69,9 +69,9 @@ public class ShowWidgetController extends AppWidgetProvider {
 		try { // Remote errors
 			node.level = level;
 			RemoteViews line = rootService.render(node, null, "dark");
-			widget.addView(R.id.show_widget_list, line);
 			Log.i(TAG, "Render line: " + node.text + ", " + node.collapsed
 					+ ", " + node.children);
+			widget.addView(R.id.show_widget_list, line);
 			if (null != node.children && !node.collapsed) { // Have children
 				for (Node ch : node.children) { // Render children
 					renderLine(ch, rootService, level + 1, widget);

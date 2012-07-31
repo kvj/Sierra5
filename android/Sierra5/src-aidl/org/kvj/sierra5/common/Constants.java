@@ -15,6 +15,7 @@ public class Constants {
 	public static final String LIST_INTENT_FILE = "list_file";
 	public static final String LIST_INTENT_ITEM = "list_item";
 	public static final String LIST_FORCE_EDITOR = "force_editor";
+	public static final String INTENT_TEMPLATE = "path_template";
 
 	public static final String EDITOR_INTENT_FILE = "edit_file";
 	public static final String EDITOR_INTENT_ITEM = "edit_item";

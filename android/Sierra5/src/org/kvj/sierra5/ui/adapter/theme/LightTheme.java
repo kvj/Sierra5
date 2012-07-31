@@ -1,8 +1,10 @@
 package org.kvj.sierra5.ui.adapter.theme;
 
+import org.kvj.sierra5.common.theme.Theme;
+
 import android.graphics.Color;
 
-public class LightTheme extends DarkTheme {
+public class LightTheme extends Theme {
 
 	public LightTheme() {
 		super();
