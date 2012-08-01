@@ -11,8 +11,10 @@
 		android:key="background" android:defaultValue="4" android:title="Widget background" 
 		/> -->
 	<PreferenceCategory android:title="Node to display">
-		<org.kvj.sierra5.plugins.ui.widget.NodeSelectPreference
-			android:key="node" />
+	
+		<Preference 
+			android:key="node"
+			android:title="Select node" />
 	</PreferenceCategory>
 
 </PreferenceScreen>

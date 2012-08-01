@@ -13,17 +13,19 @@ import org.kvj.sierra5.ui.adapter.theme.ThemeProvider;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 
-import com.markupartist.android.widget.ActionBar;
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.SherlockFragment;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
 
-public class EditorViewFragment extends Fragment {
+public class EditorViewFragment extends SherlockFragment {
 
 	public static final String KEY_TEXT = "edit_text";
 	public static final String KEY_TEXT_ORIG = "edit_text_orig";
@@ -31,6 +33,8 @@ public class EditorViewFragment extends Fragment {
 
 	public static interface EditorViewFragmentListener {
 		public void saved(Node node);
+
+		public void toggleLoad(boolean load);
 	}
 
 	private EditorViewFragmentListener listener = null;
@@ -42,11 +46,12 @@ public class EditorViewFragment extends Fragment {
 	private EditText editText = null;
 	private ActionBar actionBar = null;
 	private String oldText = null;
-	int progressCount = 0;
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
+		actionBar = getSherlockActivity().getSupportActionBar();
+		setHasOptionsMenu(true);
 		View view = inflater.inflate(R.layout.editorview_fragment, container,
 				false);
 		editText = (EditText) view.findViewById(R.id.editorview);
@@ -57,10 +62,17 @@ public class EditorViewFragment extends Fragment {
 		editText.setBackgroundColor(theme.colorBackground);
 		editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, App.getInstance()
 				.getIntPreference(R.string.docFont, R.string.docFontDefault));
-		actionBar = (ActionBar) view.findViewById(R.id.actionbar);
-		getActivity().getMenuInflater().inflate(R.menu.editor_menu,
-				actionBar.asMenu());
 		return view;
+	}
+
+	@Override
+	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+		inflater.inflate(R.menu.editor_menu, menu);
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		return onMenuSelected(item);
 	}
 
 	/**
@@ -178,12 +190,13 @@ public class EditorViewFragment extends Fragment {
 		task.execute();
 	}
 
-	public void onMenuSelected(MenuItem item) {
+	public boolean onMenuSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.menu_save: // Save
 			save();
-			break;
+			return true;
 		}
+		return false;
 	}
 
 	public void loadNode(String file, String[] path, boolean newNode,
@@ -248,17 +261,9 @@ public class EditorViewFragment extends Fragment {
 		return false;
 	}
 
-	synchronized void toggleProgress(boolean start) {
-		if (start) { // Inc counter
-			progressCount++;
-		} else { // Dec counter
-			progressCount--;
-		}
-		if (start && progressCount == 1) { // Just started
-			actionBar.setProgressBarVisibility(View.VISIBLE);
-		}
-		if (!start && progressCount == 0) { // Just stopped
-			actionBar.setProgressBarVisibility(View.GONE);
+	private void toggleProgress(boolean start) {
+		if (null != listener) { // Have listener
+			listener.toggleLoad(start);
 		}
 	}
 }

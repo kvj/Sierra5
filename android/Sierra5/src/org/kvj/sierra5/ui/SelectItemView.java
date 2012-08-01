@@ -15,9 +15,11 @@ import org.kvj.sierra5.ui.fragment.ListViewFragment.ListViewFragmentListener;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
 
-public class SelectItemView extends FragmentActivity implements
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.Window;
+
+public class SelectItemView extends SherlockFragmentActivity implements
 		ControllerReceiver<Controller>, ListViewFragmentListener {
 
 	ControllerConnector<App, Controller, ControllerService> conn = null;
@@ -27,11 +29,13 @@ public class SelectItemView extends FragmentActivity implements
 
 	@Override
 	protected void onCreate(Bundle inData) {
+		requestWindowFeature(Window.FEATURE_PROGRESS);
 		super.onCreate(inData);
 		data = SuperActivity.getData(this, inData);
 		setContentView(R.layout.select_item);
 		listViewFragment = (ListViewFragment) getSupportFragmentManager()
 				.findFragmentById(R.id.listview_left);
+		setSupportProgressBarIndeterminateVisibility(false);
 	}
 
 	@Override
@@ -72,6 +76,11 @@ public class SelectItemView extends FragmentActivity implements
 		}
 		this.controller = controller;
 		listViewFragment.setController(data, controller, this, true);
+	}
+
+	@Override
+	public void toggleLoad(boolean load) {
+		setSupportProgressBarIndeterminateVisibility(load);
 	}
 
 }

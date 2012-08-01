@@ -22,12 +22,10 @@ import org.kvj.sierra5.ui.adapter.theme.ThemeProvider;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -35,9 +33,13 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ListView;
 
-import com.markupartist.android.widget.ActionBar;
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.SherlockFragment;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
 
-public class ListViewFragment extends Fragment implements
+public class ListViewFragment extends SherlockFragment implements
 		ListViewAdapterListener {
 
 	public enum EditType {
@@ -49,6 +51,8 @@ public class ListViewFragment extends Fragment implements
 		public void open(Node node);
 
 		public void edit(Node node, EditType editType);
+
+		public void toggleLoad(boolean load);
 	}
 
 	class MenuItemRecord<T> {
@@ -90,11 +94,24 @@ public class ListViewFragment extends Fragment implements
 	ListViewFragmentListener listener = null;
 	private ActionBar actionBar = null;
 	private boolean selectMode = false;
-	int progressCount = 0;
+
+	@Override
+	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+		if (!selectMode) { // Have menu only in normal mode
+			inflater.inflate(R.menu.list_menu, menu);
+		}
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		return onMenuSelected(item);
+	}
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
+		actionBar = getSherlockActivity().getSupportActionBar();
+		setHasOptionsMenu(true);
 		View view = inflater.inflate(R.layout.listview_fragment, container,
 				false);
 		listView = (ListView) view.findViewById(R.id.listview);
@@ -128,7 +145,6 @@ public class ListViewFragment extends Fragment implements
 				return true;
 			}
 		});
-		actionBar = (ActionBar) view.findViewById(R.id.actionbar);
 		return view;
 	}
 
@@ -239,9 +255,9 @@ public class ListViewFragment extends Fragment implements
 	public void setController(Bundle data, Controller controller,
 			ListViewFragmentListener listener, boolean selectMode) {
 		this.selectMode = selectMode;
-		if (!selectMode) { // Create toolbar
-			getActivity().getMenuInflater().inflate(R.menu.list_menu,
-					actionBar.asMenu());
+		if (!selectMode && null != actionBar) { // Create toolbar
+			// getActivity().getMenuInflater().inflate(R.menu.list_menu,
+			// actionBar.asMenu());
 		}
 		this.listener = listener;
 		this.controller = controller;
@@ -367,7 +383,7 @@ public class ListViewFragment extends Fragment implements
 	}
 
 	@Override
-	public boolean onContextItemSelected(MenuItem item) {
+	public boolean onContextItemSelected(android.view.MenuItem item) {
 		Log.i(TAG, "Clicked on " + item.getItemId());
 		if (item.getItemId() < contextMenu.size()) {
 			onContextMenu(contextMenu.get(item.getItemId()));
@@ -458,21 +474,22 @@ public class ListViewFragment extends Fragment implements
 		task.execute();
 	}
 
-	public void onMenuSelected(MenuItem item) {
+	public boolean onMenuSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.menu_config: // Show configuration
 			showConfiguration();
-			break;
+			return true;
 		case R.id.menu_add: // Start add
 			editItem(adapter.getItem(adapter.getSelectedIndex()), true);
-			break;
+			return true;
 		case R.id.menu_remove: // Remove
 			removeItem(adapter.getItem(adapter.getSelectedIndex()));
-			break;
+			return true;
 		case R.id.menu_reload:
 			refresh();
-			break;
+			return true;
 		}
+		return false;
 	}
 
 	private void removeItem(Node item) {
@@ -499,21 +516,13 @@ public class ListViewFragment extends Fragment implements
 		boolean canAdd = null != node
 				&& (Node.TYPE_FILE == node.type || Node.TYPE_TEXT == node.type);
 		boolean canRemove = null != node && Node.TYPE_TEXT == node.type;
-		actionBar.findAction(R.id.menu_add).setVisible(canAdd);
-		actionBar.findAction(R.id.menu_remove).setVisible(canRemove);
+		// actionBar.findAction(R.id.menu_add).setVisible(canAdd);
+		// actionBar.findAction(R.id.menu_remove).setVisible(canRemove);
 	}
 
-	synchronized void toggleProgress(boolean start) {
-		if (start) { // Inc counter
-			progressCount++;
-		} else { // Dec counter
-			progressCount--;
-		}
-		if (start && progressCount == 1) { // Just started
-			actionBar.setProgressBarVisibility(View.VISIBLE);
-		}
-		if (!start && progressCount == 0) { // Just stopped
-			actionBar.setProgressBarVisibility(View.GONE);
+	private void toggleProgress(boolean start) {
+		if (null != listener) { // Have listener
+			listener.toggleLoad(start);
 		}
 	}
 }

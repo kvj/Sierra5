@@ -17,11 +17,12 @@ import org.kvj.sierra5.ui.fragment.ListViewFragment.ListViewFragmentListener;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
 import android.view.KeyEvent;
-import android.view.MenuItem;
 
-public class Sierra5ListView extends FragmentActivity implements
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.Window;
+
+public class Sierra5ListView extends SherlockFragmentActivity implements
 		ControllerReceiver<Controller>, ListViewFragmentListener,
 		EditorViewFragmentListener {
 
@@ -31,11 +32,13 @@ public class Sierra5ListView extends FragmentActivity implements
 	private ListViewFragment listViewFragment = null;
 	private EditorViewFragment editorViewFragment = null;
 	Bundle data = null;
+	private int progressCount = 0;
 
 	public static final int RESULT_DONE = 102;
 
 	@Override
 	protected void onCreate(final Bundle inData) {
+		requestWindowFeature(Window.FEATURE_PROGRESS);
 		super.onCreate(inData);
 		if (null != inData) { // Have data - restore state
 			this.data = inData;
@@ -53,6 +56,7 @@ public class Sierra5ListView extends FragmentActivity implements
 		} else {
 			setContentView(R.layout.listview);
 		}
+		setSupportProgressBarIndeterminateVisibility(false);
 		listViewFragment = (ListViewFragment) getSupportFragmentManager()
 				.findFragmentById(R.id.listview_left);
 		if (null != listViewFragment && !listViewFragment.isInLayout()) {
@@ -203,16 +207,16 @@ public class Sierra5ListView extends FragmentActivity implements
 		setResult(RESULT_OK);
 	}
 
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		if (null != listViewFragment) { // Call list fragment
-			listViewFragment.onMenuSelected(item);
-		}
-		if (null != editorViewFragment) { // Call editor fragment
-			editorViewFragment.onMenuSelected(item);
-		}
-		return true;
-	}
+	// @Override
+	// public boolean onOptionsItemSelected(MenuItem item) {
+	// if (null != listViewFragment) { // Call list fragment
+	// listViewFragment.onMenuSelected(item);
+	// }
+	// if (null != editorViewFragment) { // Call editor fragment
+	// editorViewFragment.onMenuSelected(item);
+	// }
+	// return true;
+	// }
 
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -229,5 +233,24 @@ public class Sierra5ListView extends FragmentActivity implements
 			}
 		}
 		return super.onKeyDown(keyCode, event);
+	}
+
+	private synchronized void toggleProgressIndicator(boolean load) {
+		if (load) { // Inc counter
+			progressCount++;
+		} else { // Dec counter
+			progressCount--;
+		}
+		if (load && progressCount == 1) { // Just started
+			setSupportProgressBarIndeterminateVisibility(true);
+		}
+		if (!load && progressCount == 0) { // Just stopped
+			setSupportProgressBarIndeterminateVisibility(false);
+		}
+	}
+
+	@Override
+	public void toggleLoad(boolean load) {
+		toggleProgressIndicator(load);
 	}
 }

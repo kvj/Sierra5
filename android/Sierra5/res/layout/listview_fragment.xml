@@ -3,13 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical" >
-
-    <com.markupartist.android.widget.ActionBar
-        android:id="@+id/actionbar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        style="@style/ActionBar"
-        title="List" />
+    
 	<ListView
 	    android:id="@+id/listview"
 	    android:layout_width="match_parent"

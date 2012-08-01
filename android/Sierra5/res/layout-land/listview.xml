@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:orientation="horizontal">
     <FrameLayout 
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="0.5"
         android:background="@drawable/panel_border">
@@ -16,7 +16,7 @@
 	        android:layout_height="match_parent"/>
     </FrameLayout>
     <FrameLayout 
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="0.5"
 	    android:layout_marginLeft="2dp"

@@ -68,6 +68,10 @@
             android:name=".ui.widget.WidgetConfigListPane" />
         <activity
             android:configChanges="keyboardHidden|orientation"
+            android:label="Select node"
+            android:name=".ui.widget.NodeSelectPane" />
+        <activity
+            android:configChanges="keyboardHidden|orientation"
             android:label="Show widget config"
             android:name=".ui.widget.show.ShowWidgetConfigPane" >
             <intent-filter >

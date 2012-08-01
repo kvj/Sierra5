@@ -4,13 +4,13 @@
     <item
         android:id="@+id/menu_reload"
         android:icon="@drawable/a_reload"
-        android:showAsAction="always"
+        android:showAsAction="ifRoom"
         android:title="Reload"/>
 
     <item
         android:id="@+id/menu_add"
         android:icon="@drawable/a_add"
-        android:showAsAction="ifRoom"
+        android:showAsAction="always"
         android:title="Add item"/>
 
     <item
@@ -22,7 +22,7 @@
     <item
         android:id="@+id/menu_config"
         android:icon="@drawable/a_config"
-        android:showAsAction="always"
+        android:showAsAction="ifRoom"
         android:title="Configuration"/>
 
 </menu>
