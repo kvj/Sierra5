@@ -126,14 +126,18 @@ public class LinkPlugin extends DefaultPlugin {
 			// Decode image size
 			BitmapFactory.Options o = new BitmapFactory.Options();
 			o.inJustDecodeBounds = true;
+			o.inPurgeable = true;
 			BitmapFactory.decodeStream(new FileInputStream(f), null, o);
 
 			// The new size we want to scale to
 			// Find the correct scale value. It should be the power of 2.
+			if (o.outWidth <= 0) { // Invalid width
+				return null;
+			}
 			int scale = 1;
-			while (o.outWidth / scale / 2 >= width)
+			while (o.outWidth / scale / 2 >= width) {
 				scale *= 2;
-
+			}
 			// Decode with inSampleSize
 			BitmapFactory.Options o2 = new BitmapFactory.Options();
 			o2.inSampleSize = scale;

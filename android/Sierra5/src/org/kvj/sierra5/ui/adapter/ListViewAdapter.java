@@ -106,12 +106,15 @@ public class ListViewAdapter implements ListAdapter {
 			Log.w(TAG, "Expanded wout children: " + node.text);
 			return result;
 		}
-		for (Node child : node.children) { // Every children
-			SearchInTreeResult r = moveThru(child, searchIndex - result.size);
-			if (null != r.foundNode) { // Node found
-				return r; // Don't need to go thru anymore
+		synchronized (node.children) { // Lock modifications
+			for (Node child : node.children) { // Every children
+				SearchInTreeResult r = moveThru(child, searchIndex
+						- result.size);
+				if (null != r.foundNode) { // Node found
+					return r; // Don't need to go thru anymore
+				}
+				result.size += r.size;
 			}
-			result.size += r.size;
 		}
 		return result;
 	}
