@@ -90,6 +90,12 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/show_widget_info" />
         </receiver>
-    </application>
+        <receiver
+            android:name="org.kvj.bravo7.widget.WidgetUpdateReceiver" >
+            <intent-filter >
+                <action android:name="org.kvj.sierra5.plugins.UPDATE_WIDGET" />
+            </intent-filter>
+        </receiver>
+        </application>
 
 </manifest>

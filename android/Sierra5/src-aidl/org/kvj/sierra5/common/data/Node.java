@@ -26,6 +26,13 @@ public class Node implements Parcelable {
 	public int type = TYPE_FOLDER;
 	public int level = 0;
 
+	public static <T> T[] list2array(List<T> list, T[] zero) {
+		if (null == list) { // Empty
+			return zero;
+		}
+		return list.toArray(zero);
+	}
+
 	public Node createChild(int childType, String childText, int tabSize) {
 		StringBuilder sb = new StringBuilder();
 		if (type == Node.TYPE_TEXT) { // Padding only for text

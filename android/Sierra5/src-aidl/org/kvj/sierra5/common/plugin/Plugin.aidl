@@ -15,4 +15,5 @@ interface Plugin {
 	MenuItemInfo[] getMenu(int id, in Node node);
 	boolean executeAction(int id, inout Node node);
 	void parse(inout Node node, in Node parent);
+	RemoteViews render(in Node node, in Theme theme, int width);
 }

@@ -466,6 +466,7 @@ public class ListViewFragment extends SherlockFragment implements
 					adapter.setSelectedIndex(adapter.isShowRoot() ? res.index
 							: res.index - 1);
 				}
+				adapter.resetRemoteRenders();
 				adapter.dataChanged();
 				toggleProgress(false);
 			}

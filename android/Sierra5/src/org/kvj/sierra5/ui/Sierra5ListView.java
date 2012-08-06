@@ -198,13 +198,17 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 	}
 
 	@Override
-	public void saved(Node node) {
+	public void saved(Node node, boolean close) {
 		if (null != listViewFragment) { // Have list - update selection
 			// Log.i(TAG, "Reselect " + node.file + ", " + node.text + ", "
 			// + node.textPath);
 			listViewFragment.selectNode(node);
 		}
 		setResult(RESULT_OK);
+		if (close && null == listViewFragment) {
+			// Editor and asked for close - close
+			finish();
+		}
 	}
 
 	// @Override

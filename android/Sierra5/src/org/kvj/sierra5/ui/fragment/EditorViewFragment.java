@@ -32,7 +32,7 @@ public class EditorViewFragment extends SherlockFragment {
 	private static final String TAG = "EditorFragment";
 
 	public static interface EditorViewFragmentListener {
-		public void saved(Node node);
+		public void saved(Node node, boolean close);
 
 		public void toggleLoad(boolean load);
 	}
@@ -151,7 +151,7 @@ public class EditorViewFragment extends SherlockFragment {
 		}
 	}
 
-	private void save() {
+	private void save(final boolean close) {
 		if (null == node || null == parent) { // No node loaded
 			SuperActivity.notifyUser(getActivity(), "No item loaded");
 			return;
@@ -182,7 +182,7 @@ public class EditorViewFragment extends SherlockFragment {
 				node = saveMe; // Save this
 				actionBar.setTitle(node.text);
 				if (null != listener) { // Report saved
-					listener.saved(node);
+					listener.saved(node, close);
 				}
 			}
 
@@ -193,7 +193,10 @@ public class EditorViewFragment extends SherlockFragment {
 	public boolean onMenuSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.menu_save: // Save
-			save();
+			save(false);
+			return true;
+		case R.id.menu_save_close: // Save and close
+			save(true);
 			return true;
 		}
 		return false;

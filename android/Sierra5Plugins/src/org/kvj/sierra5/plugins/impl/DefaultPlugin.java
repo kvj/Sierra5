@@ -7,6 +7,7 @@ import org.kvj.sierra5.common.plugin.Plugin;
 import org.kvj.sierra5.common.theme.Theme;
 
 import android.os.RemoteException;
+import android.widget.RemoteViews;
 
 public class DefaultPlugin extends Plugin.Stub {
 
@@ -49,6 +50,12 @@ public class DefaultPlugin extends Plugin.Stub {
 	@Override
 	public int[] getCapabilities() throws RemoteException {
 		return new int[0];
+	}
+
+	@Override
+	public RemoteViews render(Node node, Theme theme, int width)
+			throws RemoteException {
+		return null;
 	}
 
 }

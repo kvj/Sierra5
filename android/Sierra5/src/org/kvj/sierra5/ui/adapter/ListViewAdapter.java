@@ -1,7 +1,9 @@
 package org.kvj.sierra5.ui.adapter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,6 +22,7 @@ import org.kvj.sierra5.ui.adapter.theme.ThemeProvider;
 import android.content.Context;
 import android.database.DataSetObserver;
 import android.graphics.Typeface;
+import android.os.AsyncTask;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
@@ -28,7 +31,6 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.RemoteViews;
 import android.widget.TextView;
@@ -49,8 +51,12 @@ public class ListViewAdapter implements ListAdapter {
 	private int textSize = 0;
 	DefaultTextFormatter defaultTextFormatter = new DefaultTextFormatter();
 	private PlainTextFormatter<Node> textFormatter = null;
+	private Map<String, RemoteViews> remoteRenders = new HashMap<String, RemoteViews>();
+	List<Plugin> remoteRenderPlugins = new ArrayList<Plugin>();
 
 	private Theme theme = null;
+
+	private Controller controller = null;
 
 	class DefaultTextFormatter implements NodeTextFormatter {
 
@@ -148,9 +154,9 @@ public class ListViewAdapter implements ListAdapter {
 	public void customize(View view, Node node, boolean selected) {
 		TextView textView = (TextView) view
 				.findViewById(R.id.listview_item_text);
-		ImageView menuIcon = (ImageView) view
-				.findViewById(R.id.listview_item_menu_icon);
-		menuIcon.setVisibility(selected ? View.VISIBLE : View.GONE);
+		// ImageView menuIcon = (ImageView) view
+		// .findViewById(R.id.listview_item_menu_icon);
+		// menuIcon.setVisibility(selected ? View.VISIBLE : View.GONE);
 		textView.setTextColor(theme.colorText);
 		// textView.setBackgroundColor(theme.colorBackground);
 		textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, textSize);
@@ -171,19 +177,81 @@ public class ListViewAdapter implements ListAdapter {
 
 	@Override
 	public View getView(int index, View view, ViewGroup parent) {
+		Node node = getItem(index);
+		if (null == node) { // Error case
+			return null;
+		}
 		if (view == null) {
 			LayoutInflater inflater = (LayoutInflater) parent.getContext()
 					.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 			view = inflater.inflate(R.layout.listview_item, parent, false);
 		}
-		Node node = getItem(index);
-		if (null == node) { // Error case
-			return null;
+		ViewGroup root = (ViewGroup) view; // Actualy linear layout
+		while (root.getChildCount() > 1) { // Remove remote
+			root.removeViewAt(1);
 		}
+		boolean selected = selectedIndex == index;
 		view.setMinimumHeight((int) (28 * view.getContext().getResources()
 				.getDisplayMetrics().density));
+		view.findViewById(R.id.listview_item_menu_icon).setVisibility(
+				selected ? View.VISIBLE : View.GONE);
+		view.findViewById(R.id.listview_item_top).setVisibility(View.VISIBLE);
 		customize(view, node, index == selectedIndex);
+		if (Node.TYPE_TEXT == node.type) {
+			// Remote render only for text
+			synchronized (remoteRenders) { // Lock for modifications
+				RemoteViews rv = remoteRenders.get(node.text);
+				if (null != rv) { // Have remote views
+					Log.i(TAG, "getView: " + node.text + ", remote found");
+					View renderResult = rv.apply(parent.getContext(), root);
+					root.addView(renderResult);
+					if (!selected) { // Hide top part when not selected
+						view.findViewById(R.id.listview_item_top)
+								.setVisibility(View.GONE);
+					}
+				} else {
+					if (!remoteRenders.containsKey(node.text)) {
+						// Not started yet - start
+						remoteRender(node, root);
+					}
+				}
+			}
+		}
 		return view;
+	}
+
+	private void remoteRender(final Node node, final View parent) {
+		synchronized (remoteRenders) { // Lock
+			remoteRenders.put(node.text, null); // No remote render at start
+		}
+		AsyncTask<Void, Void, RemoteViews> task = new AsyncTask<Void, Void, RemoteViews>() {
+
+			@Override
+			protected RemoteViews doInBackground(Void... params) {
+				for (Plugin plugin : remoteRenderPlugins) { // every plugin
+					RemoteViews res = null;
+					try { // Remote error
+						res = plugin.render(node, theme, parent.getWidth());
+					} catch (Exception e) {
+					}
+					if (null != res) { // Got remote view
+						return res;
+					}
+				}
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(RemoteViews result) {
+				if (null != result) { // Got remote view
+					synchronized (remoteRenders) { // Lock
+						remoteRenders.put(node.text, result);
+					}
+					dataChanged();
+				}
+			}
+		};
+		task.execute();
 	}
 
 	@Override
@@ -230,6 +298,7 @@ public class ListViewAdapter implements ListAdapter {
 	}
 
 	public void setController(Controller controller) {
+		this.controller = controller;
 		List<NodeTextFormatter> formatters = new ArrayList<NodeTextFormatter>();
 		List<Plugin> plugins = controller
 				.getPlugins(PluginInfo.PLUGIN_CAN_FORMAT);
@@ -240,6 +309,7 @@ public class ListViewAdapter implements ListAdapter {
 		formatters.add(defaultTextFormatter);
 		textFormatter.setFormatters(formatters
 				.toArray(new NodeTextFormatter[0]));
+		resetRemoteRenders();
 	}
 
 	public boolean setRoot(Node node, boolean showRoot) {
@@ -352,6 +422,12 @@ public class ListViewAdapter implements ListAdapter {
 			Log.e(TAG, "Error creating plugin formatter", e);
 		}
 		return result;
+	}
+
+	public void resetRemoteRenders() {
+		remoteRenders.clear();
+		remoteRenderPlugins = controller
+				.getPlugins(PluginInfo.PLUGIN_CAN_RENDER);
 	}
 
 }

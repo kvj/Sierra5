@@ -1,14 +1,18 @@
 package org.kvj.sierra5.plugins.ui.widget.show;
 
+import org.kvj.bravo7.widget.WidgetUpdateReceiver;
+import org.kvj.sierra5.common.Constants;
 import org.kvj.sierra5.common.data.Node;
 import org.kvj.sierra5.common.root.Root;
 import org.kvj.sierra5.plugins.App;
 import org.kvj.sierra5.plugins.R;
 import org.kvj.sierra5.plugins.WidgetController;
 
+import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.text.TextUtils;
 import android.util.Log;
@@ -56,6 +60,36 @@ public class ShowWidgetController extends AppWidgetProvider {
 			}
 			RemoteViews widget = new RemoteViews(App.getInstance()
 					.getPackageName(), R.layout.show_widget);
+			int bg = Integer.parseInt(prefs.getString("background", "4"));
+			Log.i(TAG, "bg: " + bg + ", " + prefs.getString("background", "4"));
+			int bgResource = android.R.drawable.screen_background_dark;
+			switch (bg) {
+			case 0:
+				bgResource = android.R.color.transparent;
+				break;
+			case 1:
+				bgResource = R.drawable.opacity0;
+				break;
+			case 2:
+				bgResource = R.drawable.opacity1;
+				break;
+			case 3:
+				bgResource = R.drawable.opacity2;
+				break;
+			}
+			widget.setInt(R.id.show_widget_list, "setBackgroundResource",
+					bgResource);
+			Intent launchIntent = new Intent(Constants.SHOW_EDIT_ITEM_NS);
+			launchIntent.putExtra(Constants.LIST_INTENT_ROOT, node.file);
+			launchIntent.putExtra(Constants.LIST_INTENT_FILE, node.file);
+			launchIntent.putExtra(Constants.LIST_INTENT_ITEM,
+					Node.list2array(node.textPath, new String[0]));
+			PendingIntent intent = PendingIntent.getActivity(App.getInstance(),
+					0, launchIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+			widget.setOnClickPendingIntent(R.id.show_widget_subroot, intent);
+			widget.setOnClickPendingIntent(R.id.show_widget_reload,
+					WidgetUpdateReceiver.createUpdateIntent(App.getInstance(),
+							id));
 			widget.removeAllViews(R.id.show_widget_list);
 			renderLine(node, rootService, 0, widget);
 			appWidgetManager.updateAppWidget(id, widget);

@@ -50,7 +50,7 @@ public class WidgetController {
 
 	private Plugin.Stub widgetPlugin = new WidgetPlugin();
 
-	private Plugin.Stub linkPlugin = new LinkPlugin();
+	private Plugin.Stub linkPlugin = new LinkPlugin(this);
 
 	private Plugin.Stub checkboxPlugin = new CheckboxPlugin(this);
 

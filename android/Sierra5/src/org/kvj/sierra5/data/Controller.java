@@ -90,6 +90,11 @@ public class Controller {
 		boolean skipFirstLine = false;
 		if (null != node.raw) { // Have raw data
 			lines = node.raw.split("\n");
+			if (1 == lines.length && TextUtils.isEmpty(lines[0])
+					&& node.type == Node.TYPE_FILE) {
+				// File + empty text = nothing to write
+				lines = new String[0];
+			}
 		} else { // Not changed
 			if (node.type == Node.TYPE_FILE) {
 				// Don't write first line - it's file name
@@ -310,7 +315,7 @@ public class Controller {
 			pattern.append('^');
 		}
 		ItemPattern res = new ItemPattern();
-		if (text.charAt(0) == '!' && regexp) {
+		if (!TextUtils.isEmpty(text) && text.charAt(0) == '!' && regexp) {
 			text = text.substring(1);
 			res.inverted = true;
 		}
@@ -578,13 +583,6 @@ public class Controller {
 		return result;
 	}
 
-	private <T> T[] list2array(List<T> list, T[] zero) {
-		if (null == list) { // Empty
-			return zero;
-		}
-		return list.toArray(zero);
-	}
-
 	public Node[] actualizeNode(Node node) {
 		if (null == node || null == node.file) { // Invalid node
 			return new Node[0];
@@ -652,7 +650,7 @@ public class Controller {
 					throw new IOException("File not found: " + node.file);
 				}
 				SearchNodeResult result = searchInNode(file, node.file,
-						list2array(node.textPath, new String[0]), false);
+						Node.list2array(node.textPath, new String[0]), false);
 				if (null == result || !result.found) { // Item not found
 					throw new RuntimeException("Item not found");
 				}

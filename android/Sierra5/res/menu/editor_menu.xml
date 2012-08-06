@@ -7,4 +7,10 @@
         android:showAsAction="always"
         android:title="Save"/>
 
+    <item
+        android:id="@+id/menu_save_close"
+        android:icon="@drawable/a_save_close"
+        android:showAsAction="ifRoom"
+        android:title="Save and close"/>
+
 </menu>

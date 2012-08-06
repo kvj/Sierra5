@@ -5,12 +5,32 @@
     android:layout_height="match_parent"
     android:background="@drawable/panel_border"
     android:layout_margin="@dimen/widget_margin">
+    <RelativeLayout
+        android:id="@+id/show_widget_subroot" 
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 	<LinearLayout
 	    android:padding="5dp"
 	    android:id="@+id/show_widget_list"
+	    android:layout_alignLeft="@id/show_widget_subroot"
 	    android:layout_width="match_parent"
 	    android:layout_height="match_parent"
 	    android:gravity="top|left"
 	    android:orientation="vertical"
 	    android:background="@drawable/opacity1"/>
+	<LinearLayout
+	    android:id="@+id/show_widget_icons"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:orientation="horizontal"
+	    android:layout_alignParentRight="true"
+	    android:layout_alignParentBottom="true">
+	    <ImageButton 
+	        android:id="@+id/show_widget_reload"
+	        android:layout_width="30dp"
+	        android:layout_height="30dp"
+	        android:src="@drawable/widget_reload"
+	        android:background="@android:color/transparent"/>
+	</LinearLayout>
+	</RelativeLayout>
 </FrameLayout>
