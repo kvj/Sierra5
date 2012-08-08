@@ -34,7 +34,7 @@ public class CheckboxPlugin extends DefaultPlugin {
 	@Override
 	public int[] getCapabilities() throws RemoteException {
 		return new int[] { PluginInfo.PLUGIN_CAN_FORMAT,
-				PluginInfo.PLUGIN_HAVE_MENU };
+				PluginInfo.PLUGIN_HAVE_MENU, PluginInfo.PLUGIN_HAVE_EDIT_MENU };
 	}
 
 	@Override
@@ -67,6 +67,19 @@ public class CheckboxPlugin extends DefaultPlugin {
 			}
 		}
 		return null;
+	}
+
+	@Override
+	public MenuItemInfo[] getEditorMenu(int id, Node node)
+			throws RemoteException {
+		return new MenuItemInfo[] { new MenuItemInfo(0,
+				MenuItemInfo.MENU_ITEM_INSERT_TEXT, "Add checkbox") };
+	}
+
+	@Override
+	public String executeEditAction(int id, String text, Node node)
+			throws RemoteException {
+		return "[ ] ";
 	}
 
 	@Override

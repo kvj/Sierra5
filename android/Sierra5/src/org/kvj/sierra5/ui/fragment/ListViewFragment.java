@@ -55,7 +55,7 @@ public class ListViewFragment extends SherlockFragment implements
 		public void toggleLoad(boolean load);
 	}
 
-	class MenuItemRecord<T> {
+	static class MenuItemRecord<T> {
 
 		public MenuItemRecord(int type, String title, T data) {
 			this.type = type;
@@ -68,10 +68,10 @@ public class ListViewFragment extends SherlockFragment implements
 		T data = null;
 	}
 
-	class PluginMenuRecord extends MenuItemRecord<Node> {
+	static class PluginMenuRecord extends MenuItemRecord<Node> {
 
-		private Plugin plugin;
-		private MenuItemInfo info;
+		Plugin plugin;
+		MenuItemInfo info;
 
 		public PluginMenuRecord(int index, Node node, Plugin plugin,
 				MenuItemInfo info) {
@@ -268,18 +268,19 @@ public class ListViewFragment extends SherlockFragment implements
 		adapter.setController(controller);
 		if (null != file) { // Have file in Activity parameters
 			rootSet = adapter.setRoot(
-					controller.nodeFromPath(file, useTemplatePath), true);
+					controller.nodeFromPath(file, null, useTemplatePath), true);
 			if (rootSet) { // Result = OK - save
 				rootFile = adapter.getRoot().file;
 			}
 		} else { // No file - show root
 			String rootFolder = controller.getRootFolder();
 			rootSet = adapter.setRoot(
-					controller.nodeFromPath(rootFolder, false), false);
+					controller.nodeFromPath(rootFolder, null, false), false);
 		}
 		// Log.i(TAG, "rootSet: " + rootSet);
 		adapter.setSelectedIndex(-1);
 		if (rootSet) { // Root set - expand root
+			adapter.getRoot().level = 0;
 			actionBar.setTitle(adapter.getRoot().text);
 			expandTree(adapter.getRoot(),
 					data.getString(Constants.LIST_INTENT_FILE),
@@ -333,43 +334,44 @@ public class ListViewFragment extends SherlockFragment implements
 		if (null == controller) { // No controller - no refresh
 			return;
 		}
-		toggleProgress(true);
-		AsyncTask<Void, Void, Integer> task = new AsyncTask<Void, Void, Integer>() {
-
-			@Override
-			protected Integer doInBackground(Void... params) {
-				Integer result = null;
-				if (null == file) { // Don't need to search
-					boolean exp = controller.expand(node, true, false);
-					result = -1;
-				} else {
-					SearchNodeResult res = controller.searchInNode(node, file,
-							path, useTemplate);
-					if (null == res) { // Error expand
-						result = -1;
-					} else {
-						result = res.index;
-					}
-				}
-				return result;
+		// toggleProgress(true);
+		// AsyncTask<Void, Void, Integer> task = new AsyncTask<Void, Void,
+		// Integer>() {
+		//
+		// @Override
+		// protected Integer doInBackground(Void... params) {
+		Integer result = null;
+		if (null == file) { // Don't need to search
+			boolean exp = controller.expand(node, true, false);
+			result = -1;
+		} else {
+			SearchNodeResult res = controller.searchInNode(node, file, path,
+					useTemplate);
+			if (null == res) { // Error expand
+				result = -1;
+			} else {
+				result = res.index;
 			}
-
-			@Override
-			protected void onPostExecute(Integer result) {
-				if (result != null) { // State changed - notify adapter
-					if (-1 != result) { // Not expanded
-						adapter.setSelectedIndex(adapter.isShowRoot() ? result
-								: result - 1);
-					}
-					adapter.dataChanged();
-				} else {
-					SuperActivity.notifyUser(getActivity(), "Item not found");
-				}
-				toggleProgress(false);
+		}
+		// return result;
+		// }
+		//
+		// @Override
+		// protected void onPostExecute(Integer result) {
+		if (result != null) { // State changed - notify adapter
+			if (-1 != result) { // Not expanded
+				adapter.setSelectedIndex(adapter.isShowRoot() ? result
+						: result - 1);
 			}
-
-		};
-		task.execute();
+			adapter.dataChanged();
+		} else {
+			SuperActivity.notifyUser(getActivity(), "Item not found");
+		}
+		// toggleProgress(false);
+		// }
+		//
+		// }
+		// task.execute();
 	}
 
 	@Override
@@ -433,7 +435,7 @@ public class ListViewFragment extends SherlockFragment implements
 					} else {
 						// Update selection
 						// Log.i(TAG, "After exec: " + node.text);
-						refresh();
+						refresh(node);
 					}
 				}
 			};
@@ -445,7 +447,7 @@ public class ListViewFragment extends SherlockFragment implements
 		if (null == node) { // Nothing
 			return;
 		}
-		if (null == adapter.getRoot()) { // Dont' have root - stop
+		if (null == adapter.getRoot()) { // Don't have root - stop
 			return;
 		}
 		toggleProgress(true);
@@ -453,20 +455,19 @@ public class ListViewFragment extends SherlockFragment implements
 
 			@Override
 			protected SearchNodeResult doInBackground(Void... params) {
-				return controller.searchInNode(
-						adapter.getRoot(),
-						node.file,
-						node.textPath != null ? node.textPath
-								.toArray(new String[0]) : null, false);
+				return controller.searchInNode(adapter.getRoot(), node.file,
+						Node.list2array(node.textPath, new String[0]), false);
 			}
 
 			@Override
 			protected void onPostExecute(SearchNodeResult res) {
 				if (null != res) { // Found
+					// Log.i(TAG, "selectNode: " + node.file + ", "
+					// + node.textPath + ", " + res.found);
 					adapter.setSelectedIndex(adapter.isShowRoot() ? res.index
 							: res.index - 1);
 				}
-				adapter.resetRemoteRenders();
+				adapter.resetPlugins();
 				adapter.dataChanged();
 				toggleProgress(false);
 			}
@@ -487,7 +488,7 @@ public class ListViewFragment extends SherlockFragment implements
 			removeItem(adapter.getItem(adapter.getSelectedIndex()));
 			return true;
 		case R.id.menu_reload:
-			refresh();
+			refresh(null);
 			return true;
 		}
 		return false;
@@ -499,8 +500,9 @@ public class ListViewFragment extends SherlockFragment implements
 		}
 	}
 
-	public void refresh() {
-		selectNode(adapter.getItem(adapter.getSelectedIndex()));
+	public void refresh(Node node) {
+		selectNode(node != null ? node : adapter.getItem(adapter
+				.getSelectedIndex()));
 	}
 
 	private void showConfiguration() {

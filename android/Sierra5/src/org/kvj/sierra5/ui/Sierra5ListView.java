@@ -130,7 +130,16 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 	@Override
 	public void edit(final Node node, final EditType editType) {
 		if (EditType.Remove == editType) { // Do remove
+			if (node == null || Node.TYPE_TEXT != node.type) { // Only for text
+				SuperActivity.notifyUser(this, "Invalid item");
+				return;
+			}
 			removeNode(node);
+			return;
+		}
+		if (node == null || Node.TYPE_FOLDER == node.type) {
+			// Only for text and file
+			SuperActivity.notifyUser(this, "Invalid item");
 			return;
 		}
 		if (null != editorViewFragment) { // Double pane - load
@@ -163,7 +172,15 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 	protected void onActivityResult(int request, int result, Intent intent) {
 		if (result == RESULT_OK) { // Done
 			if (listViewFragment != null) { // Have list - refresh
-				listViewFragment.refresh();
+				Node changedNode = null;
+				if (null != intent && null != intent.getExtras()) {
+					// Have extras
+					changedNode = controller.nodeFromPath(intent
+							.getStringExtra(Constants.LIST_INTENT_FILE), intent
+							.getStringArrayExtra(Constants.LIST_INTENT_ITEM),
+							false);
+				}
+				listViewFragment.refresh(changedNode);
 			}
 			setResult(RESULT_OK);
 		}
@@ -204,7 +221,11 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 			// + node.textPath);
 			listViewFragment.selectNode(node);
 		}
-		setResult(RESULT_OK);
+		Intent outData = new Intent();
+		outData.putExtra(Constants.LIST_INTENT_FILE, node.file);
+		outData.putExtra(Constants.LIST_INTENT_ITEM,
+				Node.list2array(node.textPath, new String[0]));
+		setResult(RESULT_OK, outData);
 		if (close && null == listViewFragment) {
 			// Editor and asked for close - close
 			finish();

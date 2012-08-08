@@ -7,6 +7,8 @@ public class MenuItemInfo implements Parcelable {
 
 	public static final int MENU_ITEM_SUBMENU = 0;
 	public static final int MENU_ITEM_ACTION = 1;
+	public static final int MENU_ITEM_INSERT_TEXT = 1;
+	public static final int MENU_ITEM_REPLACE_TEXT = 2;
 
 	private String text = null;
 	private int type = MENU_ITEM_ACTION;

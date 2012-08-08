@@ -3,11 +3,15 @@ package org.kvj.sierra5.plugins.impl.link;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.kvj.sierra5.common.data.Node;
 import org.kvj.sierra5.common.plugin.FormatSpan;
+import org.kvj.sierra5.common.plugin.MenuItemInfo;
 import org.kvj.sierra5.common.plugin.PluginInfo;
 import org.kvj.sierra5.common.theme.Theme;
 import org.kvj.sierra5.plugins.App;
@@ -42,7 +46,8 @@ public class LinkPlugin extends DefaultPlugin {
 	@Override
 	public int[] getCapabilities() throws RemoteException {
 		return new int[] { PluginInfo.PLUGIN_CAN_FORMAT,
-				PluginInfo.PLUGIN_CAN_PARSE, PluginInfo.PLUGIN_CAN_RENDER };
+				PluginInfo.PLUGIN_CAN_PARSE, PluginInfo.PLUGIN_CAN_RENDER,
+				PluginInfo.PLUGIN_HAVE_EDIT_MENU };
 	}
 
 	@Override
@@ -58,13 +63,20 @@ public class LinkPlugin extends DefaultPlugin {
 							new ForegroundColorSpan(theme.ceLCyan)),
 					new FormatSpan(":",
 							new ForegroundColorSpan(theme.colorText)) };
+		case 2: // Project
+			String project = text.substring(0, text.indexOf(','));
+			return new FormatSpan[] {
+					new FormatSpan(project, new ForegroundColorSpan(
+							theme.c9LRed)),
+					new FormatSpan(", ", new ForegroundColorSpan(
+							theme.colorText)) };
 		}
 		return null;
 	}
 
 	@Override
 	public int getFormatterCount() throws RemoteException {
-		return 2;
+		return 3;
 	}
 
 	@Override
@@ -78,6 +90,8 @@ public class LinkPlugin extends DefaultPlugin {
 			return "@[A-Za-z0-9\\-]+";
 		case 1: // Activity
 			return "#[A-Za-z0-9\\-]+\\:";
+		case 2: // Project
+			return "(\\ |^)[A-Z][A-Za-z0-9\\-]+,(\\ |$)";
 		}
 		return null;
 	}
@@ -163,9 +177,24 @@ public class LinkPlugin extends DefaultPlugin {
 		RemoteViews rv = new RemoteViews(App.getInstance().getPackageName(),
 				R.layout.link_image);
 		rv.setImageViewBitmap(R.id.link_image_image, image);
-		// rv.setInt(R.id.link_image_image, "setMaxWidth", width - 10);
-		// Log.i(TAG, "render: image rendered: " + width);
 		return rv;
+	}
+
+	@Override
+	public MenuItemInfo[] getEditorMenu(int id, Node node)
+			throws RemoteException {
+		return new MenuItemInfo[] { new MenuItemInfo(0,
+				MenuItemInfo.MENU_ITEM_INSERT_TEXT, "Insert date and time") };
+	}
+
+	@Override
+	public String executeEditAction(int id, String text, Node node)
+			throws RemoteException {
+		String format = App.getInstance().getStringPreference(
+				R.string.template_insertDateTime,
+				R.string.template_insertDateTimeDefault);
+		SimpleDateFormat dt = new SimpleDateFormat(format, Locale.ENGLISH);
+		return dt.format(new Date()) + " ";
 	}
 
 }

@@ -1,19 +1,30 @@
 package org.kvj.sierra5.ui.fragment;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.kvj.bravo7.SuperActivity;
 import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
 import org.kvj.sierra5.common.Constants;
 import org.kvj.sierra5.common.data.Node;
+import org.kvj.sierra5.common.plugin.MenuItemInfo;
+import org.kvj.sierra5.common.plugin.Plugin;
+import org.kvj.sierra5.common.plugin.PluginInfo;
 import org.kvj.sierra5.common.theme.Theme;
 import org.kvj.sierra5.data.Controller;
 import org.kvj.sierra5.data.Controller.ItemPattern;
 import org.kvj.sierra5.data.Controller.SearchNodeResult;
 import org.kvj.sierra5.ui.adapter.theme.ThemeProvider;
+import org.kvj.sierra5.ui.fragment.ListViewFragment.MenuItemRecord;
+import org.kvj.sierra5.ui.fragment.ListViewFragment.PluginMenuRecord;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.TypedValue;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,6 +43,7 @@ public class EditorViewFragment extends SherlockFragment {
 	private static final String TAG = "EditorFragment";
 
 	public static interface EditorViewFragmentListener {
+
 		public void saved(Node node, boolean close);
 
 		public void toggleLoad(boolean load);
@@ -46,6 +58,7 @@ public class EditorViewFragment extends SherlockFragment {
 	private EditText editText = null;
 	private ActionBar actionBar = null;
 	private String oldText = null;
+	List<MenuItemRecord<Node>> contextMenu = new ArrayList<MenuItemRecord<Node>>();
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -198,13 +211,61 @@ public class EditorViewFragment extends SherlockFragment {
 		case R.id.menu_save_close: // Save and close
 			save(true);
 			return true;
+		case R.id.menu_edit_more: // Show menu
+			showMenu(null);
+			return true;
 		}
 		return false;
 	}
 
+	private void showMenu(final PluginMenuRecord parent) {
+		contextMenu.clear();
+		toggleProgress(true);
+		AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>() {
+
+			@Override
+			protected Void doInBackground(Void... params) {
+				try { // Get menus from plugins
+					int menuIndex = 0;
+					// Log.i(TAG, "Getting menu from plugins");
+					for (Plugin plugin : controller
+							.getPlugins(PluginInfo.PLUGIN_HAVE_EDIT_MENU)) {
+						// menu from every plugin
+						MenuItemInfo[] menus = plugin
+								.getEditorMenu(
+										null != parent ? parent.info.getId()
+												: -1, node);
+						if (null == menus) { // No menus
+							continue;
+						}
+						for (MenuItemInfo info : menus) { // Add menus
+							contextMenu.add(new PluginMenuRecord(menuIndex++,
+									node, plugin, info));
+						}
+					}
+				} catch (Exception e) {
+					Log.w(TAG, "Error getting menus", e);
+				}
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(Void result) {
+				if (contextMenu.size() > 0) { // Show menu
+					registerForContextMenu(editText);
+					getActivity().openContextMenu(editText);
+					unregisterForContextMenu(editText);
+				}
+				toggleProgress(false);
+			}
+
+		};
+		task.execute();
+	}
+
 	public void loadNode(String file, String[] path, boolean newNode,
 			String template, boolean useTemplatePath) {
-		final Node n = controller.nodeFromPath(file, useTemplatePath);
+		final Node n = controller.nodeFromPath(file, null, useTemplatePath);
 		// File found
 		if (null == n) { // Invalid file
 			SuperActivity.notifyUser(getActivity(), "File not found");
@@ -269,4 +330,80 @@ public class EditorViewFragment extends SherlockFragment {
 			listener.toggleLoad(start);
 		}
 	}
+
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v,
+			ContextMenuInfo menuInfo) {
+		menu.clear();
+		for (int i = 0; i < contextMenu.size(); i++) {
+			MenuItemRecord info = contextMenu.get(i);
+			menu.add(0, i, i, info.title);
+		}
+	}
+
+	@Override
+	public boolean onContextItemSelected(android.view.MenuItem item) {
+		if (item.getItemId() < contextMenu.size()) {
+			onContextMenu(contextMenu.get(item.getItemId()));
+		}
+		return true;
+	}
+
+	private void onContextMenu(MenuItemRecord<Node> item) {
+		if (item instanceof PluginMenuRecord) { // Plugin menu
+			final PluginMenuRecord pitem = (PluginMenuRecord) item;
+			if (pitem.info.getType() == MenuItemInfo.MENU_ITEM_SUBMENU) {
+				// This is submenu
+				showMenu(pitem);
+				return;
+			}
+			final String text = editText.getText().toString();
+			// Execute action
+			AsyncTask<Void, Void, String> task = new AsyncTask<Void, Void, String>() {
+
+				@Override
+				protected String doInBackground(Void... params) {
+					try { // Remote errors
+							// Log.i(TAG, "Before exec: " + node.text);
+						return pitem.plugin.executeEditAction(
+								pitem.info.getId(), text, node);
+					} catch (Exception e) {
+						Log.w(TAG, "Error executing action: " + pitem.title, e);
+					}
+					return null;
+				}
+
+				@Override
+				protected void onPostExecute(String result) {
+					if (null == result) { // Execute failed
+						SuperActivity.notifyUser(getActivity(),
+								"Error in action");
+					} else {
+						int cursorPos = editText.getSelectionStart();
+						ItemPattern pattern = controller.parsePattern(result,
+								false);
+						String newText = pattern.converted;
+						int cursorIndex = newText.indexOf("${|}");
+						if (-1 != cursorIndex) { // Found cursor position
+							newText = newText.replace("${|}", "");
+						} else {
+							cursorIndex = newText.length();
+						}
+						if (pitem.info.getType() == MenuItemInfo.MENU_ITEM_INSERT_TEXT) {
+							// Insert template
+							editText.getText().insert(cursorPos, newText);
+							editText.setSelection(cursorPos + cursorIndex);
+						} else if (pitem.info.getType() == MenuItemInfo.MENU_ITEM_REPLACE_TEXT) {
+							// Replace text
+							editText.setText(newText);
+							editText.setSelection(cursorIndex);
+						}
+
+					}
+				}
+			};
+			task.execute();
+		}
+	}
+
 }

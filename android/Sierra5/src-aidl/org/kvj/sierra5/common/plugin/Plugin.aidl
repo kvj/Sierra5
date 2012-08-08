@@ -13,6 +13,8 @@ interface Plugin {
 	String getPattern(int index, in Node node, boolean selected);
 	FormatSpan[] format(int index, in Theme theme, in Node node, String text, boolean selected);
 	MenuItemInfo[] getMenu(int id, in Node node);
+	MenuItemInfo[] getEditorMenu(int id, in Node node);
+	String executeEditAction(int id, String text, in Node node);
 	boolean executeAction(int id, inout Node node);
 	void parse(inout Node node, in Node parent);
 	RemoteViews render(in Node node, in Theme theme, int width);

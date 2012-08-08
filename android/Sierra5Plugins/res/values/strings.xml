@@ -2,7 +2,9 @@
 <resources>
 
     <string name="app_name">Sierra5Plugins</string>
-
+    <string name="template_insertDateTime">template_insertDateTime</string>
+    <string name="template_insertDateTimeDefault">M/d HH:mm</string>
+        
     <string-array name="widgetBGid">
         <item>0</item>
         <item>1</item>

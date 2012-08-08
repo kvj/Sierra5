@@ -58,4 +58,16 @@ public class DefaultPlugin extends Plugin.Stub {
 		return null;
 	}
 
+	@Override
+	public MenuItemInfo[] getEditorMenu(int id, Node node)
+			throws RemoteException {
+		return null;
+	}
+
+	@Override
+	public String executeEditAction(int id, String text, Node node)
+			throws RemoteException {
+		return null;
+	}
+
 }

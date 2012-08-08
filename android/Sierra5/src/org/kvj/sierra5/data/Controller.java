@@ -463,7 +463,8 @@ public class Controller {
 	/**
 	 * Constructs Node by file path
 	 */
-	public Node nodeFromPath(String path, boolean expectTemplate) {
+	public Node nodeFromPath(String path, String[] textPath,
+			boolean expectTemplate) {
 		// Log.i(TAG, "nodeFromPath: " + path);
 		if (TextUtils.isEmpty(path)) { // Invalid path
 			return null;
@@ -476,7 +477,8 @@ public class Controller {
 		node.file = file.getAbsolutePath();
 		node.text = file.getName();
 		node.type = file.isDirectory() ? Node.TYPE_FOLDER : Node.TYPE_FILE;
-		SearchNodeResult result = searchInNode(node, path, null, expectTemplate);
+		SearchNodeResult result = searchInNode(node, path, textPath,
+				expectTemplate);
 		if (null == result || !result.found) { // Not found
 			return null;
 		}
@@ -533,15 +535,15 @@ public class Controller {
 			pathToSearch.add(pathToRoot.get(i));
 		}
 		if (null != path) { // Have path
-			Log.i(TAG, "Path: " + path.length);
+			// Log.i(TAG, "Path: " + path.length);
 			for (String p : path) { // Copy path
-				Log.i(TAG, "Add path: " + p + ", " + pathToSearch.size());
+				// Log.i(TAG, "Add path: " + p + ", " + pathToSearch.size());
 				pathToSearch.add(p);
 			}
 		}
 		int index = 0; // Index of found item in tree
 		Node n = root;
-		Log.i(TAG, "Before search: " + pathToSearch + ", " + path);
+		// Log.i(TAG, "Before search: " + pathToSearch + ", " + path);
 		for (int depth = 0; depth < pathToSearch.size(); depth++) {
 			// For every item
 			if (!expand(n, true, false)) { // Expand failed
@@ -587,10 +589,9 @@ public class Controller {
 		if (null == node || null == node.file) { // Invalid node
 			return new Node[0];
 		}
-		Node parent = nodeFromPath(node.file, false);
+		Node parent = nodeFromPath(node.file, null, false);
 		SearchNodeResult res = searchInNode(parent, node.file,
-				node.textPath != null ? node.textPath.toArray(new String[0])
-						: null, false);
+				Node.list2array(node.textPath, new String[0]), false);
 		if (null == res || !res.found) { // Not found - parent only
 			return new Node[] { parent };
 		}
@@ -622,16 +623,14 @@ public class Controller {
 		@Override
 		public Node getNode(String file, String[] path, boolean template)
 				throws RemoteException {
-			SearchNodeResult result = searchInNode(
-					nodeFromPath(getRootFolder(), template), file, path,
-					template);
-			if (null == result || !result.found) { // Error searching
+			Node node = nodeFromPath(file, path, template);
+			if (null == node) { // Error searching
 				return null;
 			}
-			if (result.node.collapsed) { // Collapsed - expand
-				expand(result.node, null, true);
+			if (node.collapsed) { // Collapsed - expand
+				expand(node, null, true);
 			}
-			return result.node;
+			return node;
 		}
 
 		@Override

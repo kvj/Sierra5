@@ -302,17 +302,7 @@ public class ListViewAdapter implements ListAdapter {
 
 	public void setController(Controller controller) {
 		this.controller = controller;
-		List<NodeTextFormatter> formatters = new ArrayList<NodeTextFormatter>();
-		List<Plugin> plugins = controller
-				.getPlugins(PluginInfo.PLUGIN_CAN_FORMAT);
-		// Log.i(TAG, "setController: plugins: " + plugins.size());
-		for (Plugin plugin : plugins) { // Create formatters for every plugin
-			formatters.addAll(formattersFromPlugin(plugin));
-		}
-		formatters.add(defaultTextFormatter);
-		textFormatter.setFormatters(formatters
-				.toArray(new NodeTextFormatter[0]));
-		resetRemoteRenders();
+		resetPlugins();
 	}
 
 	public boolean setRoot(Node node, boolean showRoot) {
@@ -427,10 +417,20 @@ public class ListViewAdapter implements ListAdapter {
 		return result;
 	}
 
-	public void resetRemoteRenders() {
+	public void resetPlugins() {
 		remoteRenders.clear();
 		remoteRenderPlugins = controller
 				.getPlugins(PluginInfo.PLUGIN_CAN_RENDER);
+		List<NodeTextFormatter> formatters = new ArrayList<NodeTextFormatter>();
+		List<Plugin> plugins = controller
+				.getPlugins(PluginInfo.PLUGIN_CAN_FORMAT);
+		// Log.i(TAG, "setController: plugins: " + plugins.size());
+		for (Plugin plugin : plugins) { // Create formatters for every plugin
+			formatters.addAll(formattersFromPlugin(plugin));
+		}
+		formatters.add(defaultTextFormatter);
+		textFormatter.setFormatters(formatters
+				.toArray(new NodeTextFormatter[0]));
 	}
 
 }

@@ -13,4 +13,9 @@
         android:showAsAction="ifRoom"
         android:title="Save and close"/>
 
+    <item
+        android:id="@+id/menu_edit_more"
+        android:icon="@drawable/a_edit_menu"
+        android:showAsAction="ifRoom"
+        android:title="More"/>
 </menu>
