@@ -7,6 +7,17 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+    <uses-permission android:name="android.permission.READ_SYNC_STATS" />
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.USE_CREDENTIALS" />
+    <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
+    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
 
     <uses-sdk
         android:minSdkVersion="7"
@@ -35,7 +46,7 @@
                 <category android:name="org.kvj.sierra5.plugin.CHECKBOX" />
             </intent-filter>
         </service>
-            <service
+        <service
             android:exported="true"
             android:name=".impl.widget.WidgetPluginService" >
             <intent-filter >
@@ -90,12 +101,37 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/show_widget_info" />
         </receiver>
-        <receiver
-            android:name="org.kvj.bravo7.widget.WidgetUpdateReceiver" >
+        <receiver android:name="org.kvj.bravo7.widget.WidgetUpdateReceiver" >
             <intent-filter >
                 <action android:name="org.kvj.sierra5.plugins.UPDATE_WIDGET" />
             </intent-filter>
         </receiver>
-        </application>
+
+        <service
+            android:exported="true"
+            android:name=".providers.auth.AuthService" >
+            <intent-filter >
+                <action android:name="android.accounts.AccountAuthenticator" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.accounts.AccountAuthenticator"
+                android:resource="@xml/authenticator" />
+        </service>
+        <service
+            android:exported="true"
+            android:name=".providers.contact.ContactSyncService" >
+            <intent-filter >
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.content.SyncAdapter"
+                android:resource="@xml/contactsync" />
+            <meta-data
+                android:name="android.provider.CONTACTS_STRUCTURE"
+                android:resource="@xml/contacts" />
+        </service>
+    </application>
 
 </manifest>

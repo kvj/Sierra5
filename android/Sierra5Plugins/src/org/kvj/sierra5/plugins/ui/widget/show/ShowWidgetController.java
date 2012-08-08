@@ -26,7 +26,7 @@ public class ShowWidgetController extends AppWidgetProvider {
 	public void onUpdate(Context context, AppWidgetManager appWidgetManager,
 			int[] appWidgetIds) {
 		super.onUpdate(context, appWidgetManager, appWidgetIds);
-		Log.i(TAG, "Updating widgets: " + appWidgetIds.length);
+		// Log.i(TAG, "Updating widgets: " + appWidgetIds.length);
 		WidgetController controller = App.getInstance().getBean(
 				WidgetController.class);
 		if (null == controller) { // No controller
@@ -44,7 +44,7 @@ public class ShowWidgetController extends AppWidgetProvider {
 
 	private void updateUI(int id, Root rootService, SharedPreferences prefs,
 			AppWidgetManager appWidgetManager) {
-		Log.i(TAG, "Updating show widget: " + id);
+		// Log.i(TAG, "Updating show widget: " + id);
 		try { // Rendering exceptions
 			String file = prefs.getString("file", "");
 			String path = prefs.getString("path", "");
@@ -52,7 +52,7 @@ public class ShowWidgetController extends AppWidgetProvider {
 			if (!TextUtils.isEmpty(path)) { // Have path
 				pathArray = path.split("/");
 			}
-			Log.i(TAG, "Loading: " + file + ", " + path);
+			// Log.i(TAG, "Loading: " + file + ", " + path);
 			Node node = rootService.getNode(file, pathArray, true);
 			if (null == node) { // Error
 				Log.w(TAG, "Error loading node " + file + ", " + path);
@@ -103,8 +103,8 @@ public class ShowWidgetController extends AppWidgetProvider {
 		try { // Remote errors
 			node.level = level;
 			RemoteViews line = rootService.render(node, null, "dark");
-			Log.i(TAG, "Render line: " + node.text + ", " + node.collapsed
-					+ ", " + node.children);
+			// Log.i(TAG, "Render line: " + node.text + ", " + node.collapsed
+			// + ", " + node.children);
 			widget.addView(R.id.show_widget_list, line);
 			if (null != node.children && !node.collapsed) { // Have children
 				for (Node ch : node.children) { // Render children
