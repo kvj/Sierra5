@@ -2,6 +2,7 @@ package org.kvj.sierra5.plugins.ui;
 
 import org.kvj.sierra5.plugins.App;
 import org.kvj.sierra5.plugins.R;
+import org.kvj.sierra5.plugins.ui.widget.NodeSelectPane;
 import org.kvj.sierra5.plugins.ui.widget.WidgetConfigListPane;
 
 import android.content.Intent;
@@ -25,6 +26,16 @@ public class PluginsConfiguration extends PreferenceActivity {
 						Intent intent = new Intent(PluginsConfiguration.this,
 								WidgetConfigListPane.class);
 						startActivity(intent);
+						return true;
+					}
+				});
+		findPreference("contacts_node").setOnPreferenceClickListener(
+				new OnPreferenceClickListener() {
+
+					@Override
+					public boolean onPreferenceClick(Preference preference) {
+						NodeSelectPane.showConfig(PluginsConfiguration.this,
+								null, null, "contacts_");
 						return true;
 					}
 				});

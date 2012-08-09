@@ -20,5 +20,6 @@
     android:contentAuthority="com.android.contacts"
     android:accountType="org.kvj.sierra5"
     android:supportsUploading="false"
+    android:isAlwaysSyncable="true"
     android:userVisible="true"
 />

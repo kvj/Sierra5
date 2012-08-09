@@ -87,7 +87,7 @@ public class LinkPlugin extends DefaultPlugin {
 		}
 		switch (index) {
 		case 0: // Name
-			return "@[A-Za-z0-9\\-]+";
+			return "@[A-Z][A-Za-z0-9\\-]+";
 		case 1: // Activity
 			return "#[A-Za-z0-9\\-]+\\:";
 		case 2: // Project

@@ -32,6 +32,9 @@ public class Authenticator extends AbstractAccountAuthenticator {
 			}
 		}
 		Bundle result = new Bundle();
+		Account account = new Account("Sierra5", accountType);
+		AccountManager manager = AccountManager.get(context);
+		manager.addAccountExplicitly(account, null, null);
 		result.putString(AccountManager.KEY_ACCOUNT_NAME, "Sierra5");
 		result.putString(AccountManager.KEY_ACCOUNT_TYPE, accountType);
 		Log.i(TAG, "Done");

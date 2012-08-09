@@ -1,12 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
 
-	<PreferenceCategory android:title="Widgets">
+    <PreferenceCategory android:title="Widgets" >
 
         <Preference
             android:key="widgets"
             android:summary="Shows widgets config"
             android:title="Widgets config" />
-	</PreferenceCategory>
+    </PreferenceCategory>
+
+    <PreferenceScreen android:title="Contacts sync" >
+
+        <PreferenceCategory android:title="Root node" >
+
+            <Preference
+                android:key="contacts_node"
+                android:title="Select node" />
+        </PreferenceCategory>
+
+        <EditTextPreference
+            android:dialogTitle="Enter path to groups and contacts"
+            android:key="@string/contacts_exp"
+            android:defaultValue="@string/contacts_expDefault"
+            android:title="Expression to groups and contacts" />
+    </PreferenceScreen>
 
 </PreferenceScreen>

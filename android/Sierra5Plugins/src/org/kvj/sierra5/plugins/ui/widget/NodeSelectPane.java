@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -23,14 +24,22 @@ public class NodeSelectPane extends Activity {
 	TextView fileEdit = null, pathEdit = null;
 	Button selectButton = null;
 	SharedPreferences prefs = null;
+	String prefix = "";
 
 	@Override
 	protected void onCreate(Bundle data) {
 		super.onCreate(data);
 		Bundle dataProvided = SuperActivity.getData(this, data);
 		Log.i(TAG, "node for " + dataProvided.getInt("id"));
-		prefs = App.getInstance().getWidgetConfig(dataProvided.getInt("id"),
-				dataProvided.getString("type"));
+		if (dataProvided.containsKey("id")) { // Have id
+			prefs = App.getInstance().getWidgetConfig(
+					dataProvided.getInt("id"), dataProvided.getString("type"));
+		} else {
+			prefs = PreferenceManager.getDefaultSharedPreferences(this);
+		}
+		if (dataProvided.containsKey("prefix")) { // Have prefix
+			prefix = dataProvided.getString("prefix");
+		}
 		setContentView(R.layout.select_node);
 		fileEdit = (TextView) findViewById(R.id.bmark_file);
 		pathEdit = (TextView) findViewById(R.id.bmark_item);
@@ -47,8 +56,8 @@ public class NodeSelectPane extends Activity {
 			SuperActivity.notifyUser(this, "Invalid config");
 			return;
 		}
-		fileEdit.setText(prefs.getString("file", ""));
-		pathEdit.setText(prefs.getString("path", ""));
+		fileEdit.setText(prefs.getString(prefix + "file", ""));
+		pathEdit.setText(prefs.getString(prefix + "path", ""));
 	};
 
 	protected void selectNode() {
@@ -85,16 +94,22 @@ public class NodeSelectPane extends Activity {
 			return;
 		}
 		Editor editor = prefs.edit();
-		editor.putString("file", fileEdit.getText().toString().trim());
-		editor.putString("path", pathEdit.getText().toString().trim());
+		editor.putString(prefix + "file", fileEdit.getText().toString().trim());
+		editor.putString(prefix + "path", pathEdit.getText().toString().trim());
 		editor.commit();
 		super.onBackPressed();
 	}
 
-	public static void showConfig(Context context, int widgetID, String type) {
+	public static void showConfig(Context context, Integer widgetID,
+			String type, String prefix) {
 		Intent intent = new Intent(context, NodeSelectPane.class);
-		intent.putExtra("id", widgetID);
-		intent.putExtra("type", type);
+		if (null != widgetID) { // This is for widget
+			intent.putExtra("id", widgetID);
+			intent.putExtra("type", type);
+		}
+		if (null != prefix) { // Have prefix
+			intent.putExtra("prefix", prefix);
+		}
 		context.startActivity(intent);
 	}
 

@@ -27,7 +27,7 @@ public class ShowWidgetConfigPane extends WidgetPreferenceActivity {
 					@Override
 					public boolean onPreferenceClick(Preference preference) {
 						NodeSelectPane.showConfig(ShowWidgetConfigPane.this,
-								widgetID, widgetType);
+								widgetID, widgetType, null);
 						return true;
 					}
 				});

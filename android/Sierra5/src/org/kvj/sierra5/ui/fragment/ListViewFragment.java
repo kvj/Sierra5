@@ -315,7 +315,7 @@ public class ListViewFragment extends SherlockFragment implements
 
 			@Override
 			protected Void doInBackground(Void... params) {
-				controller.expand(node, forceExpand, false);
+				controller.expand(node, forceExpand, Controller.EXPAND_ONE);
 				return null;
 			}
 
@@ -342,7 +342,7 @@ public class ListViewFragment extends SherlockFragment implements
 		// protected Integer doInBackground(Void... params) {
 		Integer result = null;
 		if (null == file) { // Don't need to search
-			boolean exp = controller.expand(node, true, false);
+			boolean exp = controller.expand(node, true, Controller.EXPAND_ONE);
 			result = -1;
 		} else {
 			SearchNodeResult res = controller.searchInNode(node, file, path,

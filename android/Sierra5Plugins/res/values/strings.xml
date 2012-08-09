@@ -3,8 +3,10 @@
 
     <string name="app_name">Sierra5Plugins</string>
     <string name="account_name">Sierra5 link</string>
-        <string name="template_insertDateTime">template_insertDateTime</string>
+    <string name="template_insertDateTime">template_insertDateTime</string>
     <string name="template_insertDateTimeDefault">M/d HH:mm</string>
+    <string name="contacts_exp">contacts_exp</string>
+    <string name="contacts_expDefault"></string>
         
     <string-array name="widgetBGid">
         <item>0</item>

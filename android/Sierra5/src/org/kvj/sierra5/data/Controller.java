@@ -369,6 +369,10 @@ public class Controller {
 		return res;
 	}
 
+	public static final int EXPAND_ONE = 0;
+	public static final int EXPAND_FILES = 1;
+	public static final int EXPAND_ALL = 2;
+
 	/**
 	 * Expands or collapses Node
 	 * 
@@ -376,7 +380,7 @@ public class Controller {
 	 * @param forceExpand
 	 * @param restoreExpand
 	 */
-	public boolean expand(Node node, Boolean forceExpand, boolean expandAll) {
+	public boolean expand(Node node, Boolean forceExpand, int expandType) {
 		boolean newStateCollapsed = null != forceExpand ? !forceExpand
 				: !node.collapsed;
 		// Log.i(TAG, "expand " + node.text + ", " + node.collapsed + ", "
@@ -442,9 +446,11 @@ public class Controller {
 				}
 			});
 			node.children = nodes;
-			if (expandAll) { // Expand children
+			if (expandType == EXPAND_ALL || (expandType == EXPAND_FILES)
+					&& node.type == Node.TYPE_FOLDER) {
+				// If expand all or expand files and this is folder
 				for (Node ch : nodes) { // Expand
-					expand(ch, forceExpand, true);
+					expand(ch, forceExpand, expandType);
 				}
 			}
 			return true;
@@ -546,7 +552,7 @@ public class Controller {
 		// Log.i(TAG, "Before search: " + pathToSearch + ", " + path);
 		for (int depth = 0; depth < pathToSearch.size(); depth++) {
 			// For every item
-			if (!expand(n, true, false)) { // Expand failed
+			if (!expand(n, true, EXPAND_ONE)) { // Expand failed
 				Log.w(TAG, "Expand failed: " + n.file + ", " + n.textPath);
 				return null;
 			}
@@ -574,7 +580,7 @@ public class Controller {
 				return result;
 			}
 		}
-		if (!expand(n, true, false)) { // Force expand last item
+		if (!expand(n, true, EXPAND_ONE)) { // Force expand last item
 			Log.w(TAG, "Expand failed: " + n.file + ", " + n.textPath);
 			return null;
 		}
@@ -628,7 +634,7 @@ public class Controller {
 				return null;
 			}
 			if (node.collapsed) { // Collapsed - expand
-				expand(node, null, true);
+				Controller.this.expand(node, null, EXPAND_FILES);
 			}
 			return node;
 		}
@@ -665,6 +671,18 @@ public class Controller {
 				Log.e(TAG, "Error updating", e);
 			}
 			return false;
+		}
+
+		@Override
+		public boolean expand(Node node) throws RemoteException {
+			if (node.type == Node.TYPE_TEXT) { // No action needed
+				return true;
+			}
+			if (node.type == Node.TYPE_FILE) { // Force expand to load contents
+				return Controller.this.expand(node, null, EXPAND_ONE);
+			}
+			// Else - folder, expand all files
+			return Controller.this.expand(node, null, EXPAND_FILES);
 		}
 	};
 
