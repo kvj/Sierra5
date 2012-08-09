@@ -70,13 +70,16 @@ public class LinkPlugin extends DefaultPlugin {
 							theme.c9LRed)),
 					new FormatSpan(", ", new ForegroundColorSpan(
 							theme.colorText)) };
+		case 3: // Tag
+			return new FormatSpan[] { new FormatSpan(text,
+					new ForegroundColorSpan(theme.ccLBlue)) };
 		}
 		return null;
 	}
 
 	@Override
 	public int getFormatterCount() throws RemoteException {
-		return 3;
+		return 4;
 	}
 
 	@Override
@@ -92,6 +95,8 @@ public class LinkPlugin extends DefaultPlugin {
 			return "#[A-Za-z0-9\\-]+\\:";
 		case 2: // Project
 			return "(\\ |^)[A-Z][A-Za-z0-9\\-]+,(\\ |$)";
+		case 3: // Tag
+			return "\\ -[a-z0-9\\_]+";
 		}
 		return null;
 	}
