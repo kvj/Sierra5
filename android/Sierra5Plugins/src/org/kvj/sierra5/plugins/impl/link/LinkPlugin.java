@@ -5,7 +5,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,7 +30,15 @@ import android.widget.RemoteViews;
 
 public class LinkPlugin extends DefaultPlugin {
 
+	class ParseInfo {
+		Map<String, String> params = new HashMap<String, String>();
+		int level = 0;
+		String file = null;
+	}
+
 	private WidgetController controller = null;
+
+	Map<String, ParseInfo> parseInfos = new HashMap<String, ParseInfo>();
 
 	public LinkPlugin(WidgetController controller) {
 		super();
@@ -103,8 +113,45 @@ public class LinkPlugin extends DefaultPlugin {
 
 	@Override
 	public void parse(Node node, Node parent) throws RemoteException {
-		if (node.type == Node.TYPE_TEXT && node.text.endsWith(" /-")) { // Collapse
-			node.collapsed = true;
+		if (node.type == Node.TYPE_TEXT) { // Text
+			if (node.text.endsWith(" /-")) { // Collapse
+				node.collapsed = true;
+			}
+			ParseInfo info = parseInfos.get(node.file);
+			if (null != info) { // Have info
+				String collapse = info.params.get("collapse");
+				if (null != collapse) { // Have collapse
+					if ("all".equals(collapse)) { // All levels
+						node.collapsed = true;
+					} else {
+						try { // Number errors
+							int level = Integer.parseInt(collapse, 10);
+							if (node.level - info.level + 1 == level) {
+								// This is level we are looking
+								node.collapsed = true;
+							}
+						} catch (Exception e) {
+							// TODO: handle exception
+						}
+					}
+				}
+			}
+		}
+		if (node.type == Node.TYPE_TEXT && node.text.startsWith("#")) { // Comment
+			node.visible = false;
+			if (node.text.startsWith("##")) { // Special config
+				String[] pairs = node.text.substring(2).split(",");
+				ParseInfo info = new ParseInfo();
+				info.level = node.level;
+				for (String pair : pairs) { // split by =
+					String[] nameValue = pair.split("=");
+					if (nameValue.length == 2) { // Have nameValue
+						info.params.put(nameValue[0].trim(),
+								nameValue[1].trim());
+					}
+				}
+				parseInfos.put(node.file, info);
+			}
 		}
 	}
 
@@ -150,7 +197,7 @@ public class LinkPlugin extends DefaultPlugin {
 
 			// The new size we want to scale to
 			// Find the correct scale value. It should be the power of 2.
-			if (o.outWidth <= 0) { // Invalid width
+			if (o.outWidth <= 0 || width <= 0) { // Invalid width
 				return null;
 			}
 			int scale = 1;
@@ -188,16 +235,29 @@ public class LinkPlugin extends DefaultPlugin {
 	@Override
 	public MenuItemInfo[] getEditorMenu(int id, Node node)
 			throws RemoteException {
-		return new MenuItemInfo[] { new MenuItemInfo(0,
-				MenuItemInfo.MENU_ITEM_INSERT_TEXT, "Insert date and time") };
+		return new MenuItemInfo[] {
+				new MenuItemInfo(0, MenuItemInfo.MENU_ITEM_INSERT_TEXT,
+						"Insert date and time"),
+				new MenuItemInfo(1, MenuItemInfo.MENU_ITEM_INSERT_TEXT,
+						"Insert time") };
 	}
 
 	@Override
 	public String executeEditAction(int id, String text, Node node)
 			throws RemoteException {
-		String format = App.getInstance().getStringPreference(
-				R.string.template_insertDateTime,
-				R.string.template_insertDateTimeDefault);
+		String format = "";
+		switch (id) {
+		case 0: // Date time
+			format = App.getInstance().getStringPreference(
+					R.string.template_insertDateTime,
+					R.string.template_insertDateTimeDefault);
+			break;
+		case 1: // Time
+			format = App.getInstance().getStringPreference(
+					R.string.template_insertTime,
+					R.string.template_insertTimeDefault);
+			break;
+		}
 		SimpleDateFormat dt = new SimpleDateFormat(format, Locale.ENGLISH);
 		return dt.format(new Date()) + " ";
 	}

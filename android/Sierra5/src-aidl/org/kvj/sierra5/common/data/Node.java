@@ -25,6 +25,7 @@ public class Node implements Parcelable {
 
 	public int type = TYPE_FOLDER;
 	public int level = 0;
+	public boolean visible = true;
 
 	public static <T> T[] list2array(List<T> list, T[] zero) {
 		if (null == list) { // Empty
@@ -80,6 +81,7 @@ public class Node implements Parcelable {
 		p.writeString(raw);
 		p.writeInt(type);
 		p.writeInt(level);
+		p.writeByte((byte) (visible ? 1 : 0));
 	}
 
 	@Override
@@ -99,6 +101,7 @@ public class Node implements Parcelable {
 		raw = p.readString();
 		type = p.readInt();
 		level = p.readInt();
+		visible = p.readByte() == 1;
 
 	}
 

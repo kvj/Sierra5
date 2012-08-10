@@ -305,7 +305,7 @@ public class Controller {
 	}
 
 	private static Pattern mask = Pattern
-			.compile("\\*|\\?|(\\$\\{([a-zA-Z]+)((\\+|\\-)(\\d{1,3})(h|d|w|m|y))?\\})");
+			.compile("\\*|\\?|(\\$\\{([a-zA-Z]+)((\\+|\\-|\\=)(\\d{1,3})(h|d|w|m|y|e))?\\})");
 
 	// 2: dd 3: +2d 4: + 5: 2
 
@@ -337,18 +337,47 @@ public class Controller {
 				// Date replacement
 				Calendar c = Calendar.getInstance();
 				if (null != m.group(3)) { // Have date modifier
-					int mul = "+".equals(m.group(4)) ? 1 : -1;
+					int mul = 0;
+					if ("+".equals(m.group(4))) { // +
+						mul = 1;
+					} else if ("-".equals(m.group(4))) { // -
+						mul = -1;
+					}
 					int value = Integer.parseInt(m.group(5), 10);
 					if ("h".equals(m.group(6))) { // Hour
-						c.add(Calendar.HOUR, mul * value);
+						if (0 == mul) { // Set
+							c.set(Calendar.HOUR, value);
+						} else {
+							c.add(Calendar.HOUR, mul * value);
+						}
 					} else if ("d".equals(m.group(6))) { // Day
-						c.add(Calendar.DAY_OF_YEAR, mul * value);
+						if (0 == mul) { // Set
+							c.add(Calendar.DAY_OF_MONTH, value);
+						} else {
+							c.add(Calendar.DAY_OF_YEAR, mul * value);
+						}
 					} else if ("w".equals(m.group(6))) { // Week
-						c.add(Calendar.DAY_OF_YEAR, mul * value * 7);
+						if (0 == mul) { // Set
+							c.set(Calendar.WEEK_OF_YEAR, value);
+						} else {
+							c.add(Calendar.DAY_OF_YEAR, mul * value * 7);
+						}
+					} else if ("e".equals(m.group(6))) { // Day of week
+						if (0 == mul) { // Set
+							c.set(Calendar.DAY_OF_WEEK, value);
+						}
 					} else if ("m".equals(m.group(6))) { // Month
-						c.add(Calendar.MONTH, mul * value);
+						if (0 == mul) { // Set month (from zero)
+							c.set(Calendar.MONTH, value - 1);
+						} else {
+							c.add(Calendar.MONTH, mul * value);
+						}
 					} else if ("y".equals(m.group(6))) { // Year
-						c.add(Calendar.YEAR, mul * value);
+						if (0 == mul) { // Set
+							c.set(Calendar.YEAR, value);
+						} else {
+							c.add(Calendar.YEAR, mul * value);
+						}
 					}
 				}
 				SimpleDateFormat dt = new SimpleDateFormat(m.group(2),
@@ -562,6 +591,9 @@ public class Controller {
 			// Log.i(TAG, "Pattern: " + ip.pattern.pattern());
 			for (int i = 0; i < n.children.size(); i++) { // Search child
 				Node ch = n.children.get(i);
+				if (!ch.visible) { // Not visible - skip
+					continue;
+				}
 				if ((template && ip.matches(ch.text))
 						|| (!template && ip.converted.equals(ch.text))) {
 					// From end - found

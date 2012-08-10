@@ -100,6 +100,9 @@ public class ShowWidgetController extends AppWidgetProvider {
 
 	private void renderLine(Node node, Root rootService, int level,
 			RemoteViews widget) {
+		if (!node.visible) { // Not visible - skip
+			return;
+		}
 		try { // Remote errors
 			node.level = level;
 			RemoteViews line = rootService.render(node, null, "dark");

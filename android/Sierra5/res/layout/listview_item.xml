@@ -1,28 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	android:id="@+id/listview_item_root"
+    android:id="@+id/listview_item_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical">
+    android:orientation="vertical" >
 
-    <LinearLayout 
-		android:id="@+id/listview_item_top"
+    <LinearLayout
+        android:id="@+id/listview_item_top"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent" 
         android:orientation="horizontal">
-		<TextView 
-		    android:id="@+id/listview_item_text"
-		    android:layout_width="wrap_content"
-		    android:layout_height="wrap_content"
-		    android:layout_weight="1"
-		    android:typeface="monospace"/>
-		<ImageView 
-		    android:id="@+id/listview_item_menu_icon"
-		    android:src="@drawable/a_menu"
-		    android:layout_marginTop="2dp"
-		    android:layout_marginRight="2dp"
-		    android:layout_width="20dp"
-		    android:layout_height="20dp"/>
+
+        <FrameLayout
+            android:id="@+id/listview_item_menu_icon"
+            android:layout_width="5dp"
+            android:layout_height="match_parent"
+            android:background="@android:color/background_light" />
+        <TextView
+            android:id="@+id/listview_item_text"
+            android:paddingTop="2dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:typeface="monospace" />
+
     </LinearLayout>
 
 </LinearLayout>

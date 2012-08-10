@@ -26,11 +26,16 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds.Email;
+import android.provider.ContactsContract.CommonDataKinds.Event;
 import android.provider.ContactsContract.CommonDataKinds.GroupMembership;
+import android.provider.ContactsContract.CommonDataKinds.Im;
 import android.provider.ContactsContract.CommonDataKinds.Nickname;
 import android.provider.ContactsContract.CommonDataKinds.Note;
+import android.provider.ContactsContract.CommonDataKinds.Organization;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.CommonDataKinds.StructuredName;
+import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
+import android.provider.ContactsContract.CommonDataKinds.Website;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.Groups;
 import android.provider.ContactsContract.RawContacts;
@@ -122,6 +127,156 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 		return false;
 	}
 
+	private String getChildText(Node node) {
+		StringBuffer sb = new StringBuffer();
+		if (null != node.children) { // Have children
+			for (int i = 0; i < node.children.size(); i++) { // Every child
+				if (i > 0) { // Add \n
+					sb.append('\n');
+				}
+				sb.append(node.children.get(i).text);
+			}
+		}
+		return sb.toString();
+	}
+
+	private void parseTypeValue(ContactEntry ce, String type, String value) {
+		if (in(type, "tel", "phone", "cell")) { // This is phone
+			ContactEntryInfo cei = new ContactEntryInfo();
+			cei.a(Phone.NUMBER, value);
+			cei.a(Phone.MIMETYPE, Phone.CONTENT_ITEM_TYPE);
+			if (in(type, "cell")) { // Mobile
+				cei.a(Phone.TYPE, Phone.TYPE_MOBILE);
+			} else if (in(type, "work", "office")) { // Work
+				cei.a(Phone.TYPE, Phone.TYPE_WORK);
+			} else if (in(type, "home")) { // Home
+				cei.a(Phone.TYPE, Phone.TYPE_HOME);
+			} else { // Custom
+				cei.a(Phone.TYPE, Phone.TYPE_OTHER);
+			}
+			ce.entries.add(cei);
+		} else if ("name".equals(type)) { // Name as nickname
+			ContactEntryInfo cei = new ContactEntryInfo();
+			cei.a(Nickname.MIMETYPE, Nickname.CONTENT_ITEM_TYPE);
+			cei.a(Nickname.TYPE, Nickname.TYPE_OTHER_NAME);
+			cei.a(Nickname.NAME, value);
+			ce.entries.add(cei);
+		} else if ("nick".equals(type)) { // Nick as nickname
+			ContactEntryInfo cei = new ContactEntryInfo();
+			cei.a(Nickname.MIMETYPE, Nickname.CONTENT_ITEM_TYPE);
+			cei.a(Nickname.TYPE, Nickname.TYPE_DEFAULT);
+			cei.a(Nickname.NAME, value);
+			ce.entries.add(cei);
+		} else if ("tag".equals(type)) { // Tag as short name
+			ContactEntryInfo cei = new ContactEntryInfo();
+			cei.a(Nickname.MIMETYPE, Nickname.CONTENT_ITEM_TYPE);
+			cei.a(Nickname.TYPE, Nickname.TYPE_SHORT_NAME);
+			cei.a(Nickname.NAME, value);
+			ce.entries.add(cei);
+		} else if ("home".equals(type) || "work".equals(type)
+				|| "office".equals(type) || in(type, "address", "location")) {
+			// Address
+			ContactEntryInfo cei = new ContactEntryInfo();
+			cei.a(StructuredPostal.MIMETYPE, StructuredPostal.CONTENT_ITEM_TYPE);
+			if (in(type, "home")) { // Home address
+				cei.a(StructuredPostal.TYPE, StructuredPostal.TYPE_HOME);
+			} else if (in(type, "work", "office")) { // Office
+				cei.a(StructuredPostal.TYPE, StructuredPostal.TYPE_WORK);
+			} else {
+				cei.a(StructuredPostal.TYPE, StructuredPostal.TYPE_CUSTOM);
+				cei.a(StructuredPostal.LABEL, type);
+			}
+			cei.a(StructuredPostal.FORMATTED_ADDRESS, value);
+			ce.entries.add(cei);
+		} else if ("bday".equals(type)) { // Birthday in YYYY-MM-DD
+			ContactEntryInfo cei = new ContactEntryInfo();
+			cei.a(Event.MIMETYPE, Event.CONTENT_ITEM_TYPE);
+			cei.a(Event.TYPE, Event.TYPE_BIRTHDAY);
+			cei.a(Event.START_DATE, value);
+			ce.entries.add(cei);
+		} else if ("job".equals(type)) { // Job info
+			ContactEntryInfo cei = new ContactEntryInfo();
+			cei.a(Organization.MIMETYPE, Organization.CONTENT_ITEM_TYPE);
+			cei.a(Organization.TYPE, Organization.TYPE_WORK);
+			String[] parts = value.split("\n", 3);
+			cei.a(Organization.COMPANY, parts[parts.length - 1]);
+			// Last item - company
+			if (parts.length > 1) { // More strings
+				cei.a(Organization.DEPARTMENT, parts[parts.length - 2]);
+				if (parts.length > 2) { // More strings
+					cei.a(Organization.TITLE, parts[parts.length - 3]);
+				}
+			}
+			ce.entries.add(cei);
+		} else if (in(type, "skype", "talk", "icq", "msn", "jabber")) { // IM
+			ContactEntryInfo cei = new ContactEntryInfo();
+			cei.a(Im.MIMETYPE, Im.CONTENT_ITEM_TYPE);
+			cei.a(Im.DATA, value);
+			cei.a(Im.TYPE, Im.TYPE_OTHER);
+			if (in(type, "work", "office")) { // Work
+				cei.a(Im.TYPE, Im.TYPE_WORK);
+			} else if (in(type, "home")) { // Home
+				cei.a(Im.TYPE, Im.TYPE_HOME);
+			}
+			if (in(type, "skype")) { // Skype
+				cei.a(Im.PROTOCOL, Im.PROTOCOL_SKYPE);
+			} else if (in(type, "talk")) { // Google talk
+				cei.a(Im.PROTOCOL, Im.PROTOCOL_GOOGLE_TALK);
+			} else if (in(type, "icq")) { // ICQ
+				cei.a(Im.PROTOCOL, Im.PROTOCOL_ICQ);
+			} else if (in(type, "msn")) { // MSN
+				cei.a(Im.PROTOCOL, Im.PROTOCOL_MSN);
+			} else if (in(type, "jabber")) { // Jabber
+				cei.a(Im.PROTOCOL, Im.PROTOCOL_JABBER);
+			} else {
+				cei.a(Im.PROTOCOL, Im.PROTOCOL_CUSTOM);
+				cei.a(Im.CUSTOM_PROTOCOL, type);
+			}
+			ce.entries.add(cei);
+		} else if (in(type, "mail")) { // This is email
+			ContactEntryInfo cei = new ContactEntryInfo();
+			cei.a(Email.ADDRESS, value);
+			cei.a(Email.MIMETYPE, Email.CONTENT_ITEM_TYPE);
+			if (in(type, "mobile")) { // Mobile
+				cei.a(Email.TYPE, Email.TYPE_MOBILE);
+			} else if (in(type, "work", "office")) { // Work
+				cei.a(Email.TYPE, Email.TYPE_WORK);
+			} else if (in(type, "home")) { // Home
+				cei.a(Email.TYPE, Email.TYPE_HOME);
+			} else { // Custom
+				cei.a(Email.TYPE, Email.TYPE_OTHER);
+			}
+			ce.entries.add(cei);
+		} else if ("groups".equals(type)) { // Additional groups
+			String gg[] = value.split(",");
+			for (String gr : gg) { // gr = group
+				gr = gr.trim();
+				if (TextUtils.isEmpty(gr)) { // Empty group
+					continue;
+				}
+				if (!groups.contains(gr)) { // New group
+					groups.add(gr);
+				}
+				if (!ce.groups.contains(gr)) { // New group
+					ce.groups.add(gr);
+				}
+			}
+		} else if (value.startsWith("http://") || value.startsWith("https://")) {
+			// This is link
+			ContactEntryInfo cei = new ContactEntryInfo();
+			cei.a(Website.URL, value);
+			cei.a(Website.MIMETYPE, Website.CONTENT_ITEM_TYPE);
+			cei.a(Website.TYPE, Website.TYPE_CUSTOM);
+			cei.a(Website.LABEL, type);
+			ce.entries.add(cei);
+		} else { // All unknown fields - as note
+			ContactEntryInfo cei = new ContactEntryInfo();
+			cei.a(Note.MIMETYPE, Note.CONTENT_ITEM_TYPE);
+			cei.a(Note.NOTE, value);
+			ce.entries.add(cei);
+		}
+	}
+
 	private void parseContact(String group, Node node) {
 		Log.i(TAG, "Parse contact: " + node.text + ", " + group);
 		ContactEntry ce = new ContactEntry();
@@ -145,69 +300,17 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 				String type = ch.text.substring(0, colonPos).trim()
 						.toLowerCase();
 				String value = ch.text.substring(colonPos + 1).trim();
-				if (in(type, "tel", "phone", "cell")) { // This is phone
-					ContactEntryInfo cei = new ContactEntryInfo();
-					cei.a(Phone.NUMBER, value);
-					cei.a(Phone.MIMETYPE, Phone.CONTENT_ITEM_TYPE);
-					if (in(type, "cell")) { // Mobile
-						cei.a(Phone.TYPE, Phone.TYPE_MOBILE);
-					} else if (in(type, "work", "office")) { // Work
-						cei.a(Phone.TYPE, Phone.TYPE_WORK);
-					}
-					if (in(type, "home")) { // Home
-						cei.a(Phone.TYPE, Phone.TYPE_HOME);
-					} else { // Custom
-						cei.a(Phone.TYPE, Phone.TYPE_OTHER);
-					}
-					ce.entries.add(cei);
-				} else if ("name".equals(type)) { // Name as nickname
-					ContactEntryInfo cei = new ContactEntryInfo();
-					cei.a(Nickname.MIMETYPE, Nickname.CONTENT_ITEM_TYPE);
-					cei.a(Nickname.TYPE, Nickname.TYPE_OTHER_NAME);
-					cei.a(Nickname.NAME, value);
-					ce.entries.add(cei);
-				} else if ("nick".equals(type)) { // Nick as nickname
-					ContactEntryInfo cei = new ContactEntryInfo();
-					cei.a(Nickname.MIMETYPE, Nickname.CONTENT_ITEM_TYPE);
-					cei.a(Nickname.TYPE, Nickname.TYPE_DEFAULT);
-					cei.a(Nickname.NAME, value);
-					ce.entries.add(cei);
-				} else if (in(type, "mail")) { // This is email
-					ContactEntryInfo cei = new ContactEntryInfo();
-					cei.a(Email.ADDRESS, value);
-					cei.a(Email.MIMETYPE, Email.CONTENT_ITEM_TYPE);
-					if (in(type, "mobile")) { // Mobile
-						cei.a(Email.TYPE, Email.TYPE_MOBILE);
-					} else if (in(type, "work", "office")) { // Work
-						cei.a(Email.TYPE, Email.TYPE_WORK);
-					}
-					if (in(type, "home")) { // Home
-						cei.a(Email.TYPE, Email.TYPE_HOME);
-					} else { // Custom
-						cei.a(Email.TYPE, Email.TYPE_OTHER);
-					}
-					ce.entries.add(cei);
-				} else if ("groups".equals(type)) { // Additional groups
-					String gg[] = value.split(",");
-					for (String gr : gg) { // gr = group
-						gr = gr.trim();
-						if (TextUtils.isEmpty(gr)) { // Empty group
-							continue;
-						}
-						if (!groups.contains(gr)) { // New group
-							groups.add(gr);
-						}
-						if (!ce.groups.contains(gr)) { // New group
-							ce.groups.add(gr);
-						}
-					}
-				} else { // All unknown fields - as note
-					ContactEntryInfo cei = new ContactEntryInfo();
-					cei.a(Note.MIMETYPE, Note.CONTENT_ITEM_TYPE);
-					cei.a(Note.NOTE, value);
-					ce.entries.add(cei);
+				if (TextUtils.isEmpty(value)) { // No value - use children
+					value = getChildText(ch);
 				}
-
+				if (TextUtils.isEmpty(value) || TextUtils.isEmpty(type)) {
+					// Still empty - skip
+					continue;
+				}
+				String[] types = type.split(",");
+				for (String oneType : types) { // For every type
+					parseTypeValue(ce, oneType, value);
+				}
 			}
 		}
 	}
@@ -317,6 +420,9 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 				@Override
 				public boolean onItem(boolean finalItem,
 						Map<String, Object> values, Node node) {
+					if (!node.visible) { // Node not visible
+						return false;
+					}
 					if (finalItem) { // This is contact
 						parseContact((String) values.get("g"), node);
 					}

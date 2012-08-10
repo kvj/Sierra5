@@ -5,9 +5,11 @@
     <string name="account_name">Sierra5 link</string>
     <string name="template_insertDateTime">template_insertDateTime</string>
     <string name="template_insertDateTimeDefault">M/d HH:mm</string>
+    <string name="template_insertTime">template_insertTime</string>
+    <string name="template_insertTimeDefault">HH:mm</string>
     <string name="contacts_exp">contacts_exp</string>
     <string name="contacts_expDefault"></string>
-        
+
     <string-array name="widgetBGid">
         <item>0</item>
         <item>1</item>

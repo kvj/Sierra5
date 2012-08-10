@@ -21,11 +21,9 @@ import org.kvj.sierra5.ui.adapter.theme.ThemeProvider;
 
 import android.content.Context;
 import android.database.DataSetObserver;
-import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
-import android.text.style.StyleSpan;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -73,8 +71,15 @@ public class ListViewAdapter implements ListAdapter {
 				String text, boolean selected) {
 			int color = Node.TYPE_FOLDER == note.type ? theme.cbLYellow
 					: theme.ccLBlue;
-			PlainTextFormatter.addSpan(sb, m.group(0), new ForegroundColorSpan(
-					color));
+			if (note.text.length() > 1) { // Color only First letter
+				PlainTextFormatter.addSpan(sb, text.substring(0, 1),
+						new ForegroundColorSpan(color));
+				PlainTextFormatter.addSpan(sb, text.substring(1),
+						new ForegroundColorSpan(theme.colorText));
+			} else {
+				PlainTextFormatter.addSpan(sb, text, new ForegroundColorSpan(
+						color));
+			}
 		}
 
 	}
@@ -108,6 +113,9 @@ public class ListViewAdapter implements ListAdapter {
 		}
 		synchronized (node.children) { // Lock modifications
 			for (Node child : node.children) { // Every children
+				if (!child.visible) { // Not visible - skip
+					continue;
+				}
 				SearchInTreeResult r = moveThru(child, searchIndex
 						- result.size);
 				if (null != r.foundNode) { // Node found
@@ -164,16 +172,19 @@ public class ListViewAdapter implements ListAdapter {
 		// textView.setBackgroundColor(theme.colorBackground);
 		textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, textSize);
 		SpannableStringBuilder text = new SpannableStringBuilder();
-		for (int i = 0; i < node.level; i++) { // Append level chars first
+		int levels = showRoot ? node.level : node.level - 1;
+		for (int i = 0; i < levels; i++) {
+			// Append level chars first
 			text.append(" ");
 		}
 		textFormatter.writePlainText(node, text, theme.colorText, node.text,
 				selected);
-		if (node.collapsed) {
-			text.setSpan(new StyleSpan(Typeface.ITALIC), 0, text.length(), 0);
-		}
-		if (selected) {
-			text.setSpan(new StyleSpan(Typeface.BOLD), 0, text.length(), 0);
+		if (selected) { // Change color
+			view.findViewById(R.id.listview_item_menu_icon).setBackgroundColor(
+					node.collapsed ? theme.c3Yellow : theme.c2Green);
+		} else {
+			view.findViewById(R.id.listview_item_menu_icon).setBackgroundColor(
+					node.collapsed ? theme.c1Red : theme.c7White);
 		}
 		textView.setText(text);
 	}
@@ -189,15 +200,13 @@ public class ListViewAdapter implements ListAdapter {
 					.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 			view = inflater.inflate(R.layout.listview_item, parent, false);
 		}
-		ViewGroup root = (ViewGroup) view; // Actualy linear layout
+		ViewGroup root = (ViewGroup) view; // Actually linear layout
 		while (root.getChildCount() > 1) { // Remove remote
 			root.removeViewAt(1);
 		}
 		boolean selected = selectedIndex == index;
 		view.setMinimumHeight((int) (28 * view.getContext().getResources()
 				.getDisplayMetrics().density));
-		view.findViewById(R.id.listview_item_menu_icon).setVisibility(
-				selected ? View.VISIBLE : View.GONE);
 		view.findViewById(R.id.listview_item_top).setVisibility(View.VISIBLE);
 		customize(view, node, index == selectedIndex);
 		if (Node.TYPE_TEXT == node.type) {
