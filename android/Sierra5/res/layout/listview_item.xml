@@ -11,15 +11,25 @@
         android:layout_height="match_parent" 
         android:orientation="horizontal">
 
-        <FrameLayout
-            android:id="@+id/listview_item_menu_icon"
-            android:layout_width="5dp"
+        <TextView 
+            android:id="@+id/listview_item_left"
             android:layout_height="match_parent"
-            android:background="@android:color/background_light" />
+            android:layout_width="wrap_content"
+            android:textSize="16dp"
+            android:typeface="monospace"/>
+        <ImageView 
+            android:id="@+id/listview_item_menu_icon"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginLeft="2dp"
+            android:layout_marginRight="2dp"
+            android:layout_marginTop="3dp"
+            android:src="@drawable/folder_col" 
+            android:contentDescription="icon"/>
         <TextView
             android:id="@+id/listview_item_text"
-            android:paddingTop="2dp"
-            android:layout_width="wrap_content"
+            android:paddingLeft="2dp"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:typeface="monospace" />

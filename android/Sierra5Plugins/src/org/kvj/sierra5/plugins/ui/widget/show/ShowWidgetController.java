@@ -45,6 +45,30 @@ public class ShowWidgetController extends AppWidgetProvider {
 	private void updateUI(int id, Root rootService, SharedPreferences prefs,
 			AppWidgetManager appWidgetManager) {
 		// Log.i(TAG, "Updating show widget: " + id);
+		RemoteViews widget = new RemoteViews(
+				App.getInstance().getPackageName(), R.layout.show_widget);
+		int bg = Integer.parseInt(prefs.getString("background", "4"));
+		// Log.i(TAG, "bg: " + bg + ", " + prefs.getString("background", "4"));
+		int bgResource = android.R.drawable.screen_background_dark;
+		switch (bg) {
+		case 0:
+			bgResource = android.R.color.transparent;
+			break;
+		case 1:
+			bgResource = R.drawable.opacity0;
+			break;
+		case 2:
+			bgResource = R.drawable.opacity1;
+			break;
+		case 3:
+			bgResource = R.drawable.opacity2;
+			break;
+		}
+		widget.setInt(R.id.show_widget_list, "setBackgroundResource",
+				bgResource);
+		widget.setOnClickPendingIntent(R.id.show_widget_reload,
+				WidgetUpdateReceiver.createUpdateIntent(App.getInstance(), id));
+		widget.removeAllViews(R.id.show_widget_list);
 		try { // Rendering exceptions
 			String file = prefs.getString("file", "");
 			String path = prefs.getString("path", "");
@@ -56,29 +80,8 @@ public class ShowWidgetController extends AppWidgetProvider {
 			Node node = rootService.getNode(file, pathArray, true);
 			if (null == node) { // Error
 				Log.w(TAG, "Error loading node " + file + ", " + path);
-				return;
+				throw new Exception("Node not found");
 			}
-			RemoteViews widget = new RemoteViews(App.getInstance()
-					.getPackageName(), R.layout.show_widget);
-			int bg = Integer.parseInt(prefs.getString("background", "4"));
-			Log.i(TAG, "bg: " + bg + ", " + prefs.getString("background", "4"));
-			int bgResource = android.R.drawable.screen_background_dark;
-			switch (bg) {
-			case 0:
-				bgResource = android.R.color.transparent;
-				break;
-			case 1:
-				bgResource = R.drawable.opacity0;
-				break;
-			case 2:
-				bgResource = R.drawable.opacity1;
-				break;
-			case 3:
-				bgResource = R.drawable.opacity2;
-				break;
-			}
-			widget.setInt(R.id.show_widget_list, "setBackgroundResource",
-					bgResource);
 			Intent launchIntent = new Intent(Constants.SHOW_EDIT_ITEM_NS);
 			launchIntent.putExtra(Constants.LIST_INTENT_ROOT, node.file);
 			launchIntent.putExtra(Constants.LIST_INTENT_FILE, node.file);
@@ -87,15 +90,11 @@ public class ShowWidgetController extends AppWidgetProvider {
 			PendingIntent intent = PendingIntent.getActivity(App.getInstance(),
 					0, launchIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 			widget.setOnClickPendingIntent(R.id.show_widget_subroot, intent);
-			widget.setOnClickPendingIntent(R.id.show_widget_reload,
-					WidgetUpdateReceiver.createUpdateIntent(App.getInstance(),
-							id));
-			widget.removeAllViews(R.id.show_widget_list);
 			renderLine(node, rootService, 0, widget);
-			appWidgetManager.updateAppWidget(id, widget);
 		} catch (Exception e) {
 			Log.e(TAG, "Error rendering:", e);
 		}
+		appWidgetManager.updateAppWidget(id, widget);
 	}
 
 	private void renderLine(Node node, Root rootService, int level,

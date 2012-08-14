@@ -24,11 +24,11 @@
 	    android:layout_height="wrap_content"
 	    android:orientation="horizontal"
 	    android:layout_alignParentRight="true"
-	    android:layout_alignParentBottom="true">
+	    android:layout_alignParentTop="true">
 	    <ImageButton 
 	        android:id="@+id/show_widget_reload"
-	        android:layout_width="30dp"
-	        android:layout_height="30dp"
+	        android:layout_width="25dp"
+	        android:layout_height="25dp"
 	        android:src="@drawable/widget_reload"
 	        android:background="@android:color/transparent"/>
 	</LinearLayout>

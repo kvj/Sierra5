@@ -21,14 +21,17 @@ import org.kvj.sierra5.ui.adapter.theme.ThemeProvider;
 
 import android.content.Context;
 import android.database.DataSetObserver;
+import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.RemoteViews;
 import android.widget.TextView;
@@ -40,6 +43,8 @@ public class ListViewAdapter implements ListAdapter {
 	}
 
 	private static final String TAG = "Adapter";
+
+	private static final int LEFT_GAP = 10;
 
 	private Node root = null;
 	private boolean showRoot = false;
@@ -162,29 +167,57 @@ public class ListViewAdapter implements ListAdapter {
 		return 0;
 	}
 
+	private static int getIcon(Node node) {
+		if (node.type == Node.TYPE_TEXT && node.children.size() == 0) {
+			// Hide icon
+			return -1;
+		} else {
+			switch (node.type) {
+			case Node.TYPE_FOLDER:
+				return node.collapsed ? R.drawable.folder_col
+						: R.drawable.folder_exp;
+			case Node.TYPE_FILE:
+				return node.collapsed ? R.drawable.file_col
+						: R.drawable.file_exp;
+			case Node.TYPE_TEXT:
+				return node.collapsed ? R.drawable.text_col
+						: R.drawable.text_exp;
+			}
+		}
+		return -1;
+	}
+
 	public void customize(View view, Node node, boolean selected) {
 		TextView textView = (TextView) view
 				.findViewById(R.id.listview_item_text);
-		// ImageView menuIcon = (ImageView) view
-		// .findViewById(R.id.listview_item_menu_icon);
+		ImageView menuIcon = (ImageView) view
+				.findViewById(R.id.listview_item_menu_icon);
 		// menuIcon.setVisibility(selected ? View.VISIBLE : View.GONE);
 		textView.setTextColor(theme.colorText);
 		// textView.setBackgroundColor(theme.colorBackground);
 		textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, textSize);
 		SpannableStringBuilder text = new SpannableStringBuilder();
+		// float dens =
+		// view.getContext().getResources().getDisplayMetrics().density;
 		int levels = showRoot ? node.level : node.level - 1;
+		StringBuffer left = new StringBuffer();
 		for (int i = 0; i < levels; i++) {
-			// Append level chars first
-			text.append(" ");
+			left.append(' ');
 		}
+		TextView leftView = (TextView) view
+				.findViewById(R.id.listview_item_left);
+		leftView.setText(left.toString());
 		textFormatter.writePlainText(node, text, theme.colorText, node.text,
 				selected);
-		if (selected) { // Change color
-			view.findViewById(R.id.listview_item_menu_icon).setBackgroundColor(
-					node.collapsed ? theme.c3Yellow : theme.c2Green);
+		if (selected) { // Add italic
+			text.setSpan(new StyleSpan(Typeface.ITALIC), 0, text.length(), 0);
+		}
+		int iconID = getIcon(node);
+		if (-1 == iconID) { //
+			menuIcon.setVisibility(View.INVISIBLE);
 		} else {
-			view.findViewById(R.id.listview_item_menu_icon).setBackgroundColor(
-					node.collapsed ? theme.c1Red : theme.c7White);
+			menuIcon.setVisibility(View.VISIBLE);
+			menuIcon.setImageResource(iconID);
 		}
 		textView.setText(text);
 	}
@@ -314,11 +347,21 @@ public class ListViewAdapter implements ListAdapter {
 		resetPlugins();
 	}
 
+	private void fixLevel(Node node, int level) {
+		node.level = level;
+		if (null != node.children) { // Have children
+			for (Node ch : node.children) { // ch = child
+				fixLevel(ch, level + 1);
+			}
+		}
+	}
+
 	public boolean setRoot(Node node, boolean showRoot) {
 		if (node == null) { // Invalid node
 			return false;
 		}
 		root = node;
+		fixLevel(root, 0);
 		this.showRoot = showRoot;
 		return true;
 	}
@@ -350,17 +393,27 @@ public class ListViewAdapter implements ListAdapter {
 		ListViewAdapter instance = new ListViewAdapter(null, theme);
 		instance.setController(controller);
 		SpannableStringBuilder text = new SpannableStringBuilder();
-		if (null != left) { // Have left
-			text.append(left);
-		} else {
-			for (int i = 0; i < node.level; i++) { // Append level chars first
-				text.append(" ");
-			}
-		}
 		instance.textFormatter.writePlainText(node, text, theme.colorText,
 				node.text, false);
-		result.setViewVisibility(R.id.listview_item_menu_icon, View.GONE);
+		// result.setViewVisibility(R.id.listview_item_menu_icon, View.GONE);
 		result.setTextViewText(R.id.listview_item_text, text);
+		int iconID = getIcon(node);
+		if (-1 == iconID) {
+			result.setViewVisibility(R.id.listview_item_menu_icon,
+					View.INVISIBLE);
+		} else {
+			result.setViewVisibility(R.id.listview_item_menu_icon, View.VISIBLE);
+			result.setImageViewResource(R.id.listview_item_menu_icon, iconID);
+		}
+		// float dens =
+		// App.getInstance().getResources().getDisplayMetrics().density;
+		// result.setInt(R.id.listview_item_left, "setMinimumWidth",
+		// (int) (LEFT_GAP * dens * node.level));
+		StringBuffer leftBuffer = new StringBuffer();
+		for (int i = 0; i < node.level; i++) {
+			leftBuffer.append(' ');
+		}
+		result.setTextViewText(R.id.listview_item_left, leftBuffer.toString());
 		return result;
 	}
 

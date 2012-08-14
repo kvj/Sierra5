@@ -555,8 +555,7 @@ public class Controller {
 			boolean template) {
 		File rootFile = new File(root.file);
 		if (!rootFile.exists()) { // Invalid file
-			Log.w(TAG,
-					"Root not exists: " + root.file + " " + rootFile.exists());
+			Log.w(TAG, "Root not exist: " + root.file + " " + rootFile.exists());
 			return null;
 		}
 		List<String> pathToRoot = findPath(root.file, file);

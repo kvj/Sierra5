@@ -280,7 +280,6 @@ public class ListViewFragment extends SherlockFragment implements
 		// Log.i(TAG, "rootSet: " + rootSet);
 		adapter.setSelectedIndex(-1);
 		if (rootSet) { // Root set - expand root
-			adapter.getRoot().level = 0;
 			actionBar.setTitle(adapter.getRoot().text);
 			expandTree(adapter.getRoot(),
 					data.getString(Constants.LIST_INTENT_FILE),
