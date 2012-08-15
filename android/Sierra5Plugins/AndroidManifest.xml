@@ -24,85 +24,86 @@
         android:targetSdkVersion="14" />
 
     <application
+        android:name=".App"
         android:icon="@drawable/logo"
-        android:label="@string/app_name"
-        android:name=".App" >
+        android:label="@string/app_name" >
         <service android:name=".service.UIService" />
         <service
-            android:exported="true"
-            android:name=".impl.link.LinkPluginService" >
-            <intent-filter >
+            android:name=".impl.link.LinkPluginService"
+            android:exported="true" >
+            <intent-filter>
                 <action android:name="org.kvj.sierra5.PLUGIN" />
 
                 <category android:name="org.kvj.sierra5.plugin.LINK" />
             </intent-filter>
         </service>
         <service
-            android:exported="true"
-            android:name=".impl.quebec4.Q4PluginService" >
-            <intent-filter >
+            android:name=".impl.quebec.Q4PluginService"
+            android:exported="true" >
+            <intent-filter>
                 <action android:name="org.kvj.sierra5.PLUGIN" />
 
-                <category android:name="org.kvj.sierra5.plugin.QUEBEC4" />
+                <category android:name="org.kvj.sierra5.plugin.QUEBEC" />
             </intent-filter>
         </service>
-            <service
-            android:exported="true"
-            android:name=".impl.check.CheckboxPluginService" >
-            <intent-filter >
+        <service
+            android:name=".impl.check.CheckboxPluginService"
+            android:exported="true" >
+            <intent-filter>
                 <action android:name="org.kvj.sierra5.PLUGIN" />
 
                 <category android:name="org.kvj.sierra5.plugin.CHECKBOX" />
             </intent-filter>
         </service>
+        <!-- 
         <service
-            android:exported="true"
-            android:name=".impl.widget.WidgetPluginService" >
-            <intent-filter >
+            android:name=".impl.widget.WidgetPluginService"
+            android:exported="true" >
+            <intent-filter>
                 <action android:name="org.kvj.sierra5.PLUGIN" />
 
                 <category android:name="org.kvj.sierra5.plugin.WIDGET" />
             </intent-filter>
         </service>
-
+		 -->
         <activity
+            android:name=".ui.NewBookmarkView"
             android:icon="@drawable/file"
-            android:label="Sierra5 link"
-            android:name=".ui.NewBookmarkView" >
-            <intent-filter >
+            android:label="Sierra5 link" >
+            <intent-filter>
                 <action android:name="android.intent.action.CREATE_SHORTCUT" />
             </intent-filter>
         </activity>
         <activity
-            android:label="Sierra5 plugins"
-            android:name=".ui.PluginsConfiguration" >
-            <intent-filter >
+            android:name=".ui.PluginsConfiguration"
+            android:label="Sierra5 plugins" >
+            <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
+            android:name=".ui.widget.WidgetConfigListPane"
             android:configChanges="keyboardHidden|orientation"
-            android:label="Widgets"
-            android:name=".ui.widget.WidgetConfigListPane" />
+            android:label="Widgets" />
         <activity
+            android:name=".ui.widget.NodeSelectPane"
             android:configChanges="keyboardHidden|orientation"
-            android:label="Select node"
-            android:name=".ui.widget.NodeSelectPane" />
+            android:label="Select node" />
         <activity
+            android:name=".ui.widget.show.ShowWidgetConfigPane"
             android:configChanges="keyboardHidden|orientation"
-            android:label="Show widget config"
-            android:name=".ui.widget.show.ShowWidgetConfigPane" >
-            <intent-filter >
+            android:label="Show widget config" >
+            <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
         </activity>
 
         <receiver
-            android:label="Sierra5 node"
-            android:name=".ui.widget.show.ShowWidgetController" >
-            <intent-filter >
+            android:name=".ui.widget.show.ShowWidgetController"
+            android:label="Sierra5 node" >
+            <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
 
@@ -111,15 +112,15 @@
                 android:resource="@xml/show_widget_info" />
         </receiver>
         <receiver android:name="org.kvj.bravo7.widget.WidgetUpdateReceiver" >
-            <intent-filter >
+            <intent-filter>
                 <action android:name="org.kvj.sierra5.plugins.UPDATE_WIDGET" />
             </intent-filter>
         </receiver>
 
         <service
-            android:exported="true"
-            android:name=".providers.auth.AuthService" >
-            <intent-filter >
+            android:name=".providers.auth.AuthService"
+            android:exported="true" >
+            <intent-filter>
                 <action android:name="android.accounts.AccountAuthenticator" />
             </intent-filter>
 
@@ -128,9 +129,9 @@
                 android:resource="@xml/authenticator" />
         </service>
         <service
-            android:exported="true"
-            android:name=".providers.contact.ContactSyncService" >
-            <intent-filter >
+            android:name=".providers.contact.ContactSyncService"
+            android:exported="true" >
+            <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
             </intent-filter>
 

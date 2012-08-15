@@ -1,4 +1,4 @@
-package org.kvj.sierra5.plugins.impl.quebec4;
+package org.kvj.sierra5.plugins.impl.quebec;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -49,10 +49,10 @@ public class Q4Plugin extends DefaultPlugin {
 
 	@Override
 	public MenuItemInfo[] getMenu(int id, Node node) throws RemoteException {
+		Log.i(TAG, "Get menu: " + id + ", " + node.type);
 		if (node.type == Node.TYPE_FOLDER) { // Not for folders
 			return null;
 		}
-		Log.i(TAG, "Get menu: " + id);
 		Quebec4Service service = remote.getRemote();
 		if (null != service) { // Connected to quebec4
 			if (-1 == id) { // RootMenu
@@ -147,5 +147,10 @@ public class Q4Plugin extends DefaultPlugin {
 			e.printStackTrace();
 		}
 		return false;
+	}
+
+	@Override
+	public String getName() throws RemoteException {
+		return "Quebec4";
 	}
 }

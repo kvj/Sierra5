@@ -88,7 +88,7 @@ public class ShowWidgetController extends AppWidgetProvider {
 			launchIntent.putExtra(Constants.LIST_INTENT_ITEM,
 					Node.list2array(node.textPath, new String[0]));
 			PendingIntent intent = PendingIntent.getActivity(App.getInstance(),
-					0, launchIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+					id, launchIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 			widget.setOnClickPendingIntent(R.id.show_widget_subroot, intent);
 			renderLine(node, rootService, 0, widget);
 		} catch (Exception e) {

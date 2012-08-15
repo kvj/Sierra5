@@ -368,7 +368,9 @@ public class Controller {
 						}
 					} else if ("e".equals(m.group(6))) { // Day of week
 						if (0 == mul) { // Set
-							c.set(Calendar.DAY_OF_WEEK, value);
+							int nowE = c.get(Calendar.DAY_OF_WEEK) - 1;
+							// 0 = SUNDAY
+							c.add(Calendar.DAY_OF_YEAR, value - nowE);
 						}
 					} else if ("m".equals(m.group(6))) { // Month
 						if (0 == mul) { // Set month (from zero)
@@ -752,7 +754,7 @@ public class Controller {
 				Log.i(TAG, "putFile: " + to + ", " + path + ", " + text);
 				InputStream reader = null;
 				File toFile = new File(to);
-				if (!toFile.exists()) { // Not exist yet
+				if (!toFile.getParentFile().exists()) { // Not exist yet
 					if (!toFile.getParentFile().mkdirs()) { // Mkdirs failed
 						Log.e(TAG, "mkdirs failed: " + to);
 						return false;

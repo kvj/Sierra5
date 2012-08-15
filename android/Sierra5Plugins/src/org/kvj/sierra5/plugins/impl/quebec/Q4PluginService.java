@@ -1,4 +1,4 @@
-package org.kvj.sierra5.plugins.impl.quebec4;
+package org.kvj.sierra5.plugins.impl.quebec;
 
 import org.kvj.bravo7.ipc.RemotelyBindableService;
 import org.kvj.sierra5.plugins.App;
