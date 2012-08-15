@@ -1,11 +1,15 @@
 package org.kvj.sierra5.data;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
@@ -714,6 +718,79 @@ public class Controller {
 			}
 			// Else - folder, expand all files
 			return Controller.this.expand(node, null, EXPAND_FILES);
+		}
+
+		@Override
+		public Node append(Node node, String raw) throws RemoteException {
+			int tabSize = App.getInstance().getIntPreference(R.string.tabSize,
+					R.string.tabSizeDefault);
+			Node[] nn = actualizeNode(node);
+			if (2 != nn.length) { // Actual node not found
+				Log.w(TAG, "Node not found: " + node.file + ", "
+						+ node.textPath);
+				return null;
+			}
+			Node n = nn[1]; // Last node
+			if (n.type == Node.TYPE_FOLDER) { // Not supported
+				Log.w(TAG, "Node not supported");
+				return null;
+			}
+			Node ch = n.createChild(Node.TYPE_TEXT, raw, tabSize);
+			ch.raw = raw;
+			if (saveFile(nn[0], null)) { // Saved OK
+				Log.i(TAG, "Saved OK: " + ch.file + ", " + ch.textPath);
+				return ch;
+			}
+			Log.w(TAG, "Node not saved");
+			return null;
+		}
+
+		@Override
+		public boolean putFile(String to, String path, String text)
+				throws RemoteException {
+			try { // IO errors
+				Log.i(TAG, "putFile: " + to + ", " + path + ", " + text);
+				InputStream reader = null;
+				File toFile = new File(to);
+				if (!toFile.exists()) { // Not exist yet
+					if (!toFile.getParentFile().mkdirs()) { // Mkdirs failed
+						Log.e(TAG, "mkdirs failed: " + to);
+						return false;
+					}
+				}
+				if (toFile.isDirectory()) { // No folders here
+					Log.e(TAG, "File is folder: " + to);
+					return false;
+				}
+				if (null != path) { // Copy files
+					File fromFile = new File(path);
+					if (!fromFile.exists() || !fromFile.isFile()) {
+						// Invalid file
+						Log.e(TAG, "Invalid file: " + path);
+						return false;
+					}
+					reader = new FileInputStream(fromFile);
+				} else { // Write string
+					reader = new ByteArrayInputStream(text.getBytes("utf-8"));
+				}
+				int BUFFER_SIZE = 4096;
+				BufferedOutputStream writer = new BufferedOutputStream(
+						new FileOutputStream(toFile, false), BUFFER_SIZE);
+				BufferedInputStream breader = new BufferedInputStream(reader,
+						BUFFER_SIZE);
+				byte[] buffer = new byte[BUFFER_SIZE];
+				int bytesRead = 0;
+				while ((bytesRead = breader.read(buffer)) > 0) { // Have data
+					writer.write(buffer, 0, bytesRead);
+				}
+				breader.close();
+				writer.close();
+				Log.i(TAG, "Copy done");
+				return true;
+			} catch (Exception e) {
+				Log.e(TAG, "Error copying file: ", e);
+			}
+			return false;
 		}
 	};
 

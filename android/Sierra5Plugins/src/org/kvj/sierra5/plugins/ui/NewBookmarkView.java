@@ -65,7 +65,7 @@ public class NewBookmarkView extends Activity {
 				templateEdit.setEnabled(templateEnabled);
 			}
 		});
-		setNodeType(-1);
+		setNodeType(Node.TYPE_FOLDER);
 	}
 
 	protected void saveBookmark() {

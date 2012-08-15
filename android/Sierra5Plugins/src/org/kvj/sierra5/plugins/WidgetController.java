@@ -14,6 +14,7 @@ import org.kvj.sierra5.common.plugin.Plugin;
 import org.kvj.sierra5.common.root.Root;
 import org.kvj.sierra5.plugins.impl.check.CheckboxPlugin;
 import org.kvj.sierra5.plugins.impl.link.LinkPlugin;
+import org.kvj.sierra5.plugins.impl.quebec4.Q4Plugin;
 import org.kvj.sierra5.plugins.impl.widget.WidgetPlugin;
 
 import android.content.Context;
@@ -197,6 +198,8 @@ public class WidgetController {
 
 	private Plugin.Stub checkboxPlugin = new CheckboxPlugin(this);
 
+	private Plugin.Stub q4Plugin = new Q4Plugin(this);
+
 	public Root getRootService() {
 		return root.getRemote();
 	}
@@ -211,5 +214,9 @@ public class WidgetController {
 
 	public Binder getCheckboxPlugin() {
 		return checkboxPlugin;
+	}
+
+	public Binder getQ4Plugin() {
+		return q4Plugin;
 	}
 }

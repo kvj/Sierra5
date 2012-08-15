@@ -37,6 +37,11 @@
 			<locationURI>HOBBY_FOLDER/Lima1/android/Common/src</locationURI>
 		</link>
 		<link>
+			<name>src-quebec4</name>
+			<type>2</type>
+			<locationURI>HOBBY_FOLDER/Quebec4/src-quebec4</locationURI>
+		</link>
+		<link>
 			<name>src-sierra5</name>
 			<type>2</type>
 			<locationURI>HOBBY_FOLDER/Sierra5/android/Sierra5/src-aidl</locationURI>

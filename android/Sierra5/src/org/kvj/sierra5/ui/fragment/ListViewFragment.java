@@ -172,19 +172,20 @@ public class ListViewFragment extends SherlockFragment implements
 
 			@Override
 			protected Void doInBackground(Void... params) {
-				if (Node.TYPE_FILE == node.type || Node.TYPE_TEXT == node.type) {
+				if (null == parent
+						&& (Node.TYPE_FILE == node.type || Node.TYPE_TEXT == node.type)) {
 					// File or text - edit
 					contextMenu.add(new MenuItemRecord<Node>(MENU_EDIT, "Edit",
 							node));
 				}
-				if (Node.TYPE_FILE == node.type
-						|| Node.TYPE_FOLDER == node.type) {
+				if (null == parent
+						&& (Node.TYPE_FILE == node.type || Node.TYPE_FOLDER == node.type)) {
 					// File or folder - open
 					contextMenu.add(new MenuItemRecord<Node>(MENU_OPEN, "Open",
 							node));
 				}
-				if (adapter.getSelectedIndex() == index) { // Menu on selected
-															// index
+				if (adapter.getSelectedIndex() == index) {
+					// Menu on selected index
 					try { // Get menus from plugins
 						int menuIndex = 2;
 						// Log.i(TAG, "Getting menu from plugins");
@@ -217,15 +218,17 @@ public class ListViewFragment extends SherlockFragment implements
 
 			@Override
 			protected void onPostExecute(Void result) {
-				if (1 == contextMenu.size()) {
+				toggleProgress(false);
+				if (1 == contextMenu.size() && null == parent) {
+					// Only one root menu - open/edit
 					onContextMenu(contextMenu.get(0));
+					return;
 				}
-				if (contextMenu.size() > 1) { // Show menu
+				if (contextMenu.size() > 0) { // Show menu
 					registerForContextMenu(listView);
 					getActivity().openContextMenu(listView);
 					unregisterForContextMenu(listView);
 				}
-				toggleProgress(false);
 			}
 
 		};

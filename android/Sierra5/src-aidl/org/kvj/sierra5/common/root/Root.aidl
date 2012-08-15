@@ -8,4 +8,6 @@ interface Root {
 	RemoteViews render(in Node node, String left, String theme); 
 	boolean update(in Node node, String text, String raw);
 	boolean expand(inout Node node);
+	boolean putFile(String to, String path, String text);
+	Node append(in Node node, String raw);
 }

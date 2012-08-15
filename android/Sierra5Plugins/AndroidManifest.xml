@@ -39,6 +39,15 @@
         </service>
         <service
             android:exported="true"
+            android:name=".impl.quebec4.Q4PluginService" >
+            <intent-filter >
+                <action android:name="org.kvj.sierra5.PLUGIN" />
+
+                <category android:name="org.kvj.sierra5.plugin.QUEBEC4" />
+            </intent-filter>
+        </service>
+            <service
+            android:exported="true"
             android:name=".impl.check.CheckboxPluginService" >
             <intent-filter >
                 <action android:name="org.kvj.sierra5.PLUGIN" />
