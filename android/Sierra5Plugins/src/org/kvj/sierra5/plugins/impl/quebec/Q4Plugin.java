@@ -252,7 +252,7 @@ public class Q4Plugin extends DefaultPlugin {
 				// Create when elements
 				Element coords = createElement(doc, "gx:coord", KML_GOOGLE_NS);
 				StringBuffer sb = new StringBuffer(String.format(
-						Locale.ENGLISH, "%f %f", point.lat, point.lon));
+						Locale.ENGLISH, "%f %f", point.lon, point.lat));
 				if (point.altitude != 0) { // Add altitude
 					sb.append(" " + point.altitude);
 				}
