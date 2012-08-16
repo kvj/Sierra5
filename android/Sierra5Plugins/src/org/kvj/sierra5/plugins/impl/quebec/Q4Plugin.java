@@ -1,12 +1,23 @@
 package org.kvj.sierra5.plugins.impl.quebec;
 
 import java.io.File;
+import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.kvj.bravo7.ipc.RemoteServiceConnector;
+import org.kvj.quebec4.data.PointBean;
 import org.kvj.quebec4.data.Q4Constants;
 import org.kvj.quebec4.data.Quebec4Service;
 import org.kvj.quebec4.data.TaskBean;
@@ -18,6 +29,8 @@ import org.kvj.sierra5.plugins.App;
 import org.kvj.sierra5.plugins.R;
 import org.kvj.sierra5.plugins.WidgetController;
 import org.kvj.sierra5.plugins.impl.DefaultPlugin;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -49,7 +62,7 @@ public class Q4Plugin extends DefaultPlugin {
 
 	@Override
 	public MenuItemInfo[] getMenu(int id, Node node) throws RemoteException {
-		Log.i(TAG, "Get menu: " + id + ", " + node.type);
+		// Log.i(TAG, "Get menu: " + id + ", " + node.type);
 		if (node.type == Node.TYPE_FOLDER) { // Not for folders
 			return null;
 		}
@@ -60,7 +73,7 @@ public class Q4Plugin extends DefaultPlugin {
 						MenuItemInfo.MENU_ITEM_SUBMENU, "Import from Quebec4") };
 			} else { // Request tasks from Q4
 				List<TaskBean> tasks = service.getTasks();
-				Log.i(TAG, "Tasks found: " + tasks.size());
+				// Log.i(TAG, "Tasks found: " + tasks.size());
 				MenuItemInfo[] menu = new MenuItemInfo[tasks.size()];
 				for (int i = 0; i < menu.length; i++) { // Create menu items
 					TaskBean task = tasks.get(i);
@@ -78,7 +91,7 @@ public class Q4Plugin extends DefaultPlugin {
 
 	@Override
 	public boolean executeAction(int id, Node node) throws RemoteException {
-		Log.i(TAG, "Exec action: " + id);
+		// Log.i(TAG, "Exec action: " + id);
 		try { // Remote errors
 			Quebec4Service service = remote.getRemote();
 			Root root = controller.getRootService();
@@ -125,6 +138,22 @@ public class Q4Plugin extends DefaultPlugin {
 				}
 				geoChild = "[[geo:" + sb + "]]";
 			}
+			if (null != task.points) { // Create KML
+				String kml = createKML(task);
+				if (null == kml) { // No KML
+					Log.w(TAG, "KML not created");
+					return false;
+				}
+				String link = "_files" + File.separator
+						+ System.currentTimeMillis() + ".kml";
+				File toFile = new File(folder, link);
+				if (!root.putFile(toFile.getAbsolutePath(), null, kml)) {
+					// Copy failed
+					Log.w(TAG, "Copy failed: " + link + ", " + toFile);
+					return false;
+				}
+				geoChild = "[[" + link + "]]";
+			}
 			String dateTimeFormat = App.getInstance().getStringPreference(
 					R.string.template_insertDateTime,
 					R.string.template_insertDateTimeDefault);
@@ -147,6 +176,106 @@ public class Q4Plugin extends DefaultPlugin {
 			e.printStackTrace();
 		}
 		return false;
+	}
+
+	private Element createElement(Document doc, String name, String ns) {
+		String _name = name;
+		String _prefix = "";
+		int idx = _name.indexOf(":");
+		if (idx != -1) {
+			_prefix = _name.substring(0, idx);
+			_name = _name.substring(idx + 1);
+		}
+		if (ns != null && !"".equals(ns)) {
+			Element e = doc.createElementNS(ns, _name);
+			if (!"".equals(_prefix)) { // Have prefix
+				e.setPrefix(_prefix);
+			}
+			return e;
+		}
+		return doc.createElement(_name);
+	}
+
+	private Element append(Element to, Element what) {
+		to.appendChild(what);
+		return to;
+	}
+
+	private Element addText(Element node, String text) {
+		node.appendChild(node.getOwnerDocument().createTextNode(text));
+		return node;
+	}
+
+	private static String KML_NS = "http://www.opengis.net/kml/2.2";
+	private static String KML_GOOGLE_NS = "http://www.google.com/kml/ext/2.2";
+
+	private String createKML(TaskBean task) {
+		try { // XML related errors
+			DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
+			dbfac.setNamespaceAware(true);
+			DocumentBuilder docBuilder;
+
+			docBuilder = dbfac.newDocumentBuilder();
+			Document doc = docBuilder.newDocument();
+			Element root = createElement(doc, "kml", KML_NS);
+			doc.appendChild(root);
+			Element document = createElement(doc, "Document", null);
+			root.appendChild(document);
+			append(document,
+					addText(createElement(doc, "name", null), task.title));
+			Element style = createElement(doc, "Style", null);
+			style.setAttribute("id", "line");
+			Element lineStyle = createElement(doc, "LineStyle", null);
+			append(lineStyle,
+					addText(createElement(doc, "color", null), "ffff0000"));
+			append(lineStyle, addText(createElement(doc, "width", null), "3"));
+			append(style, lineStyle);
+			append(document, style);
+			Element placemark = createElement(doc, "Placemark", null);
+			document.appendChild(placemark);
+			append(placemark,
+					addText(createElement(doc, "name", null), task.title));
+			append(placemark,
+					addText(createElement(doc, "styleUrl", null), "#line"));
+			Element track = createElement(doc, "gx:Track", KML_GOOGLE_NS);
+			placemark.appendChild(track);
+			SimpleDateFormat dateFormat = new SimpleDateFormat(
+					"yyyy-MM-dd'T'HH:mm:ss'Z'");
+			dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+			for (PointBean point : task.points) {
+				// Create when elements
+				Element when = createElement(doc, "when", null);
+				addText(when, dateFormat.format(new Date(point.created)));
+				track.appendChild(when);
+			}
+			for (PointBean point : task.points) {
+				// Create when elements
+				Element coords = createElement(doc, "gx:coord", KML_GOOGLE_NS);
+				StringBuffer sb = new StringBuffer(String.format(
+						Locale.ENGLISH, "%f %f", point.lat, point.lon));
+				if (point.altitude != 0) { // Add altitude
+					sb.append(" " + point.altitude);
+				}
+				addText(coords, sb.toString());
+				track.appendChild(coords);
+			}
+			TransformerFactory transfac = TransformerFactory.newInstance();
+			Transformer trans = transfac.newTransformer();
+			trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+			trans.setOutputProperty(OutputKeys.INDENT, "yes");
+
+			// create string from xml tree
+			StringWriter sw = new StringWriter();
+			StreamResult result = new StreamResult(sw);
+			DOMSource source = new DOMSource(root);
+			trans.transform(source, result);
+			String xmlString = sw.toString();
+			Log.i(TAG, "XML: " + xmlString);
+			return xmlString;
+		} catch (Exception e) {
+			Log.e(TAG, "Error in XML", e);
+		}
+		return null;
 	}
 
 	@Override

@@ -20,7 +20,7 @@
     <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
 
     <uses-sdk
-        android:minSdkVersion="7"
+        android:minSdkVersion="8"
         android:targetSdkVersion="14" />
 
     <application
@@ -45,6 +45,7 @@
 
                 <category android:name="org.kvj.sierra5.plugin.QUEBEC" />
             </intent-filter>
+            <meta-data android:name="api" android:value="8"/>
         </service>
         <service
             android:name=".impl.check.CheckboxPluginService"
@@ -55,17 +56,6 @@
                 <category android:name="org.kvj.sierra5.plugin.CHECKBOX" />
             </intent-filter>
         </service>
-        <!-- 
-        <service
-            android:name=".impl.widget.WidgetPluginService"
-            android:exported="true" >
-            <intent-filter>
-                <action android:name="org.kvj.sierra5.PLUGIN" />
-
-                <category android:name="org.kvj.sierra5.plugin.WIDGET" />
-            </intent-filter>
-        </service>
-		 -->
         <activity
             android:name=".ui.NewBookmarkView"
             android:icon="@drawable/file"

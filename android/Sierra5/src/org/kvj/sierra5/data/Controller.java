@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.kvj.bravo7.ipc.RemoteServicesCollector;
+import org.kvj.bravo7.ipc.RemoteServicesCollector.APIPluginFilter;
 import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
 import org.kvj.sierra5.common.Constants;
@@ -55,7 +56,7 @@ public class Controller {
 
 	public Controller() {
 		plugins = new RemoteServicesCollector<Plugin>(App.getInstance(),
-				Constants.PLUGIN_NS) {
+				Constants.PLUGIN_NS, new APIPluginFilter()) {
 
 			@Override
 			public Plugin castAIDL(IBinder binder) {
@@ -64,15 +65,15 @@ public class Controller {
 
 			@Override
 			public void onChange() {
-				List<Plugin> list = getPlugins();
-				Log.i(TAG, "Plugins: " + list.size());
-				try {
-					for (Plugin plugin : list) {
-						Log.i(TAG, "Plugin: " + plugin.getName());
-					}
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
+				// List<Plugin> list = getPlugins();
+				// Log.i(TAG, "Plugins: " + list.size());
+				// try {
+				// for (Plugin plugin : list) {
+				// Log.i(TAG, "Plugin: " + plugin.getName());
+				// }
+				// } catch (RemoteException e) {
+				// e.printStackTrace();
+				// }
 			}
 		};
 	}
