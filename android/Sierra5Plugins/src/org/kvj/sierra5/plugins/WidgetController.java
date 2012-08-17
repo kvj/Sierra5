@@ -1,7 +1,7 @@
 package org.kvj.sierra5.plugins;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -71,6 +71,10 @@ public class WidgetController {
 		for (int i = 0; i < what.length(); i++) { //
 			if (what.charAt(i) == '.') { // replace with \\.
 				to.append("\\.");
+			} else if (what.charAt(i) == '*') { // replace with .*
+				to.append(".*");
+			} else if (what.charAt(i) == '?') { // replace with .
+				to.append(".");
 			} else {
 				to.append(what.charAt(i));
 			}
@@ -135,13 +139,14 @@ public class WidgetController {
 		StringBuffer regexp = new StringBuffer();
 		List<ItemInfo> items = parseItem(regexp, parts[index]);
 		Pattern p = Pattern.compile(regexp.toString());
-		Log.i(TAG, "parseOneNode: " + regexp);
-		if (Node.TYPE_FILE == node.type) { // File - expand
-			getRootService().expand(node);
+		// Log.i(TAG, "parseOneNode: " + regexp + ", " + node.children);
+		if (Node.TYPE_FILE == node.type && node.collapsed) { // File - expand
+			getRootService().expand(node, true);
 		}
 		if (null != node.children) { // Have children
 			for (Node ch : node.children) { // ch = child
 				Matcher m = p.matcher(ch.text);
+				// Log.i(TAG, "Matching: " + ch.text + " vs " + regexp);
 				if (m.find()) { // Our case
 					for (int i = 0; i < items.size(); i++) {
 						// Add value
@@ -159,14 +164,14 @@ public class WidgetController {
 						}
 					}
 					boolean itemOK = listener.onItem(lastItem, values, ch);
-					Log.i(TAG, "Match: " + ch.text + ", " + itemOK + ", "
-							+ values);
+					// Log.i(TAG, "Match: " + ch.text + ", " + itemOK + ", "
+					// + values);
 					if (itemOK && !lastItem) { // Jump in
 						parseOneNode(index + 1 == parts.length - 1, parts,
 								index + 1, ch, listener, values);
 					}
 					// } else {
-					// Log.i(TAG, "Not match: " + ch.text);
+					// Log.i(TAG, "Not match: " + ch.text + ", " + regexp);
 				}
 			}
 		}
@@ -176,7 +181,7 @@ public class WidgetController {
 	public boolean parseNode(String exp, Node start, ParserListener listener) {
 		try { // Remote and other errors
 			String[] parts = exp.split("/");
-			Map<String, Object> values = new HashMap<String, Object>();
+			Map<String, Object> values = new LinkedHashMap<String, Object>();
 			if (TextUtils.isEmpty(exp)) { // No exp
 				parts = new String[0];
 			}

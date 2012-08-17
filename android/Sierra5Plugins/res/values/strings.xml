@@ -9,7 +9,21 @@
     <string name="template_insertTimeDefault">HH:mm</string>
     <string name="contacts_exp">contacts_exp</string>
     <string name="contacts_expDefault"></string>
-
+    <string name="calendar_exp">calendar_exp</string>
+    <string name="calendar_expDefault"></string>
+    
+    <string name="calendar_duration">calendar_duration</string>
+    <string name="calendar_durationDefault">1h</string>
+    
+    <string name="calendar_reminder">calendar_reminder</string>
+    <string name="calendar_reminderDefault">0</string>
+    
+    <string name="calendar_syncPast">calendar_syncPast</string>
+    <string name="calendar_syncPastDefault">3</string>
+    
+    <string name="calendar_syncFuture">calendar_syncFuture</string>
+    <string name="calendar_syncFutureDefault">14</string>
+    
     <string-array name="widgetBGid">
         <item>0</item>
         <item>1</item>

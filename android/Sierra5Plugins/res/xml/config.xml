@@ -2,7 +2,6 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <PreferenceCategory android:title="Widgets" >
-
         <Preference
             android:key="widgets"
             android:summary="Shows widgets config"
@@ -10,19 +9,56 @@
     </PreferenceCategory>
 
     <PreferenceScreen android:title="Contacts sync" >
-
         <PreferenceCategory android:title="Root node" >
-
             <Preference
                 android:key="contacts_node"
                 android:title="Select node" />
         </PreferenceCategory>
 
         <EditTextPreference
+            android:defaultValue="@string/contacts_expDefault"
             android:dialogTitle="Enter path to groups and contacts"
             android:key="@string/contacts_exp"
-            android:defaultValue="@string/contacts_expDefault"
-            android:title="Expression to groups and contacts" />
+            android:summary="Expression to groups and contacts"
+            android:title="Expression" />
     </PreferenceScreen>
+    <PreferenceScreen android:title="Calendar sync" >
+        <PreferenceCategory android:title="Root node" >
+            <Preference
+                android:key="calendar_node"
+                android:title="Select node" />
+        </PreferenceCategory>
+
+        <EditTextPreference
+            android:defaultValue="@string/calendar_expDefault"
+            android:dialogTitle="Enter path to calendar events"
+            android:key="@string/calendar_exp"
+            android:summary="Expression to caledar events"
+            android:title="Expression" />
+        <EditTextPreference
+            android:defaultValue="@string/calendar_reminderDefault"
+            android:dialogTitle="Reminder in minutes"
+            android:key="@string/calendar_reminder"
+            android:summary="Reminder in minutes"
+            android:title="Reminder" />
+        <EditTextPreference
+            android:defaultValue="@string/calendar_durationDefault"
+            android:dialogTitle="Duration 00h00m"
+            android:key="@string/calendar_duration"
+            android:summary="Default duration"
+            android:title="Duration" />
+        <EditTextPreference
+            android:defaultValue="@string/calendar_syncPastDefault"
+            android:key="@string/calendar_syncPast"
+            android:dialogTitle="Sync past days"
+            android:summary="Sync past days"
+            android:title="Number of days to sync in the past" />
+        <EditTextPreference
+            android:defaultValue="@string/calendar_syncFutureDefault"
+            android:key="@string/calendar_syncFuture"
+            android:dialogTitle="Sync future days"
+            android:summary="Sync future days"
+            android:title="Number of days to sync in the future" />
+        </PreferenceScreen>
 
 </PreferenceScreen>

@@ -1,23 +1,24 @@
-package org.kvj.sierra5.plugins.providers.contact;
+package org.kvj.sierra5.plugins.providers.calendar;
 
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.util.Log;
 
-public class ContactSyncService extends Service {
+public class CalendarSyncService extends Service {
 
 	private static final Object sSyncAdapterLock = new Object();
 
-	private static final String TAG = "ContactService";
+	private static final String TAG = "CalendarService";
 
-	private static ContactSyncAdapter sSyncAdapter = null;
+	private static CalendarSyncAdapter sSyncAdapter = null;
 
 	@Override
 	public void onCreate() {
-		// Log.i(TAG, "Created");
+		Log.i(TAG, "Created");
 		synchronized (sSyncAdapterLock) {
 			if (sSyncAdapter == null) {
-				sSyncAdapter = new ContactSyncAdapter(getApplicationContext(),
+				sSyncAdapter = new CalendarSyncAdapter(getApplicationContext(),
 						true);
 			}
 		}
@@ -25,7 +26,7 @@ public class ContactSyncService extends Service {
 
 	@Override
 	public IBinder onBind(Intent intent) {
-		// Log.i(TAG, "Bound");
+		Log.i(TAG, "Bound");
 		return sSyncAdapter.getSyncAdapterBinder();
 	}
 

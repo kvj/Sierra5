@@ -39,6 +39,16 @@ public class PluginsConfiguration extends PreferenceActivity {
 						return true;
 					}
 				});
+		findPreference("calendar_node").setOnPreferenceClickListener(
+				new OnPreferenceClickListener() {
+
+					@Override
+					public boolean onPreferenceClick(Preference preference) {
+						NodeSelectPane.showConfig(PluginsConfiguration.this,
+								null, null, "calendar_");
+						return true;
+					}
+				});
 	}
 
 }

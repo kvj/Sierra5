@@ -671,9 +671,9 @@ public class Controller {
 			if (null == node) { // Error searching
 				return null;
 			}
-			if (node.collapsed) { // Collapsed - expand
-				Controller.this.expand(node, null, EXPAND_FILES);
-			}
+			// if (node.collapsed) { // Collapsed - expand
+			Controller.this.expand(node, true, EXPAND_FILES);
+			// }
 			return node;
 		}
 
@@ -712,15 +712,16 @@ public class Controller {
 		}
 
 		@Override
-		public boolean expand(Node node) throws RemoteException {
+		public boolean expand(Node node, boolean expand) throws RemoteException {
+			node.collapsed = !expand;
 			if (node.type == Node.TYPE_TEXT) { // No action needed
 				return true;
 			}
 			if (node.type == Node.TYPE_FILE) { // Force expand to load contents
-				return Controller.this.expand(node, null, EXPAND_ONE);
+				return Controller.this.expand(node, expand, EXPAND_ONE);
 			}
 			// Else - folder, expand all files
-			return Controller.this.expand(node, null, EXPAND_FILES);
+			return Controller.this.expand(node, expand, EXPAND_FILES);
 		}
 
 		@Override

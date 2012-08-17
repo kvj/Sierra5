@@ -86,39 +86,52 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 		return groupId;
 	}
 
-	class ContactEntryInfo {
+	public static class ProviderEntryInfo {
 
 		ContentValues values = new ContentValues();
 
-		public ContactEntryInfo() {
+		public ProviderEntryInfo() {
 		}
 
-		ContactEntryInfo a(String type, String data) {
+		public ProviderEntryInfo(String mime, String type) {
+			a(mime, type);
+		}
+
+		public ProviderEntryInfo a(String type, String data) {
 			values.put(type, data);
 			return this;
 		}
 
-		ContactEntryInfo a(String type, Integer data) {
+		public ProviderEntryInfo a(String type, Integer data) {
 			values.put(type, data);
 			return this;
 		}
 
-		ContactEntryInfo a(String type, Boolean data) {
+		public ProviderEntryInfo a(String type, Long data) {
 			values.put(type, data);
 			return this;
+		}
+
+		public ProviderEntryInfo a(String type, Boolean data) {
+			values.put(type, data);
+			return this;
+		}
+
+		public ContentValues getValues() {
+			return values;
 		}
 	}
 
 	class ContactEntry {
 		String rawID = "";
 		List<String> groups = new ArrayList<String>();
-		List<ContactEntryInfo> entries = new ArrayList<ContactEntryInfo>();
+		List<ProviderEntryInfo> entries = new ArrayList<ProviderEntryInfo>();
 	}
 
 	private List<String> groups = new ArrayList<String>();
 	private List<ContactEntry> contacts = new ArrayList<ContactEntry>();
 
-	private boolean in(String where, String... what) {
+	public static boolean in(String where, String... what) {
 		for (String wh : what) {
 			if (where.contains(wh)) {
 				return true;
@@ -127,14 +140,21 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 		return false;
 	}
 
-	private String getChildText(Node node) {
+	public static String getChildText(Node node, String left) {
 		StringBuffer sb = new StringBuffer();
 		if (null != node.children) { // Have children
 			for (int i = 0; i < node.children.size(); i++) { // Every child
 				if (i > 0) { // Add \n
 					sb.append('\n');
 				}
+				sb.append(left);
 				sb.append(node.children.get(i).text);
+				String childText = getChildText(node.children.get(i), left
+						+ left);
+				if (!TextUtils.isEmpty(childText)) { // Have
+					sb.append('\n');
+					sb.append(childText);
+				}
 			}
 		}
 		return sb.toString();
@@ -142,7 +162,7 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 
 	private void parseTypeValue(ContactEntry ce, String type, String value) {
 		if (in(type, "tel", "phone", "cell")) { // This is phone
-			ContactEntryInfo cei = new ContactEntryInfo();
+			ProviderEntryInfo cei = new ProviderEntryInfo();
 			cei.a(Phone.NUMBER, value);
 			cei.a(Phone.MIMETYPE, Phone.CONTENT_ITEM_TYPE);
 			if (in(type, "cell")) { // Mobile
@@ -156,19 +176,19 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 			}
 			ce.entries.add(cei);
 		} else if ("name".equals(type)) { // Name as nickname
-			ContactEntryInfo cei = new ContactEntryInfo();
+			ProviderEntryInfo cei = new ProviderEntryInfo();
 			cei.a(Nickname.MIMETYPE, Nickname.CONTENT_ITEM_TYPE);
 			cei.a(Nickname.TYPE, Nickname.TYPE_OTHER_NAME);
 			cei.a(Nickname.NAME, value);
 			ce.entries.add(cei);
 		} else if ("nick".equals(type)) { // Nick as nickname
-			ContactEntryInfo cei = new ContactEntryInfo();
+			ProviderEntryInfo cei = new ProviderEntryInfo();
 			cei.a(Nickname.MIMETYPE, Nickname.CONTENT_ITEM_TYPE);
 			cei.a(Nickname.TYPE, Nickname.TYPE_DEFAULT);
 			cei.a(Nickname.NAME, value);
 			ce.entries.add(cei);
 		} else if ("tag".equals(type)) { // Tag as short name
-			ContactEntryInfo cei = new ContactEntryInfo();
+			ProviderEntryInfo cei = new ProviderEntryInfo();
 			cei.a(Nickname.MIMETYPE, Nickname.CONTENT_ITEM_TYPE);
 			cei.a(Nickname.TYPE, Nickname.TYPE_SHORT_NAME);
 			cei.a(Nickname.NAME, value);
@@ -176,7 +196,7 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 		} else if ("home".equals(type) || "work".equals(type)
 				|| "office".equals(type) || in(type, "address", "location")) {
 			// Address
-			ContactEntryInfo cei = new ContactEntryInfo();
+			ProviderEntryInfo cei = new ProviderEntryInfo();
 			cei.a(StructuredPostal.MIMETYPE, StructuredPostal.CONTENT_ITEM_TYPE);
 			if (in(type, "home")) { // Home address
 				cei.a(StructuredPostal.TYPE, StructuredPostal.TYPE_HOME);
@@ -189,13 +209,13 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 			cei.a(StructuredPostal.FORMATTED_ADDRESS, value);
 			ce.entries.add(cei);
 		} else if ("bday".equals(type)) { // Birthday in YYYY-MM-DD
-			ContactEntryInfo cei = new ContactEntryInfo();
+			ProviderEntryInfo cei = new ProviderEntryInfo();
 			cei.a(Event.MIMETYPE, Event.CONTENT_ITEM_TYPE);
 			cei.a(Event.TYPE, Event.TYPE_BIRTHDAY);
 			cei.a(Event.START_DATE, value);
 			ce.entries.add(cei);
 		} else if ("job".equals(type)) { // Job info
-			ContactEntryInfo cei = new ContactEntryInfo();
+			ProviderEntryInfo cei = new ProviderEntryInfo();
 			cei.a(Organization.MIMETYPE, Organization.CONTENT_ITEM_TYPE);
 			cei.a(Organization.TYPE, Organization.TYPE_WORK);
 			String[] parts = value.split("\n", 3);
@@ -209,7 +229,7 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 			}
 			ce.entries.add(cei);
 		} else if (in(type, "skype", "talk", "icq", "msn", "jabber")) { // IM
-			ContactEntryInfo cei = new ContactEntryInfo();
+			ProviderEntryInfo cei = new ProviderEntryInfo();
 			cei.a(Im.MIMETYPE, Im.CONTENT_ITEM_TYPE);
 			cei.a(Im.DATA, value);
 			cei.a(Im.TYPE, Im.TYPE_OTHER);
@@ -234,7 +254,7 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 			}
 			ce.entries.add(cei);
 		} else if (in(type, "mail")) { // This is email
-			ContactEntryInfo cei = new ContactEntryInfo();
+			ProviderEntryInfo cei = new ProviderEntryInfo();
 			cei.a(Email.ADDRESS, value);
 			cei.a(Email.MIMETYPE, Email.CONTENT_ITEM_TYPE);
 			if (in(type, "mobile")) { // Mobile
@@ -263,14 +283,14 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 			}
 		} else if (value.startsWith("http://") || value.startsWith("https://")) {
 			// This is link
-			ContactEntryInfo cei = new ContactEntryInfo();
+			ProviderEntryInfo cei = new ProviderEntryInfo();
 			cei.a(Website.URL, value);
 			cei.a(Website.MIMETYPE, Website.CONTENT_ITEM_TYPE);
 			cei.a(Website.TYPE, Website.TYPE_CUSTOM);
 			cei.a(Website.LABEL, type);
 			ce.entries.add(cei);
 		} else { // All unknown fields - as note
-			ContactEntryInfo cei = new ContactEntryInfo();
+			ProviderEntryInfo cei = new ProviderEntryInfo();
 			cei.a(Note.MIMETYPE, Note.CONTENT_ITEM_TYPE);
 			cei.a(Note.NOTE, value);
 			ce.entries.add(cei);
@@ -287,7 +307,7 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 				groups.add(group);
 			}
 		}
-		ce.entries.add(new ContactEntryInfo().a(StructuredName.DISPLAY_NAME,
+		ce.entries.add(new ProviderEntryInfo().a(StructuredName.DISPLAY_NAME,
 				node.text).a(StructuredName.MIMETYPE,
 				StructuredName.CONTENT_ITEM_TYPE));
 		contacts.add(ce);
@@ -301,7 +321,7 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 						.toLowerCase();
 				String value = ch.text.substring(colonPos + 1).trim();
 				if (TextUtils.isEmpty(value)) { // No value - use children
-					value = getChildText(ch);
+					value = getChildText(ch, "");
 				}
 				if (TextUtils.isEmpty(value) || TextUtils.isEmpty(type)) {
 					// Still empty - skip
@@ -336,7 +356,7 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 			Map<String, Integer> groupIDs = new HashMap<String, Integer>();
 			for (String name : groups) { // Insert group
 				int index = ops.size();
-				ContactEntryInfo group = new ContactEntryInfo();
+				ProviderEntryInfo group = new ProviderEntryInfo();
 				group.a(Groups.ACCOUNT_NAME, account.name)
 						.a(Groups.ACCOUNT_TYPE, account.type)
 						.a(Groups.GROUP_VISIBLE, true).a(Groups.TITLE, name);
@@ -347,14 +367,14 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 			}
 			for (ContactEntry ce : contacts) {
 				int index = ops.size();
-				ContactEntryInfo raw = new ContactEntryInfo();
+				ProviderEntryInfo raw = new ProviderEntryInfo();
 				raw.a(RawContacts.ACCOUNT_TYPE, account.type)
 						.a(RawContacts.ACCOUNT_NAME, account.name)
 						.a(RawContacts.SOURCE_ID, ce.rawID);
 				ops.add(ContentProviderOperation
 						.newInsert(RawContacts.CONTENT_URI)
 						.withYieldAllowed(true).withValues(raw.values).build());
-				for (ContactEntryInfo cei : ce.entries) { // Add values
+				for (ProviderEntryInfo cei : ce.entries) { // Add values
 					ops.add(ContentProviderOperation
 							.newInsert(Data.CONTENT_URI)
 							.withValueBackReference(Data.RAW_CONTACT_ID, index)

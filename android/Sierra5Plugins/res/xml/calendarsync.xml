@@ -16,15 +16,10 @@
  * limitations under the License.
  */
 -->
-
-<ContactsSource
-    xmlns:android="http://schemas.android.com/apk/res/android"
->
-
-    <ContactsDataKind
-        android:mimeType="vnd.android.cursor.item/vnd.sierra5contact.profile"
-        android:icon="@drawable/logo"
-        android:summaryColumn="name"
-        android:detailColumn="detail"/>
-
-</ContactsSource>
+<sync-adapter xmlns:android="http://schemas.android.com/apk/res/android"
+    android:contentAuthority="com.android.calendar"
+    android:accountType="org.kvj.sierra5"
+    android:supportsUploading="false"
+    android:isAlwaysSyncable="true"
+    android:userVisible="true"
+/>
