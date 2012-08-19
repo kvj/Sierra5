@@ -51,14 +51,20 @@
             android:defaultValue="@string/calendar_syncPastDefault"
             android:key="@string/calendar_syncPast"
             android:dialogTitle="Sync past days"
-            android:summary="Sync past days"
-            android:title="Number of days to sync in the past" />
+            android:title="Sync past days"
+            android:summary="Number of days to sync in the past" />
         <EditTextPreference
             android:defaultValue="@string/calendar_syncFutureDefault"
             android:key="@string/calendar_syncFuture"
             android:dialogTitle="Sync future days"
-            android:summary="Sync future days"
-            android:title="Number of days to sync in the future" />
+            android:title="Sync future days"
+            android:summary="Number of days to sync in the future" />
+        <EditTextPreference
+            android:defaultValue="@string/calendar_colorDefault"
+            android:dialogTitle="Color #aarrggbb"
+            android:key="@string/calendar_color"
+            android:summary="Calendar color"
+            android:title="Color" />
         </PreferenceScreen>
 
 </PreferenceScreen>

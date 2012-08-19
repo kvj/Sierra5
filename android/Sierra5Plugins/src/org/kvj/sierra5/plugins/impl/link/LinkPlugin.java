@@ -21,11 +21,14 @@ import org.kvj.sierra5.plugins.R;
 import org.kvj.sierra5.plugins.WidgetController;
 import org.kvj.sierra5.plugins.impl.DefaultPlugin;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.RemoteException;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
+import android.webkit.MimeTypeMap;
 import android.widget.RemoteViews;
 
 public class LinkPlugin extends DefaultPlugin {
@@ -57,7 +60,22 @@ public class LinkPlugin extends DefaultPlugin {
 	public int[] getCapabilities() throws RemoteException {
 		return new int[] { PluginInfo.PLUGIN_CAN_FORMAT,
 				PluginInfo.PLUGIN_CAN_PARSE, PluginInfo.PLUGIN_CAN_RENDER,
-				PluginInfo.PLUGIN_HAVE_EDIT_MENU };
+				PluginInfo.PLUGIN_HAVE_EDIT_MENU, PluginInfo.PLUGIN_HAVE_MENU };
+	}
+
+	private String getLinkCaption(String link) {
+		link = link.substring(2, link.length() - 2);
+		Log.i(TAG, "Format:" + link);
+		if (link.startsWith("geo:")) { // geo
+			return "GEO";
+		}
+		if (link.endsWith(".jpg")) { // image
+			return "Image";
+		}
+		if (link.endsWith(".kml")) { // KML file
+			return "KML";
+		}
+		return "Attachment";
 	}
 
 	@Override
@@ -83,13 +101,77 @@ public class LinkPlugin extends DefaultPlugin {
 		case 3: // Tag
 			return new FormatSpan[] { new FormatSpan(text,
 					new ForegroundColorSpan(theme.ccLBlue)) };
+		case 4: // Link
+			return new FormatSpan[] { new FormatSpan(getLinkCaption(text),
+					new ForegroundColorSpan(theme.cbLYellow)) };
 		}
 		return null;
 	}
 
 	@Override
+	public MenuItemInfo[] getMenu(int id, Node node) throws RemoteException {
+		Matcher m = linkPattern.matcher(node.text);
+		if (m.find()) { // Open link
+			return new MenuItemInfo[] { new MenuItemInfo(0,
+					MenuItemInfo.MENU_ITEM_ACTION, "Open attachment...") };
+		}
+		return null;
+	}
+
+	private Map<String, String> parseGeo(String geo) {
+		String[] parts = geo.split(",");
+		Map<String, String> result = new HashMap<String, String>();
+		if (parts.length > 1) { // Have lat lon
+			result.put("lat", parts[0]);
+			result.put("lon", parts[1]);
+		}
+		for (int i = 2; i < parts.length; i++) { // Other parts
+			String[] arr = parts[i].split("=");
+			if (arr.length == 2) { // both
+				result.put(arr[0], arr[1]);
+			}
+		}
+		return result;
+	}
+
+	@Override
+	public boolean executeAction(int id, Node node) throws RemoteException {
+		Matcher m = linkPattern.matcher(node.text);
+		if (m.find()) { // Open link
+			String link = m.group(1);
+			Intent i = new Intent(android.content.Intent.ACTION_VIEW);
+			i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			if (link.startsWith("geo:")) { // Geo
+				Map<String, String> geo = parseGeo(link.substring(4));
+				if (geo.containsKey("lat") && geo.containsKey("lon")) {
+					// Have coords
+					String uri = String.format("geo:%s,%s", geo.get("lat"),
+							geo.get("lon"));
+					i.setData(Uri.parse(uri));
+					App.getInstance().startActivity(i);
+					return true;
+				}
+			} else {
+				File file = findFile(node, link);
+				if (null == file) { // File not found
+					return false;
+				}
+				Uri uri = Uri.fromFile(file);
+				String extension = MimeTypeMap.getFileExtensionFromUrl(uri
+						.toString());
+				String mimetype = MimeTypeMap.getSingleton()
+						.getMimeTypeFromExtension(extension);
+				i.setDataAndType(uri, mimetype);
+				App.getInstance().startActivity(i);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Override
 	public int getFormatterCount() throws RemoteException {
-		return 4;
+		return 5;
 	}
 
 	@Override
@@ -107,6 +189,8 @@ public class LinkPlugin extends DefaultPlugin {
 			return "(\\ |^)[A-Z][A-Za-z0-9\\-]+,(\\ |$)";
 		case 3: // Tag
 			return "\\ -[a-z0-9\\_]+";
+		case 4: // Link
+			return linkPattern.pattern();
 		}
 		return null;
 	}
@@ -155,34 +239,39 @@ public class LinkPlugin extends DefaultPlugin {
 		}
 	}
 
+	private File findFile(Node node, String link) {
+		File file = null;
+		if (link.startsWith("/")) { // From root
+			try {
+				String root = controller.getRootService().getRoot();
+				File rootFile = new File(root);
+				if (!rootFile.exists()) { // Invalid root
+					return null;
+				}
+				file = new File(rootFile, link.substring(1));
+			} catch (Exception e) {
+				return null;
+			}
+		} else {
+			// Relative path
+			File rootFile = new File(node.file);
+			if (!rootFile.exists()) { // Invalid root
+				return null;
+			}
+			file = new File(rootFile.getParent(), link);
+		}
+		if (null != file && file.exists() && file.isFile()) { // File is OK
+			return file;
+		}
+		return null;
+	}
+
 	private File getLink(Node node) {
 		Matcher m = linkPattern.matcher(node.text);
 		if (m.find()) { // Have link
 			String link = m.group(1);
 			Log.i(TAG, "Found link: " + link);
-			File file = null;
-			if (link.startsWith("/")) { // From root
-				try {
-					String root = controller.getRootService().getRoot();
-					File rootFile = new File(root);
-					if (!rootFile.exists()) { // Invalid root
-						return null;
-					}
-					file = new File(rootFile, link.substring(1));
-				} catch (Exception e) {
-					return null;
-				}
-			} else {
-				// Relative path
-				File rootFile = new File(node.file);
-				if (!rootFile.exists()) { // Invalid root
-					return null;
-				}
-				file = new File(rootFile.getParent(), link);
-			}
-			if (null != file && file.exists() && file.isFile()) { // File is OK
-				return file;
-			}
+			return findFile(node, link);
 		}
 		return null;
 	}

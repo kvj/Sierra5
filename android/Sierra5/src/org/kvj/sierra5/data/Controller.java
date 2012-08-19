@@ -371,6 +371,10 @@ public class Controller {
 						if (0 == mul) { // Set
 							int nowE = c.get(Calendar.DAY_OF_WEEK) - 1;
 							// 0 = SUNDAY
+							if (nowE == 0) { // It's Sunday now
+								// TODO: Make it configurable
+								nowE = 7;
+							}
 							c.add(Calendar.DAY_OF_YEAR, value - nowE);
 						}
 					} else if ("m".equals(m.group(6))) { // Month
@@ -390,6 +394,9 @@ public class Controller {
 				SimpleDateFormat dt = new SimpleDateFormat(m.group(2),
 						Locale.ENGLISH);
 				repl = dt.format(c.getTime());
+				// Log.i(TAG, "Date repl:" + m.group() + ", " + c.getTime() +
+				// ", "
+				// + repl);
 			}
 			m.appendReplacement(pattern, repl);
 		}

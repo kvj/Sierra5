@@ -3,34 +3,38 @@
     android:id="@+id/show_widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/panel_border"
-    android:layout_margin="@dimen/widget_margin">
+    android:layout_margin="@dimen/widget_margin"
+    android:background="@drawable/panel_border" >
+
     <RelativeLayout
-        android:id="@+id/show_widget_subroot" 
+        android:id="@+id/show_widget_subroot"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-	<LinearLayout
-	    android:padding="5dp"
-	    android:id="@+id/show_widget_list"
-	    android:layout_alignLeft="@id/show_widget_subroot"
-	    android:layout_width="match_parent"
-	    android:layout_height="match_parent"
-	    android:gravity="top|left"
-	    android:orientation="vertical"
-	    android:background="@drawable/opacity1"/>
-	<LinearLayout
-	    android:id="@+id/show_widget_icons"
-	    android:layout_width="wrap_content"
-	    android:layout_height="wrap_content"
-	    android:orientation="horizontal"
-	    android:layout_alignParentRight="true"
-	    android:layout_alignParentTop="true">
-	    <ImageButton 
-	        android:id="@+id/show_widget_reload"
-	        android:layout_width="30dp"
-	        android:layout_height="30dp"
-	        android:src="@drawable/widget_reload"
-	        android:background="@android:color/transparent"/>
-	</LinearLayout>
-	</RelativeLayout>
+        android:layout_height="match_parent" >
+
+        <LinearLayout
+            android:id="@+id/show_widget_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignLeft="@id/show_widget_subroot"
+            android:background="@drawable/opacity1"
+            android:orientation="vertical"
+            android:padding="2dp" />
+
+        <LinearLayout
+            android:id="@+id/show_widget_icons"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:orientation="horizontal" >
+
+            <ImageButton
+                android:id="@+id/show_widget_reload"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="@android:color/transparent"
+                android:src="@drawable/widget_reload" />
+        </LinearLayout>
+    </RelativeLayout>
+
 </FrameLayout>

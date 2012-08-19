@@ -26,6 +26,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.SyncResult;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.CalendarContract;
@@ -52,10 +53,24 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 
 	List<CalendarEntry> entries = new ArrayList<CalendarEntry>();
 
+	private int getCalendarCompareValue(Calendar c, String key) {
+		if ("y".equals(key)) { // year
+			return c.get(Calendar.YEAR);
+		} else if ("m".equals(key)) { // month
+			return c.get(Calendar.YEAR) * 12 + c.get(Calendar.MONTH);
+		} else if ("d".equals(key)) { // Day
+			return c.get(Calendar.YEAR) * 12 + c.get(Calendar.MONTH) * 31
+					+ c.get(Calendar.DAY_OF_MONTH);
+		} else if ("w".equals(key)) { // Week
+			return c.get(Calendar.YEAR) * 60 + c.get(Calendar.WEEK_OF_YEAR);
+		}
+		return 0;
+	}
+
 	private Calendar createCalendar(Calendar from, Calendar to,
 			Map<String, Object> values) {
 		Calendar c = Calendar.getInstance();
-		c.set(Calendar.DAY_OF_MONTH, 1);
+		c.set(from.get(Calendar.YEAR), 0, 1);
 		for (String key : values.keySet()) { // Check
 			int calEntry = -1;
 			int calValue = -1;
@@ -73,15 +88,15 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 				calValue = (Integer) values.get(key);
 			}
 			if (-1 != calEntry) { // Found
-				if (from.get(calEntry) > calValue
-						|| to.get(calEntry) < calValue) { // Not in range
-					Log.i(TAG,
-							"Not in range: " + calValue + ", "
-									+ from.get(calEntry) + " - "
-									+ to.get(calEntry));
+				c.set(calEntry, calValue);
+				int fromValue = getCalendarCompareValue(from, key);
+				int toValue = getCalendarCompareValue(to, key);
+				int cValue = getCalendarCompareValue(c, key);
+				if (fromValue > cValue || toValue < cValue) { // Not in range
+					// Log.i(TAG, "Not in range: " + cValue + ", " + fromValue
+					// + " - " + toValue);
 					return null; // Not in range - skip
 				}
-				c.set(calEntry, calValue);
 			}
 		}
 		return c;
@@ -247,16 +262,25 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 			String path = App.getInstance().getStringPreference(
 					"calendar_path", "");
 			String exp = App.getInstance().getStringPreference(
-					R.string.contacts_exp, R.string.contacts_expDefault);
-			if (TextUtils.isEmpty(exp)) { // FIXME: For debug
-				exp = "${0:y}/${0:m}_*/${0:d} */${*:e}";
-			}
+					R.string.calendar_exp, R.string.calendar_expDefault);
+			// if (TextUtils.isEmpty(exp)) { // FIXME: For debug
+			// exp = "${0:y}/${0:m}_*/${0:d} */${*:e}";
+			// }
 			final String duration = App.getInstance().getStringPreference(
 					R.string.calendar_duration,
 					R.string.calendar_durationDefault);
 			final int reminderMinutes = App.getInstance().getIntPreference(
 					R.string.calendar_reminder,
 					R.string.calendar_reminderDefault);
+			int color = Color.BLACK;
+			String colorString = App.getInstance().getStringPreference(
+					R.string.calendar_color, R.string.calendar_colorDefault);
+			if (!TextUtils.isEmpty(colorString)) { // Parse color
+				try { // Parse error
+					color = Color.parseColor(colorString);
+				} catch (Exception e) {
+				}
+			}
 			String[] pathArray = null;
 			if (!TextUtils.isEmpty(path)) { // Have path
 				pathArray = path.split("/");
@@ -288,8 +312,9 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 					}
 					Calendar c = createCalendar(from, to, values);
 					if (null == c) { // Not in range
-						Log.w(TAG, "Skipping " + values + ", " + from.getTime()
-								+ " - " + to.getTime());
+						// Log.w(TAG, "Skipping " + values + ", " +
+						// from.getTime()
+						// + " - " + to.getTime());
 						return false;
 					}
 					if (finalItem) { // This is entry
@@ -304,7 +329,7 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 				}
 			});
 			Log.i(TAG, "Ready to add entries: " + entries.size());
-			saveData(account, authority, client);
+			saveData(account, authority, client, color);
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
@@ -325,7 +350,7 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 	}
 
 	private void saveData(Account account, String authority,
-			ContentProviderClient client) {
+			ContentProviderClient client, int color) {
 		try { // Save errors
 			ArrayList<ContentProviderOperation> ops = new ArrayList<ContentProviderOperation>();
 			// Check if calendar exists or not
@@ -352,6 +377,7 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 				contentValues.put(Calendars.ACCOUNT_TYPE, account.type);
 				contentValues.put(Calendars.NAME, "Sierra5");
 				contentValues.put(Calendars.CALENDAR_DISPLAY_NAME, "Sierra5");
+				contentValues.put(Calendars.CALENDAR_COLOR, color);
 				contentValues
 						.put(Calendars.ALLOWED_REMINDERS,
 								Reminders.METHOD_DEFAULT + ","
@@ -365,6 +391,11 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 				ops.add(ContentProviderOperation
 						.newDelete(Events.CONTENT_URI)
 						.withSelection(Events.CALENDAR_ID + "=?",
+								new String[] { Long.toString(calID) }).build());
+				ops.add(ContentProviderOperation
+						.newUpdate(addIsSync(Calendars.CONTENT_URI, account))
+						.withValue(Calendars.CALENDAR_COLOR, color)
+						.withSelection(Calendars._ID + "=?",
 								new String[] { Long.toString(calID) }).build());
 			}
 			for (CalendarEntry ce : entries) { // Insert entries

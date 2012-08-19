@@ -11,6 +11,8 @@
     <string name="contacts_expDefault"></string>
     <string name="calendar_exp">calendar_exp</string>
     <string name="calendar_expDefault"></string>
+    <string name="calendar_color">calendar_color</string>
+    <string name="calendar_colorDefault"></string>
     
     <string name="calendar_duration">calendar_duration</string>
     <string name="calendar_durationDefault">1h</string>

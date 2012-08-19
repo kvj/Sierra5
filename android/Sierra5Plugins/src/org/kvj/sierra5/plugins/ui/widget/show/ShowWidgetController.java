@@ -91,6 +91,9 @@ public class ShowWidgetController extends AppWidgetProvider {
 					id, launchIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 			widget.setOnClickPendingIntent(R.id.show_widget_subroot, intent);
 			renderLine(node, rootService, 0, widget);
+
+			widget.addView(R.id.show_widget_list, new RemoteViews(App
+					.getInstance().getPackageName(), R.layout.show_widget_last));
 		} catch (Exception e) {
 			Log.e(TAG, "Error rendering:", e);
 		}

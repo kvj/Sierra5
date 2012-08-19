@@ -64,9 +64,6 @@ public class WidgetController {
 				Node node);
 	}
 
-	private static Pattern subs = Pattern
-			.compile("\\$\\{(([^\\}]+?)(:([A-Za-z0-9]+))?)\\}");
-
 	private void escape(String what, StringBuffer to) {
 		for (int i = 0; i < what.length(); i++) { //
 			if (what.charAt(i) == '.') { // replace with \\.
@@ -99,6 +96,9 @@ public class WidgetController {
 		}
 	}
 
+	private static Pattern subs = Pattern
+			.compile("[\\$|\\?]\\{(([^\\}]+?)(:([A-Za-z0-9]+))?)\\}");
+
 	private List<ItemInfo> parseItem(StringBuffer result, String text) {
 		List<ItemInfo> items = new ArrayList<ItemInfo>();
 		result.append('^');
@@ -107,23 +107,38 @@ public class WidgetController {
 			StringBuffer left = new StringBuffer();
 			m.appendReplacement(left, "");
 			escape(left.toString(), result);
+			String endChar = m.group().startsWith("?") ? "?" : "";
 			String itemName = null == m.group(3) ? "i" + items.size() : m
 					.group(4);
-			if ("...".equals(m.group(1))) { // ... - any chars .* and skip
-				result.append(".*");
-			} else if ("*".equals(m.group(2))) { // *
-				result.append("(.*)");
-				items.add(new ItemInfo(itemName));
-			} else if ("0".equals(m.group(2))) { // 0 any numbers \\d*
-				result.append("(\\d*)");
-				items.add(new ItemInfo(ITEM_NUMBER, itemName));
-			} else if (m.group(2).matches("^\\?+$")) { // ???
-				result.append("(");
+			if (m.group(2).matches("^\\?+$")) { // ???
+				result.append("((");
 				for (int i = 0; i < m.group(2).length(); i++) { // add .
 					result.append(".");
 				}
-				result.append(")");
+				result.append("))" + endChar);
 				items.add(new ItemInfo(itemName));
+			} else {
+				// Use as is
+				String pt = m.group(2);
+				StringBuffer sb = new StringBuffer();
+				boolean itemAdded = false;
+				for (int i = 0; i < pt.length(); i++) {
+					char ch = pt.charAt(i);
+					if (ch == '*' && !itemAdded) { // Any char
+						sb.append("(.+)");
+						items.add(new ItemInfo(itemName));
+						itemAdded = true;
+					} else if (ch == '0' && !itemAdded) { // Any number
+						sb.append("(\\d+)");
+						items.add(new ItemInfo(ITEM_NUMBER, itemName));
+						itemAdded = true;
+					} else {
+						// add as is
+						sb.append(ch);
+					}
+				}
+				// Log.i(TAG, "As is:" + m.group(2) + ", " + endChar);
+				result.append("(" + sb + ")" + endChar);
 			}
 		}
 		StringBuffer tail = new StringBuffer();
@@ -133,13 +148,14 @@ public class WidgetController {
 		return items;
 	}
 
-	private boolean parseOneNode(boolean lastItem, String[] parts, int index,
-			Node node, ParserListener listener, Map<String, Object> values)
-			throws RemoteException {
+	private boolean parseOneNode(boolean lastItem, List<String> parts,
+			int index, Node node, ParserListener listener,
+			Map<String, Object> values) throws RemoteException {
 		StringBuffer regexp = new StringBuffer();
-		List<ItemInfo> items = parseItem(regexp, parts[index]);
+		Map<String, Object> _values = new LinkedHashMap<String, Object>(values);
+		List<ItemInfo> items = parseItem(regexp, parts.get(index));
+		// Log.i(TAG, "parseOneNode: " + regexp + ", " + parts.get(index));
 		Pattern p = Pattern.compile(regexp.toString());
-		// Log.i(TAG, "parseOneNode: " + regexp + ", " + node.children);
 		if (Node.TYPE_FILE == node.type && node.collapsed) { // File - expand
 			getRootService().expand(node, true);
 		}
@@ -148,27 +164,28 @@ public class WidgetController {
 				Matcher m = p.matcher(ch.text);
 				// Log.i(TAG, "Matching: " + ch.text + " vs " + regexp);
 				if (m.find()) { // Our case
-					for (int i = 0; i < items.size(); i++) {
+					int groupIndex = 2;
+					for (int i = 0; i < items.size(); i++, groupIndex += 2) {
 						// Add value
 						ItemInfo itemInfo = items.get(i);
 						if (itemInfo.type == ITEM_STRING) {
 							// String - no conversion
-							values.put(itemInfo.name, m.group(i + 1));
+							_values.put(itemInfo.name, m.group(groupIndex));
 						} else if (itemInfo.type == ITEM_NUMBER) {
 							// Parse number
 							try { // Conversion error
-								values.put(itemInfo.name,
-										Integer.parseInt(m.group(i + 1), 10));
+								_values.put(itemInfo.name, Integer.parseInt(
+										m.group(groupIndex), 10));
 							} catch (Exception e) {
 							}
 						}
 					}
-					boolean itemOK = listener.onItem(lastItem, values, ch);
+					boolean itemOK = listener.onItem(lastItem, _values, ch);
 					// Log.i(TAG, "Match: " + ch.text + ", " + itemOK + ", "
 					// + values);
 					if (itemOK && !lastItem) { // Jump in
-						parseOneNode(index + 1 == parts.length - 1, parts,
-								index + 1, ch, listener, values);
+						parseOneNode(index + 1 == parts.size() - 1, parts,
+								index + 1, ch, listener, _values);
 					}
 					// } else {
 					// Log.i(TAG, "Not match: " + ch.text + ", " + regexp);
@@ -185,11 +202,32 @@ public class WidgetController {
 			if (TextUtils.isEmpty(exp)) { // No exp
 				parts = new String[0];
 			}
-			Log.i(TAG, "parseNode: " + exp + ", " + parts.length + ", "
-					+ start.text);
-			if (parts.length > 0) { // Have smth
-				parseOneNode(parts.length == 1, parts, 0, start, listener,
-						values);
+			// Log.i(TAG, "parseNode: " + exp + ", " + parts.length + ", "
+			// + start.text);
+			List<String> partsList = new ArrayList<String>();
+			StringBuffer item = new StringBuffer();
+			for (int i = 0; i < parts.length; i++) {
+				String part = parts[i];
+				if (TextUtils.isEmpty(part)) { // This is mask
+					item.append("/");
+					if (i < parts.length - 1) { // Have one more item
+						i++;
+						item.append(parts[i]);
+					}
+				} else {
+					if (item.length() > 0) { // Have item
+						partsList.add(item.toString());
+						item.setLength(0);
+					}
+					item.append(part);
+				}
+			}
+			if (item.length() > 0) { // Have item
+				partsList.add(item.toString());
+			}
+			if (partsList.size() > 0) { // Have smth
+				parseOneNode(partsList.size() == 1, partsList, 0, start,
+						listener, values);
 			}
 		} catch (Exception e) {
 			Log.e(TAG, "Error in parse", e);
