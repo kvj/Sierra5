@@ -10,10 +10,10 @@
 
         <ListPreference
             android:defaultValue="4"
+            android:key="background"
             android:entries="@array/widgetBG"
             android:entryValues="@array/widgetBGid"
-            android:key="background"
-            android:title="Widget background" />
+            android:title="Widget theme" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="Node to display" >

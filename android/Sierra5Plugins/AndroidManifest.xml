@@ -92,7 +92,15 @@
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
         </activity>
-
+        <activity
+            android:name=".ui.widget.words.WordsWidgetConfigPane"
+            android:configChanges="keyboardHidden|orientation"
+            android:label="Widget config" >
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        
         <receiver
             android:name=".ui.widget.show.ShowWidgetController"
             android:label="Sierra5 node" >
@@ -103,6 +111,17 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/show_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".ui.widget.words.WordsWidgetController"
+            android:label="Sierra5 words" >
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/words_widget_info" />
         </receiver>
         <receiver android:name="org.kvj.bravo7.widget.WidgetUpdateReceiver" >
             <intent-filter>

@@ -26,6 +26,25 @@
     <string name="calendar_syncFuture">calendar_syncFuture</string>
     <string name="calendar_syncFutureDefault">14</string>
     
+    <string name="words_lines">words_lines</string>
+    <string name="words_linesDefault">2</string>
+    <string name="words_exp">words_exp</string>
+    <string name="words_expDefault"></string>
+    <string name="words_sizes">words_sizes</string>
+    <string name="words_sizesDefault"></string>
+    <string name="words_theme">words_theme</string>
+    <string name="words_themeDefault">dark</string>
+    <string-array name="words_themeCaptions">
+        <item>Dark</item>
+        <item>Lite</item>
+    </string-array>
+    <string-array name="words_themeVals">
+        <item>dark</item>
+        <item>lite</item>
+    </string-array>
+    <string name="words_lines_visible">words_lines_visible</string>
+    <string name="words_lines_visibleDefault">127</string>
+    
     <string-array name="widgetBGid">
         <item>0</item>
         <item>1</item>

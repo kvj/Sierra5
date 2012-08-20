@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/words_widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="@dimen/widget_margin"
+    android:background="@drawable/words_bg_dark" >
+
+    <RelativeLayout
+        android:id="@+id/words_widget_subroot"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+        <LinearLayout
+            android:id="@+id/words_widget_lines"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_centerInParent="true"
+            android:gravity="top"
+            android:orientation="vertical"
+            android:padding="2dp" >
+
+            <!--
+            <TextView 
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="1dp"
+                android:textSize="30dp"
+                android:gravity="center"
+                android:text="Hi Korea!"/>
+            -->
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/words_widget_reload"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:background="@android:color/transparent"
+            android:src="@drawable/words_reload" />
+
+        <LinearLayout
+            android:id="@+id/words_widget_icons"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:orientation="horizontal" >
+
+            <!--
+            <ImageButton
+	            android:layout_width="30dp"
+	            android:layout_height="30dp"
+	            android:background="@android:color/transparent"
+	            android:src="@drawable/line_show" />
+            -->
+
+        </LinearLayout>
+    </RelativeLayout>
+
+</FrameLayout>

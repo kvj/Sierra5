@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <PreferenceCategory android:title="General" >
+        <EditTextPreference
+            android:dialogTitle="Enter widget name"
+            android:key="name"
+            android:title="Widget name" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="Data" >
+        <Preference
+            android:key="node"
+            android:title="Select node" />
+
+        <EditTextPreference
+            android:defaultValue="@string/words_expDefault"
+            android:dialogTitle="Enter path to words"
+            android:key="@string/words_exp"
+            android:summary="Expression to words"
+            android:title="Expression" />
+        <EditTextPreference
+            android:defaultValue="@string/words_linesDefault"
+            android:dialogTitle="Number of lines"
+            android:key="@string/words_lines"
+            android:summary="Number of lines to show"
+            android:title="Number of lines" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="Look&apos;n&apos;Fill" >
+        <ListPreference
+            android:defaultValue="@string/words_themeDefault"
+            android:entries="@array/words_themeCaptions"
+            android:entryValues="@array/words_themeVals"
+            android:key="@string/words_theme"
+            android:title="Widget background" />
+
+        <EditTextPreference
+            android:defaultValue="@string/words_sizesDefault"
+            android:dialogTitle="Text sizes"
+            android:key="@string/words_sizes"
+            android:summary="Text sizes, comma separated"
+            android:title="Text sizes" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

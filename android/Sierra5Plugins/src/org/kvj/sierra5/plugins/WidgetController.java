@@ -16,8 +16,13 @@ import org.kvj.sierra5.plugins.impl.check.CheckboxPlugin;
 import org.kvj.sierra5.plugins.impl.link.LinkPlugin;
 import org.kvj.sierra5.plugins.impl.quebec.Q4Plugin;
 import org.kvj.sierra5.plugins.impl.widget.WidgetPlugin;
+import org.kvj.sierra5.plugins.ui.widget.words.WordsWidgetController;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -56,6 +61,21 @@ public class WidgetController {
 				Log.i(TAG, "Root interface disconnected");
 			}
 		};
+		ctx.registerReceiver(new BroadcastReceiver() {
+
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				int id = intent.getIntExtra(
+						WordsWidgetController.BCAST_WIDGET_ID, -1);
+				if (id == -1) { // No widget ID
+					Log.w(TAG, "Invalid widgetID");
+					return;
+				}
+				WordsWidgetController controller = new WordsWidgetController();
+				controller.update(id, intent.getExtras());
+			}
+		}, new IntentFilter(WordsWidgetController.BCAST_ACTION));
+
 	}
 
 	public static interface ParserListener {
@@ -97,7 +117,7 @@ public class WidgetController {
 	}
 
 	private static Pattern subs = Pattern
-			.compile("[\\$|\\?]\\{(([^\\}]+?)(:([A-Za-z0-9]+))?)\\}");
+			.compile("[\\$|\\?|\\#]\\{(([^\\}]+?)(:([A-Za-z0-9]+))?)\\}");
 
 	private List<ItemInfo> parseItem(StringBuffer result, String text) {
 		List<ItemInfo> items = new ArrayList<ItemInfo>();
@@ -107,6 +127,10 @@ public class WidgetController {
 			StringBuffer left = new StringBuffer();
 			m.appendReplacement(left, "");
 			escape(left.toString(), result);
+			if (m.group().startsWith("#")) { // Direct injection
+				result.append(m.group(2));
+				continue;
+			}
 			String endChar = m.group().startsWith("?") ? "?" : "";
 			String itemName = null == m.group(3) ? "i" + items.size() : m
 					.group(4);
@@ -131,6 +155,10 @@ public class WidgetController {
 					} else if (ch == '0' && !itemAdded) { // Any number
 						sb.append("(\\d+)");
 						items.add(new ItemInfo(ITEM_NUMBER, itemName));
+						itemAdded = true;
+					} else if (ch == '#' && !itemAdded) { // Any non space
+						sb.append("(\\S+)");
+						items.add(new ItemInfo(itemName));
 						itemAdded = true;
 					} else {
 						// add as is
@@ -261,5 +289,27 @@ public class WidgetController {
 
 	public Binder getQ4Plugin() {
 		return q4Plugin;
+	}
+
+	public Node findNodeFromPreferences(SharedPreferences preferences,
+			String fileName, String pathName) {
+		String file = preferences.getString(fileName, "");
+		String path = preferences.getString(pathName, "");
+		String[] pathArray = null;
+		if (!TextUtils.isEmpty(path)) { // Have path
+			pathArray = path.split("/");
+		}
+		// Log.i(TAG, "Loading: " + file + ", " + path);
+		Root rootService = root.getRemote();
+		if (null == rootService) { // No root service
+			Log.w(TAG, "findNodeFromPreferences: No root service");
+			return null;
+		}
+		try {
+			return rootService.getNode(file, pathArray, true);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }
