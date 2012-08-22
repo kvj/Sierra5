@@ -33,6 +33,8 @@ import org.kvj.sierra5.common.plugin.Plugin;
 import org.kvj.sierra5.common.plugin.PluginInfo;
 import org.kvj.sierra5.common.root.Root;
 import org.kvj.sierra5.ui.adapter.ListViewAdapter;
+import org.kvj.sierra5.ui.plugin.LocalPlugin;
+import org.kvj.sierra5.ui.plugin.impl.ClipboardPlugin;
 
 import android.os.Environment;
 import android.os.IBinder;
@@ -53,6 +55,8 @@ public class Controller {
 	private static final String TAG = "Controller";
 	private Pattern left = Pattern.compile("^\\s*");
 	private RemoteServicesCollector<Plugin> plugins = null;
+
+	private List<LocalPlugin> localPlugins = new ArrayList<LocalPlugin>();
 
 	public Controller() {
 		plugins = new RemoteServicesCollector<Plugin>(App.getInstance(),
@@ -76,6 +80,7 @@ public class Controller {
 				// }
 			}
 		};
+		localPlugins.add(new ClipboardPlugin());
 	}
 
 	public static interface LineEater {
@@ -809,23 +814,50 @@ public class Controller {
 		return stub;
 	}
 
-	public List<Plugin> getPlugins(int type) {
-		List<Plugin> result = new ArrayList<Plugin>();
-		List<Plugin> pls = plugins.getPlugins();
-		for (Plugin plugin : pls) {
-			// Get capabilities of each plugin
-			try { // Remote errors
-				int[] caps = plugin.getCapabilities();
-				boolean found = false;
-				for (int cap : caps) {
-					// Search for capability
-					if (cap == type) { // Found
-						found = true;
-						break;
-					}
+	private <T extends Plugin> boolean checkPlugin(Class<T> cl, Plugin plugin,
+			int[] types) throws RemoteException {
+		if (!cl.isAssignableFrom(plugin.getClass())) { // Invalid type
+			return false;
+		}
+		int[] caps = plugin.getCapabilities();
+		boolean found = false;
+		for (int cap : caps) {
+			// Search for capability
+			for (int type : types) { //
+				if (cap == type) { // Found
+					found = true;
+					break;
 				}
-				if (found) { // Plugin is OK
-					result.add(plugin);
+			}
+			if (found) { // Found - stop checking
+				break;
+			}
+		}
+		return found;
+	}
+
+	public List<Plugin> getPlugins(int... types) {
+		return getPlugins(Plugin.class, types);
+	}
+
+	public <T extends Plugin> List<T> getPlugins(Class<T> cl, int... types) {
+		List<T> result = new ArrayList<T>();
+		List<Plugin> pls = plugins.getPlugins();
+		for (Plugin plugin : localPlugins) {
+			// Local plugins
+			try { // Remote errors
+				if (checkPlugin(cl, plugin, types)) { // Plugin OK
+					result.add((T) plugin);
+				}
+			} catch (Exception e) {
+				// Ignore remote errors
+			}
+		}
+		for (Plugin plugin : pls) {
+			// Remote errors
+			try { // Remote errors
+				if (checkPlugin(cl, plugin, types)) { // Plugin OK
+					result.add((T) plugin);
 				}
 			} catch (Exception e) {
 				// Ignore remote errors

@@ -22,13 +22,13 @@ import org.kvj.quebec4.data.Q4Constants;
 import org.kvj.quebec4.data.Quebec4Service;
 import org.kvj.quebec4.data.TaskBean;
 import org.kvj.sierra5.common.data.Node;
+import org.kvj.sierra5.common.plugin.DefaultPlugin;
 import org.kvj.sierra5.common.plugin.MenuItemInfo;
 import org.kvj.sierra5.common.plugin.PluginInfo;
 import org.kvj.sierra5.common.root.Root;
 import org.kvj.sierra5.plugins.App;
 import org.kvj.sierra5.plugins.R;
 import org.kvj.sierra5.plugins.WidgetController;
-import org.kvj.sierra5.plugins.impl.DefaultPlugin;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 

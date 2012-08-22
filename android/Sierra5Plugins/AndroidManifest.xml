@@ -128,7 +128,12 @@
                 <action android:name="org.kvj.sierra5.plugins.UPDATE_WIDGET" />
             </intent-filter>
         </receiver>
-
+        <receiver android:name=".ui.widget.words.WordsWidgetActionReceiver" >
+            <intent-filter>
+                <action android:name="org.kvj.sierra5plugins.WORDS_ACTION" />
+            </intent-filter>
+        </receiver>
+        
         <service
             android:name=".providers.auth.AuthService"
             android:exported="true" >

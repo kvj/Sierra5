@@ -1,6 +1,6 @@
 package org.kvj.sierra5.plugins.impl.widget;
 
-import org.kvj.sierra5.plugins.impl.DefaultPlugin;
+import org.kvj.sierra5.common.plugin.DefaultPlugin;
 
 import android.os.RemoteException;
 

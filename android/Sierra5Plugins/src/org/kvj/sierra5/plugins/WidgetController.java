@@ -16,12 +16,8 @@ import org.kvj.sierra5.plugins.impl.check.CheckboxPlugin;
 import org.kvj.sierra5.plugins.impl.link.LinkPlugin;
 import org.kvj.sierra5.plugins.impl.quebec.Q4Plugin;
 import org.kvj.sierra5.plugins.impl.widget.WidgetPlugin;
-import org.kvj.sierra5.plugins.ui.widget.words.WordsWidgetController;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Binder;
 import android.os.IBinder;
@@ -61,20 +57,6 @@ public class WidgetController {
 				Log.i(TAG, "Root interface disconnected");
 			}
 		};
-		ctx.registerReceiver(new BroadcastReceiver() {
-
-			@Override
-			public void onReceive(Context context, Intent intent) {
-				int id = intent.getIntExtra(
-						WordsWidgetController.BCAST_WIDGET_ID, -1);
-				if (id == -1) { // No widget ID
-					Log.w(TAG, "Invalid widgetID");
-					return;
-				}
-				WordsWidgetController controller = new WordsWidgetController();
-				controller.update(id, intent.getExtras());
-			}
-		}, new IntentFilter(WordsWidgetController.BCAST_ACTION));
 
 	}
 

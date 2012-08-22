@@ -93,7 +93,7 @@ public class WordsWidgetController extends WidgetProvider {
 				R.layout.words_widget);
 		String theme = getString(preferences, R.string.words_theme,
 				R.string.words_themeDefault);
-		Log.i(TAG, "Widget theme: " + theme);
+		// Log.i(TAG, "Widget theme: " + theme);
 		boolean lite = "lite".equals(theme);
 		if (lite) { // Lite theme
 			widget.setInt(R.id.words_widget_root, "setBackgroundResource",
@@ -103,7 +103,7 @@ public class WordsWidgetController extends WidgetProvider {
 					R.drawable.words_bg_dark);
 		}
 		String command = data.getString(COMMAND);
-		Log.i(TAG, "Command: " + command);
+		// Log.i(TAG, "Command: " + command);
 		Words words = getConfig(id);
 		boolean needLoadConfig = COMMAND_FORCE_LOAD.equals(command);
 		if (null == words) { // No config - need to load

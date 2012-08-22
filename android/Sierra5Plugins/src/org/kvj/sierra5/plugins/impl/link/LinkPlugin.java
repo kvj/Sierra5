@@ -12,6 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.kvj.sierra5.common.data.Node;
+import org.kvj.sierra5.common.plugin.DefaultPlugin;
 import org.kvj.sierra5.common.plugin.FormatSpan;
 import org.kvj.sierra5.common.plugin.MenuItemInfo;
 import org.kvj.sierra5.common.plugin.PluginInfo;
@@ -19,7 +20,6 @@ import org.kvj.sierra5.common.theme.Theme;
 import org.kvj.sierra5.plugins.App;
 import org.kvj.sierra5.plugins.R;
 import org.kvj.sierra5.plugins.WidgetController;
-import org.kvj.sierra5.plugins.impl.DefaultPlugin;
 
 import android.content.Intent;
 import android.graphics.Bitmap;

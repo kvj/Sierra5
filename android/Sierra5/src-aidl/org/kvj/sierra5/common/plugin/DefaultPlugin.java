@@ -1,8 +1,6 @@
-package org.kvj.sierra5.plugins.impl;
+package org.kvj.sierra5.common.plugin;
 
 import org.kvj.sierra5.common.data.Node;
-import org.kvj.sierra5.common.plugin.FormatSpan;
-import org.kvj.sierra5.common.plugin.MenuItemInfo;
 import org.kvj.sierra5.common.plugin.Plugin;
 import org.kvj.sierra5.common.theme.Theme;
 

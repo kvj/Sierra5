@@ -184,34 +184,32 @@ public class ListViewFragment extends SherlockFragment implements
 					contextMenu.add(new MenuItemRecord<Node>(MENU_OPEN, "Open",
 							node));
 				}
-				if (adapter.getSelectedIndex() == index) {
-					// Menu on selected index
-					try { // Get menus from plugins
-						int menuIndex = 2;
-						// Log.i(TAG, "Getting menu from plugins");
-						for (Plugin plugin : controller
-								.getPlugins(PluginInfo.PLUGIN_HAVE_MENU)) {
-							// menu from every plugin
-							MenuItemInfo[] menus = plugin.getMenu(
-									null != parent ? parent.info.getId() : -1,
-									node);
-							if (null == menus) { // No menus
-								// Log.i(TAG, "Plugin: " + menuIndex +
-								// " no menus");
-								continue;
-							}
-							// Log.i(TAG, "Plugin: " + menuIndex + " menus: "
-							// + menus.length);
-							for (MenuItemInfo info : menus) { // Add menus
-								contextMenu.add(new PluginMenuRecord(
-										menuIndex++, node, plugin, info));
-								// Log.i(TAG, "Plugin: " + menuIndex + " menu: "
-								// + info.getText());
-							}
+				try { // Get menus from plugins
+					int menuIndex = 2;
+					// Log.i(TAG, "Getting menu from plugins");
+					for (Plugin plugin : controller
+							.getPlugins(adapter.getSelectedIndex() == index ? PluginInfo.PLUGIN_HAVE_MENU
+									: PluginInfo.PLUGIN_HAVE_MENU_UNSELECTED)) {
+						// menu from every plugin
+						MenuItemInfo[] menus = plugin
+								.getMenu(null != parent ? parent.info.getId()
+										: -1, node);
+						if (null == menus) { // No menus
+							// Log.i(TAG, "Plugin: " + menuIndex +
+							// " no menus");
+							continue;
 						}
-					} catch (Exception e) {
-						Log.w(TAG, "Error getting menus", e);
+						// Log.i(TAG, "Plugin: " + menuIndex + " menus: "
+						// + menus.length);
+						for (MenuItemInfo info : menus) { // Add menus
+							contextMenu.add(new PluginMenuRecord(menuIndex++,
+									node, plugin, info));
+							// Log.i(TAG, "Plugin: " + menuIndex + " menu: "
+							// + info.getText());
+						}
 					}
+				} catch (Exception e) {
+					Log.w(TAG, "Error getting menus", e);
 				}
 				return null;
 			}
