@@ -3,11 +3,60 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical" >
-    
-	<ListView
-	    android:id="@+id/listview"
-	    android:layout_width="match_parent"
-	    android:layout_height="match_parent">
-	</ListView>
+
+    <ListView
+        android:id="@+id/listview"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" >
+    </ListView>
+
+    <RelativeLayout
+        android:id="@+id/listview_clipboard_panel"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/clipboard_panel_size"
+        android:layout_weight="0.01"
+        android:visibility="visible" >
+
+        <ImageButton
+            android:id="@+id/listview_remove"
+            android:layout_width="@dimen/clipboard_panel_size"
+            android:layout_height="@dimen/clipboard_panel_size"
+            android:layout_alignParentRight="true"
+            android:background="@android:color/transparent"
+            android:src="@drawable/a_remove" />
+        <ImageButton
+            android:id="@+id/listview_copy"
+            android:layout_width="@dimen/clipboard_panel_size"
+            android:layout_height="@dimen/clipboard_panel_size"
+            android:layout_toLeftOf="@+id/listview_remove"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_menu_copy_holo_dark" />
+
+        <ImageButton
+            android:id="@+id/listview_cut"
+            android:layout_width="@dimen/clipboard_panel_size"
+            android:layout_height="@dimen/clipboard_panel_size"
+            android:layout_toLeftOf="@+id/listview_copy"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_menu_cut_holo_dark" />
+
+        <ImageButton
+            android:id="@+id/listview_cancel"
+            android:layout_width="@dimen/clipboard_panel_size"
+            android:layout_height="@dimen/clipboard_panel_size"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_menu_cancel_holo_dark" />
+        <TextView 
+            android:id="@+id/listview_clipboard_caption"
+            android:layout_height="@dimen/clipboard_panel_size"
+            android:layout_width="wrap_content" android:gravity="center_vertical"
+            android:text="Selected: 0" 
+            android:singleLine="true"
+            android:textSize="@dimen/clipboard_panel_text"
+            android:layout_toRightOf="@+id/listview_cancel"/>
+    </RelativeLayout>
 
 </LinearLayout>

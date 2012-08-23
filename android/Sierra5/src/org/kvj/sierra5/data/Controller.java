@@ -58,6 +58,8 @@ public class Controller {
 
 	private List<LocalPlugin> localPlugins = new ArrayList<LocalPlugin>();
 
+	private ClipboardPlugin clipboardPlugin = null;
+
 	public Controller() {
 		plugins = new RemoteServicesCollector<Plugin>(App.getInstance(),
 				Constants.PLUGIN_NS, new APIPluginFilter()) {
@@ -80,7 +82,8 @@ public class Controller {
 				// }
 			}
 		};
-		localPlugins.add(new ClipboardPlugin());
+		clipboardPlugin = new ClipboardPlugin(this);
+		localPlugins.add(clipboardPlugin);
 	}
 
 	public static interface LineEater {
@@ -174,6 +177,11 @@ public class Controller {
 			}
 		});
 		return buffer.toString();
+	}
+
+	public int getTabSize() {
+		return App.getInstance().getIntPreference(R.string.tabSize,
+				R.string.tabSizeDefault);
 	}
 
 	public boolean saveFile(Node node, final Node remove) {
@@ -819,6 +827,11 @@ public class Controller {
 		if (!cl.isAssignableFrom(plugin.getClass())) { // Invalid type
 			return false;
 		}
+		for (int type : types) {
+			if (PluginInfo.PLUGIN_ANY == type) { // Any plugin
+				return true;
+			}
+		}
 		int[] caps = plugin.getCapabilities();
 		boolean found = false;
 		for (int cap : caps) {
@@ -864,5 +877,9 @@ public class Controller {
 			}
 		}
 		return result;
+	}
+
+	public ClipboardPlugin getClipboard() {
+		return clipboardPlugin;
 	}
 }

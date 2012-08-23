@@ -27,11 +27,13 @@ import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockFragment;
@@ -94,6 +96,8 @@ public class ListViewFragment extends SherlockFragment implements
 	ListViewFragmentListener listener = null;
 	private ActionBar actionBar = null;
 	private boolean selectMode = false;
+	private ViewGroup clipboardPanel = null;
+	private TextView clipboardCaption = null;
 
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
@@ -115,6 +119,42 @@ public class ListViewFragment extends SherlockFragment implements
 		View view = inflater.inflate(R.layout.listview_fragment, container,
 				false);
 		listView = (ListView) view.findViewById(R.id.listview);
+		clipboardPanel = (ViewGroup) view
+				.findViewById(R.id.listview_clipboard_panel);
+		clipboardCaption = (TextView) view
+				.findViewById(R.id.listview_clipboard_caption);
+		view.findViewById(R.id.listview_cancel).setOnClickListener(
+				new OnClickListener() {
+
+					@Override
+					public void onClick(View v) {
+						clearClipboard();
+					}
+				});
+		view.findViewById(R.id.listview_cut).setOnClickListener(
+				new OnClickListener() {
+
+					@Override
+					public void onClick(View arg0) {
+						doCutCopy(true);
+					}
+				});
+		view.findViewById(R.id.listview_copy).setOnClickListener(
+				new OnClickListener() {
+
+					@Override
+					public void onClick(View arg0) {
+						doCutCopy(false);
+					}
+				});
+		view.findViewById(R.id.listview_remove).setOnClickListener(
+				new OnClickListener() {
+
+					@Override
+					public void onClick(View arg0) {
+						doRemoveSelected();
+					}
+				});
 		String themeName = App.getInstance().getStringPreference(
 				R.string.theme, R.string.themeDefault);
 		Theme theme = ThemeProvider.getTheme(themeName);
@@ -148,9 +188,55 @@ public class ListViewFragment extends SherlockFragment implements
 		return view;
 	}
 
+	private void doRemoveSelected() {
+		SuperActivity.showQuestionDialog(getActivity(), "Remove?",
+				"Remove selected items: "
+						+ controller.getClipboard().getItemCount() + "?",
+				new Runnable() {
+
+					@Override
+					public void run() {
+						if (controller.getClipboard().remove()) { // Removed
+							updateClipboardStatus();
+							SuperActivity.notifyUser(getActivity(), "Removed");
+							refresh(null);
+						} else {
+							SuperActivity.notifyUser(getActivity(),
+									"Operation failed");
+						}
+					}
+				});
+	}
+
+	private void doCutCopy(boolean cut) {
+		if (controller.getClipboard().doCutCopy(cut)) { // Copied
+			updateClipboardStatus();
+			adapter.dataChanged();
+			SuperActivity.notifyUser(getActivity(), "Copied to clipboard");
+		} else {
+			SuperActivity.notifyUser(getActivity(), "Operation failed");
+		}
+	}
+
+	private void clearClipboard() {
+		controller.getClipboard().clear();
+		updateClipboardStatus();
+		adapter.dataChanged();
+	}
+
 	private void openNewList(Node node) {
 		if (null != listener) { // Have listener
 			listener.open(node);
+		}
+	}
+
+	private void updateClipboardStatus() {
+		int items = controller.getClipboard().getItemCount();
+		if (items > 0) { // Show and update panel
+			clipboardCaption.setText("Selected: " + items);
+			clipboardPanel.setVisibility(View.VISIBLE);
+		} else {
+			clipboardPanel.setVisibility(View.GONE);
 		}
 	}
 
@@ -165,6 +251,14 @@ public class ListViewFragment extends SherlockFragment implements
 		if (selectMode && null != listener) { // Have listener and select mode
 			listener.open(node);
 			return;
+		}
+		if (controller.getClipboard().getItemCount() > 0) {
+			// Have smth. in clipboard - can add more
+			if (controller.getClipboard().addSelection(node)) { // Added
+				updateClipboardStatus();
+				adapter.dataChanged();
+				return;
+			}
 		}
 		contextMenu.clear();
 		toggleProgress(true);
@@ -256,12 +350,9 @@ public class ListViewFragment extends SherlockFragment implements
 	public void setController(Bundle data, Controller controller,
 			ListViewFragmentListener listener, boolean selectMode) {
 		this.selectMode = selectMode;
-		if (!selectMode && null != actionBar) { // Create toolbar
-			// getActivity().getMenuInflater().inflate(R.menu.list_menu,
-			// actionBar.asMenu());
-		}
 		this.listener = listener;
 		this.controller = controller;
+		updateClipboardStatus();
 		boolean useTemplatePath = data.getBoolean(Constants.INTENT_TEMPLATE,
 				false);
 		String file = data.getString(Constants.LIST_INTENT_ROOT);
@@ -405,7 +496,7 @@ public class ListViewFragment extends SherlockFragment implements
 		}
 		if (item instanceof PluginMenuRecord) { // Plugin menu
 			int index = adapter.getSelectedIndex();
-			final Node node = adapter.getItem(index);
+			final Node node = item.data;
 			final PluginMenuRecord pitem = (PluginMenuRecord) item;
 			if (pitem.info.getType() == MenuItemInfo.MENU_ITEM_SUBMENU) {
 				// This is submenu
@@ -503,6 +594,7 @@ public class ListViewFragment extends SherlockFragment implements
 	public void refresh(Node node) {
 		selectNode(node != null ? node : adapter.getItem(adapter
 				.getSelectedIndex()));
+		updateClipboardStatus();
 	}
 
 	private void showConfiguration() {

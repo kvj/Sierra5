@@ -18,6 +18,7 @@ import org.kvj.sierra5.common.plugin.PluginInfo;
 import org.kvj.sierra5.common.theme.Theme;
 import org.kvj.sierra5.data.Controller;
 import org.kvj.sierra5.ui.adapter.theme.ThemeProvider;
+import org.kvj.sierra5.ui.plugin.LocalPlugin;
 
 import android.content.Context;
 import android.database.DataSetObserver;
@@ -56,6 +57,7 @@ public class ListViewAdapter implements ListAdapter {
 	private PlainTextFormatter<Node> textFormatter = null;
 	private Map<String, RemoteViews> remoteRenders = new HashMap<String, RemoteViews>();
 	List<Plugin> remoteRenderPlugins = new ArrayList<Plugin>();
+	List<LocalPlugin> localPlugins = new ArrayList<LocalPlugin>();
 
 	private Theme theme = null;
 
@@ -261,6 +263,10 @@ public class ListViewAdapter implements ListAdapter {
 					}
 				}
 			}
+		}
+		for (LocalPlugin plugin : localPlugins) {
+			// Customize using local plugins
+			plugin.customize(theme, view, node, selected);
 		}
 		return view;
 	}
@@ -483,6 +489,9 @@ public class ListViewAdapter implements ListAdapter {
 		remoteRenders.clear();
 		remoteRenderPlugins = controller
 				.getPlugins(PluginInfo.PLUGIN_CAN_RENDER);
+		localPlugins = controller.getPlugins(LocalPlugin.class,
+				PluginInfo.PLUGIN_ANY);
+		Log.i(TAG, "Local plugins: " + localPlugins.size());
 		List<NodeTextFormatter> formatters = new ArrayList<NodeTextFormatter>();
 		List<Plugin> plugins = controller
 				.getPlugins(PluginInfo.PLUGIN_CAN_FORMAT);
