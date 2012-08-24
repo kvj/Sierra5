@@ -41,7 +41,7 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 
 	@Override
 	public MenuItemInfo[] getMenu(int id, Node node) throws RemoteException {
-		if (getItemCount() == 0) { // No items selected
+		if (getItemCount() == 0 && id == -1) { // No items selected and top menu
 			List<MenuItemInfo> result = new ArrayList<MenuItemInfo>();
 			if (Node.TYPE_TEXT == node.type) { // Text - can mark
 				result.add(new MenuItemInfo(0, MenuItemInfo.MENU_ITEM_ACTION,

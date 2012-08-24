@@ -147,6 +147,7 @@ public class ListViewAdapter implements ListAdapter {
 		if (!showRoot) { // Root is not shown - decrease
 			result--;
 		}
+		// Log.i(TAG, "getCount: " + result);
 		return result;
 	}
 
@@ -228,6 +229,7 @@ public class ListViewAdapter implements ListAdapter {
 	public View getView(int index, View view, ViewGroup parent) {
 		Node node = getItem(index);
 		if (null == node) { // Error case
+			Log.w(TAG, "getView: is null " + index);
 			return null;
 		}
 		if (view == null) {
@@ -249,7 +251,7 @@ public class ListViewAdapter implements ListAdapter {
 			synchronized (remoteRenders) { // Lock for modifications
 				RemoteViews rv = remoteRenders.get(node.text);
 				if (null != rv) { // Have remote views
-					Log.i(TAG, "getView: " + node.text + ", remote found");
+					// Log.i(TAG, "getView: " + node.text + ", remote found");
 					View renderResult = rv.apply(parent.getContext(), root);
 					root.addView(renderResult);
 					if (!selected) { // Hide top part when not selected

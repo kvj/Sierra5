@@ -266,24 +266,33 @@ public class ListViewFragment extends SherlockFragment implements
 
 			@Override
 			protected Void doInBackground(Void... params) {
-				if (null == parent
-						&& (Node.TYPE_FILE == node.type || Node.TYPE_TEXT == node.type)) {
-					// File or text - edit
-					contextMenu.add(new MenuItemRecord<Node>(MENU_EDIT, "Edit",
-							node));
-				}
-				if (null == parent
-						&& (Node.TYPE_FILE == node.type || Node.TYPE_FOLDER == node.type)) {
-					// File or folder - open
-					contextMenu.add(new MenuItemRecord<Node>(MENU_OPEN, "Open",
-							node));
+				if (null == parent) { // Open/edit only for sub-menu
+					if (Node.TYPE_FILE == node.type
+							|| Node.TYPE_TEXT == node.type) {
+						// File or text - edit
+						contextMenu.add(new MenuItemRecord<Node>(MENU_EDIT,
+								"Edit", node));
+					}
+					if (Node.TYPE_FILE == node.type
+							|| Node.TYPE_FOLDER == node.type) {
+						// File or folder - open
+						contextMenu.add(new MenuItemRecord<Node>(MENU_OPEN,
+								"Open", node));
+					}
 				}
 				try { // Get menus from plugins
 					int menuIndex = 2;
 					// Log.i(TAG, "Getting menu from plugins");
-					for (Plugin plugin : controller
-							.getPlugins(adapter.getSelectedIndex() == index ? PluginInfo.PLUGIN_HAVE_MENU
-									: PluginInfo.PLUGIN_HAVE_MENU_UNSELECTED)) {
+					List<Plugin> plugins = null;
+					if (null != parent) { // Sub menu, plugin found
+						plugins = new ArrayList<Plugin>();
+						plugins.add(parent.plugin);
+					} else { // Root menu, request plugins
+						plugins = controller
+								.getPlugins(adapter.getSelectedIndex() == index ? PluginInfo.PLUGIN_HAVE_MENU
+										: PluginInfo.PLUGIN_HAVE_MENU_UNSELECTED);
+					}
+					for (Plugin plugin : plugins) {
 						// menu from every plugin
 						MenuItemInfo[] menus = plugin
 								.getMenu(null != parent ? parent.info.getId()
@@ -401,23 +410,24 @@ public class ListViewFragment extends SherlockFragment implements
 		if (null == controller) { // No controller - no refresh
 			return;
 		}
-		toggleProgress(true);
-		AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>() {
-
-			@Override
-			protected Void doInBackground(Void... params) {
-				controller.expand(node, forceExpand, Controller.EXPAND_ONE);
-				return null;
-			}
-
-			@Override
-			protected void onPostExecute(Void result) {
-				adapter.dataChanged();
-				toggleProgress(false);
-			}
-
-		};
-		task.execute();
+		// toggleProgress(true);
+		// AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>()
+		// {
+		//
+		// @Override
+		// protected Void doInBackground(Void... params) {
+		controller.expand(node, forceExpand, Controller.EXPAND_ONE);
+		// return null;
+		// }
+		//
+		// @Override
+		// protected void onPostExecute(Void result) {
+		adapter.dataChanged();
+		// toggleProgress(false);
+		// }
+		//
+		// };
+		// task.execute();
 	}
 
 	private void expandTree(final Node node, final String file,
@@ -477,7 +487,7 @@ public class ListViewFragment extends SherlockFragment implements
 
 	@Override
 	public boolean onContextItemSelected(android.view.MenuItem item) {
-		Log.i(TAG, "Clicked on " + item.getItemId());
+		// Log.i(TAG, "Clicked on " + item.getItemId());
 		if (item.getItemId() < contextMenu.size()) {
 			onContextMenu(contextMenu.get(item.getItemId()));
 		}
@@ -510,8 +520,10 @@ public class ListViewFragment extends SherlockFragment implements
 				protected Boolean doInBackground(Void... params) {
 					try { // Remote errors
 							// Log.i(TAG, "Before exec: " + node.text);
-						return pitem.plugin.executeAction(pitem.info.getId(),
-								node);
+						synchronized (node) { // Lock access to node
+							return pitem.plugin.executeAction(
+									pitem.info.getId(), node);
+						}
 					} catch (Exception e) {
 						Log.w(TAG, "Error executing action: " + pitem.title, e);
 					}
@@ -541,30 +553,31 @@ public class ListViewFragment extends SherlockFragment implements
 		if (null == adapter.getRoot()) { // Don't have root - stop
 			return;
 		}
-		toggleProgress(true);
-		AsyncTask<Void, Void, SearchNodeResult> task = new AsyncTask<Void, Void, Controller.SearchNodeResult>() {
-
-			@Override
-			protected SearchNodeResult doInBackground(Void... params) {
-				return controller.searchInNode(adapter.getRoot(), node.file,
+		// toggleProgress(true);
+		// AsyncTask<Void, Void, SearchNodeResult> task = new AsyncTask<Void,
+		// Void, Controller.SearchNodeResult>() {
+		//
+		// @Override
+		// protected SearchNodeResult doInBackground(Void... params) {
+		SearchNodeResult res = controller
+				.searchInNode(adapter.getRoot(), node.file,
 						Node.list2array(node.textPath, new String[0]), false);
-			}
-
-			@Override
-			protected void onPostExecute(SearchNodeResult res) {
-				if (null != res) { // Found
-					// Log.i(TAG, "selectNode: " + node.file + ", "
-					// + node.textPath + ", " + res.found);
-					adapter.setSelectedIndex(adapter.isShowRoot() ? res.index
-							: res.index - 1);
-				}
-				adapter.resetPlugins();
-				adapter.dataChanged();
-				toggleProgress(false);
-			}
-
-		};
-		task.execute();
+		// }
+		//
+		// @Override
+		// protected void onPostExecute(SearchNodeResult res) {
+		if (null != res) { // Found
+			// Log.i(TAG, "selectNode: " + node.file + ", "
+			// + node.textPath + ", " + res.found);
+			adapter.setSelectedIndex(adapter.isShowRoot() ? res.index
+					: res.index - 1);
+		}
+		adapter.dataChanged();
+		toggleProgress(false);
+		// }
+		//
+		// };
+		// task.execute();
 	}
 
 	public boolean onMenuSelected(MenuItem item) {
@@ -579,6 +592,7 @@ public class ListViewFragment extends SherlockFragment implements
 			removeItem(adapter.getItem(adapter.getSelectedIndex()));
 			return true;
 		case R.id.menu_reload:
+			adapter.resetPlugins();
 			refresh(null);
 			return true;
 		}
@@ -607,12 +621,6 @@ public class ListViewFragment extends SherlockFragment implements
 		if (selectMode) { // Skip
 			return;
 		}
-		Node node = adapter.getItem(selected);
-		boolean canAdd = null != node
-				&& (Node.TYPE_FILE == node.type || Node.TYPE_TEXT == node.type);
-		boolean canRemove = null != node && Node.TYPE_TEXT == node.type;
-		// actionBar.findAction(R.id.menu_add).setVisible(canAdd);
-		// actionBar.findAction(R.id.menu_remove).setVisible(canRemove);
 	}
 
 	private void toggleProgress(boolean start) {
