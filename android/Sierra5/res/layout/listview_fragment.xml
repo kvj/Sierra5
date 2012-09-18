@@ -16,7 +16,8 @@
         android:layout_width="match_parent"
         android:layout_height="@dimen/clipboard_panel_size"
         android:layout_weight="0.01"
-        android:visibility="gone" >
+        android:visibility="visible"
+        android:background="@drawable/clipboard_border">
 
         <ImageButton
             android:id="@+id/listview_remove"
@@ -24,14 +25,16 @@
             android:layout_height="@dimen/clipboard_panel_size"
             android:layout_alignParentRight="true"
             android:background="@android:color/transparent"
-            android:src="@drawable/a_remove" />
+            android:src="@drawable/a_remove" 
+            android:contentDescription="@string/remove"/>
         <ImageButton
             android:id="@+id/listview_copy"
             android:layout_width="@dimen/clipboard_panel_size"
             android:layout_height="@dimen/clipboard_panel_size"
             android:layout_toLeftOf="@+id/listview_remove"
             android:background="@android:color/transparent"
-            android:src="@drawable/ic_menu_copy_holo_dark" />
+            android:src="@drawable/ic_menu_copy_holo_dark" 
+            android:contentDescription="@string/copy"/>
 
         <ImageButton
             android:id="@+id/listview_cut"
@@ -39,7 +42,8 @@
             android:layout_height="@dimen/clipboard_panel_size"
             android:layout_toLeftOf="@+id/listview_copy"
             android:background="@android:color/transparent"
-            android:src="@drawable/ic_menu_cut_holo_dark" />
+            android:src="@drawable/ic_menu_cut_holo_dark" 
+            android:contentDescription="@string/cut"/>
 
         <ImageButton
             android:id="@+id/listview_cancel"
@@ -48,7 +52,8 @@
             android:layout_alignParentLeft="true"
             android:scaleType="center"
             android:background="@android:color/transparent"
-            android:src="@drawable/ic_menu_cancel_holo_dark" />
+            android:src="@drawable/ic_menu_cancel_holo_dark" 
+            android:contentDescription="@string/reset"/>
         <TextView 
             android:id="@+id/listview_clipboard_caption"
             android:layout_height="@dimen/clipboard_panel_size"

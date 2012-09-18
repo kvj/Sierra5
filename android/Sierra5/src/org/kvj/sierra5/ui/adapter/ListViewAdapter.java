@@ -493,7 +493,6 @@ public class ListViewAdapter implements ListAdapter {
 				.getPlugins(PluginInfo.PLUGIN_CAN_RENDER);
 		localPlugins = controller.getPlugins(LocalPlugin.class,
 				PluginInfo.PLUGIN_ANY);
-		Log.i(TAG, "Local plugins: " + localPlugins.size());
 		List<NodeTextFormatter> formatters = new ArrayList<NodeTextFormatter>();
 		List<Plugin> plugins = controller
 				.getPlugins(PluginInfo.PLUGIN_CAN_FORMAT);

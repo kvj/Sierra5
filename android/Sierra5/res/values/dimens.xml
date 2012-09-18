@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="widget_margin">8dp</dimen>
-	<dimen name="clipboard_panel_size">30dp</dimen>
-	<dimen name="clipboard_panel_text">15dp</dimen>
+	<dimen name="clipboard_panel_size">40dp</dimen>
+	<dimen name="clipboard_panel_text">20dp</dimen>
 </resources>

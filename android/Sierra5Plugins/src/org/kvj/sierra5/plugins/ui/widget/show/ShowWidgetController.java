@@ -64,8 +64,7 @@ public class ShowWidgetController extends AppWidgetProvider {
 			bgResource = R.drawable.opacity2;
 			break;
 		}
-		widget.setInt(R.id.show_widget_list, "setBackgroundResource",
-				bgResource);
+		widget.setImageViewResource(R.id.show_widget_bg, bgResource);
 		widget.setOnClickPendingIntent(R.id.show_widget_reload,
 				WidgetUpdateReceiver.createUpdateIntent(App.getInstance(), id));
 		widget.removeAllViews(R.id.show_widget_list);

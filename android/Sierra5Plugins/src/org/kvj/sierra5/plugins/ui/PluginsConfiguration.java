@@ -10,8 +10,11 @@ import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
+import android.util.Log;
 
 public class PluginsConfiguration extends PreferenceActivity {
+
+	protected static final String TAG = "UI";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -23,6 +26,7 @@ public class PluginsConfiguration extends PreferenceActivity {
 
 					@Override
 					public boolean onPreferenceClick(Preference preference) {
+						Log.i(TAG, "Show widget list");
 						Intent intent = new Intent(PluginsConfiguration.this,
 								WidgetConfigListPane.class);
 						startActivity(intent);

@@ -3,4 +3,12 @@
 
     <string name="app_name">Sierra5</string>
 
+    <string name="reset">Reset</string>
+
+    <string name="cut">Cut</string>
+
+    <string name="copy">Copy</string>
+
+    <string name="remove">Remove</string>
+
 </resources>

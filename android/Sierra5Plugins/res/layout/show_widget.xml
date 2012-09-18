@@ -11,14 +11,24 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" >
 
-        <LinearLayout
-            android:id="@+id/show_widget_list"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_alignLeft="@id/show_widget_subroot"
-            android:background="@drawable/opacity1"
-            android:orientation="vertical"
-            android:padding="2dp" />
+            android:layout_height="match_parent" >
+
+            <ImageView
+                android:id="@+id/show_widget_bg"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" 
+                android:src="@android:drawable/screen_background_dark"/>
+
+            <LinearLayout
+                android:id="@+id/show_widget_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_alignLeft="@id/show_widget_subroot"
+                android:orientation="vertical"
+                android:padding="2dp" />
+        </FrameLayout>
 
         <LinearLayout
             android:id="@+id/show_widget_icons"

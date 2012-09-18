@@ -95,13 +95,8 @@ public class WordsWidgetController extends WidgetProvider {
 				R.string.words_themeDefault);
 		// Log.i(TAG, "Widget theme: " + theme);
 		boolean lite = "lite".equals(theme);
-		if (lite) { // Lite theme
-			widget.setInt(R.id.words_widget_root, "setBackgroundResource",
-					R.drawable.words_bg_lite);
-		} else {
-			widget.setInt(R.id.words_widget_root, "setBackgroundResource",
-					R.drawable.words_bg_dark);
-		}
+		widget.setImageViewResource(R.id.words_widget_bg,
+				lite ? R.drawable.words_bg_lite : R.drawable.words_bg_dark);
 		String command = data.getString(COMMAND);
 		// Log.i(TAG, "Command: " + command);
 		Words words = getConfig(id);
@@ -175,7 +170,10 @@ public class WordsWidgetController extends WidgetProvider {
 		}
 		widget.removeAllViews(R.id.words_widget_lines);
 		int color = lite ? Color.BLACK : Color.WHITE;
-		for (int i = 0; i < lines; i++) { // Create lines
+		// Log.i(TAG, "add line:" + lines + ", " + sizes.length + ", "
+		// + lineVisibility.length);
+		for (int i = 0; i < lines && i < word.lines.length && i < sizes.length
+				&& i < lineVisibility.length; i++) { // Create lines
 			widget.addView(
 					R.id.words_widget_lines,
 					addLine(word.lines[i], sizes[i], lineVisibility[i]
