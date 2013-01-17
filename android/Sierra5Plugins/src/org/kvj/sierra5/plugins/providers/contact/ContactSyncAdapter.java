@@ -424,6 +424,9 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 					"contacts_path", "");
 			String exp = App.getInstance().getStringPreference(
 					R.string.contacts_exp, R.string.contacts_expDefault);
+			if (TextUtils.isEmpty(exp)) {
+				exp = "${*:g}.s5/${*:c}";
+			}
 			String[] pathArray = null;
 			if (!TextUtils.isEmpty(path)) { // Have path
 				pathArray = path.split("/");

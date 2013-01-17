@@ -263,9 +263,9 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 					"calendar_path", "");
 			String exp = App.getInstance().getStringPreference(
 					R.string.calendar_exp, R.string.calendar_expDefault);
-			// if (TextUtils.isEmpty(exp)) { // FIXME: For debug
-			// exp = "${0:y}/${0:m}_*/${0:d} */${*:e}";
-			// }
+			if (TextUtils.isEmpty(exp)) { // FIXME: For debug
+				exp = "${0:y}/${0:m}_*/${0:d}?{//0:m} */${*:e}";
+			}
 			final String duration = App.getInstance().getStringPreference(
 					R.string.calendar_duration,
 					R.string.calendar_durationDefault);

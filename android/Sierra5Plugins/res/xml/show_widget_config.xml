@@ -14,7 +14,12 @@
             android:entries="@array/widgetBG"
             android:entryValues="@array/widgetBGid"
             android:title="Widget theme" />
-    </PreferenceCategory>
+        <CheckBoxPreference
+            android:key="@string/node_protect"
+            android:defaultValue="@string/node_protectDefault"
+            android:title="Protect from modifications"/>
+
+        </PreferenceCategory>
 
     <PreferenceCategory android:title="Node to display" >
 
