@@ -50,17 +50,14 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 		super(context, autoInitialize);
 	}
 
-	public static long ensureSampleGroupExists(Context context,
-			Account account, String name) {
+	public static long ensureSampleGroupExists(Context context, Account account, String name) {
 		final ContentResolver resolver = context.getContentResolver();
 
 		// Lookup the sample group
 		long groupId = 0;
-		final Cursor cursor = resolver.query(Groups.CONTENT_URI,
-				new String[] { Groups._ID },
-				Groups.ACCOUNT_NAME + "=? AND " + Groups.ACCOUNT_TYPE
-						+ "=? AND " + Groups.TITLE + "=?", new String[] {
-						account.name, account.type, name }, null);
+		final Cursor cursor = resolver.query(Groups.CONTENT_URI, new String[] { Groups._ID }, Groups.ACCOUNT_NAME
+				+ "=? AND " + Groups.ACCOUNT_TYPE + "=? AND " + Groups.TITLE + "=?", new String[] { account.name,
+				account.type, name }, null);
 		if (cursor != null) {
 			try {
 				if (cursor.moveToFirst()) {
@@ -79,8 +76,7 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 			contentValues.put(Groups.TITLE, name);
 			contentValues.put(Groups.GROUP_IS_READ_ONLY, true);
 
-			final Uri newGroupUri = resolver.insert(Groups.CONTENT_URI,
-					contentValues);
+			final Uri newGroupUri = resolver.insert(Groups.CONTENT_URI, contentValues);
 			groupId = ContentUris.parseId(newGroupUri);
 		}
 		return groupId;
@@ -149,8 +145,7 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 				}
 				sb.append(left);
 				sb.append(node.children.get(i).text);
-				String childText = getChildText(node.children.get(i), left
-						+ left);
+				String childText = getChildText(node.children.get(i), left + left);
 				if (!TextUtils.isEmpty(childText)) { // Have
 					sb.append('\n');
 					sb.append(childText);
@@ -193,8 +188,8 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 			cei.a(Nickname.TYPE, Nickname.TYPE_SHORT_NAME);
 			cei.a(Nickname.NAME, value);
 			ce.entries.add(cei);
-		} else if ("home".equals(type) || "work".equals(type)
-				|| "office".equals(type) || in(type, "address", "location")) {
+		} else if ("home".equals(type) || "work".equals(type) || "office".equals(type)
+				|| in(type, "address", "location")) {
 			// Address
 			ProviderEntryInfo cei = new ProviderEntryInfo();
 			cei.a(StructuredPostal.MIMETYPE, StructuredPostal.CONTENT_ITEM_TYPE);
@@ -307,8 +302,7 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 				groups.add(group);
 			}
 		}
-		ce.entries.add(new ProviderEntryInfo().a(StructuredName.DISPLAY_NAME,
-				node.text).a(StructuredName.MIMETYPE,
+		ce.entries.add(new ProviderEntryInfo().a(StructuredName.DISPLAY_NAME, node.text).a(StructuredName.MIMETYPE,
 				StructuredName.CONTENT_ITEM_TYPE));
 		contacts.add(ce);
 		if (null != node.children) { // parse every children
@@ -317,8 +311,7 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 				if (-1 == colonPos) { // No colon
 					continue;
 				}
-				String type = ch.text.substring(0, colonPos).trim()
-						.toLowerCase();
+				String type = ch.text.substring(0, colonPos).trim().toLowerCase();
 				String value = ch.text.substring(colonPos + 1).trim();
 				if (TextUtils.isEmpty(value)) { // No value - use children
 					value = getChildText(ch, "");
@@ -336,50 +329,37 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 	}
 
 	private Uri addIsSync(Uri uri) {
-		return uri
-				.buildUpon()
-				.appendQueryParameter(ContactsContract.CALLER_IS_SYNCADAPTER,
-						"true").build();
+		return uri.buildUpon().appendQueryParameter(ContactsContract.CALLER_IS_SYNCADAPTER, "true").build();
 	}
 
-	private boolean saveData(Account account, String authority,
-			ContentProviderClient client) {
+	private boolean saveData(Account account, String authority, ContentProviderClient client) {
 		try {
-			client.delete(addIsSync(Groups.CONTENT_URI), Groups.ACCOUNT_NAME
-					+ "=? AND " + Groups.ACCOUNT_TYPE + "=?", new String[] {
-					account.name, account.type });
-			client.delete(addIsSync(RawContacts.CONTENT_URI),
-					RawContacts.ACCOUNT_NAME + "=? AND "
-							+ RawContacts.ACCOUNT_TYPE + "=?", new String[] {
-							account.name, account.type });
+			client.delete(addIsSync(Groups.CONTENT_URI), Groups.ACCOUNT_NAME + "=? AND " + Groups.ACCOUNT_TYPE + "=?",
+					new String[] { account.name, account.type });
+			client.delete(addIsSync(RawContacts.CONTENT_URI), RawContacts.ACCOUNT_NAME + "=? AND "
+					+ RawContacts.ACCOUNT_TYPE + "=?", new String[] { account.name, account.type });
 			ArrayList<ContentProviderOperation> ops = new ArrayList<ContentProviderOperation>();
 			Map<String, Integer> groupIDs = new HashMap<String, Integer>();
 			for (String name : groups) { // Insert group
 				int index = ops.size();
 				ProviderEntryInfo group = new ProviderEntryInfo();
-				group.a(Groups.ACCOUNT_NAME, account.name)
-						.a(Groups.ACCOUNT_TYPE, account.type)
+				group.a(Groups.ACCOUNT_NAME, account.name).a(Groups.ACCOUNT_TYPE, account.type)
 						.a(Groups.GROUP_VISIBLE, true).a(Groups.TITLE, name);
-				ops.add(ContentProviderOperation.newInsert(Groups.CONTENT_URI)
-						.withYieldAllowed(true).withValues(group.values)
-						.build());
+				ops.add(ContentProviderOperation.newInsert(Groups.CONTENT_URI).withYieldAllowed(true)
+						.withValues(group.values).build());
 				groupIDs.put(name, index);
 			}
 			for (ContactEntry ce : contacts) {
 				int index = ops.size();
 				ProviderEntryInfo raw = new ProviderEntryInfo();
-				raw.a(RawContacts.ACCOUNT_TYPE, account.type)
-						.a(RawContacts.ACCOUNT_NAME, account.name)
+				raw.a(RawContacts.ACCOUNT_TYPE, account.type).a(RawContacts.ACCOUNT_NAME, account.name)
 						.a(RawContacts.SOURCE_ID, ce.rawID);
-				ops.add(ContentProviderOperation
-						.newInsert(RawContacts.CONTENT_URI)
-						.withYieldAllowed(true).withValues(raw.values).build());
+				ops.add(ContentProviderOperation.newInsert(RawContacts.CONTENT_URI).withYieldAllowed(true)
+						.withValues(raw.values).build());
 				for (ProviderEntryInfo cei : ce.entries) { // Add values
-					ops.add(ContentProviderOperation
-							.newInsert(Data.CONTENT_URI)
-							.withValueBackReference(Data.RAW_CONTACT_ID, index)
-							.withValues(cei.values).withYieldAllowed(true)
-							.build());
+					ops.add(ContentProviderOperation.newInsert(Data.CONTENT_URI)
+							.withValueBackReference(Data.RAW_CONTACT_ID, index).withValues(cei.values)
+							.withYieldAllowed(true).build());
 				}
 				for (String group : ce.groups) { // Insert group membership
 					Integer groupID = groupIDs.get(group);
@@ -387,14 +367,10 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 						Log.w(TAG, "No group ID for " + group);
 						continue;
 					}
-					ops.add(ContentProviderOperation
-							.newInsert(Data.CONTENT_URI)
+					ops.add(ContentProviderOperation.newInsert(Data.CONTENT_URI)
 							.withValueBackReference(Data.RAW_CONTACT_ID, index)
-							.withValueBackReference(
-									GroupMembership.GROUP_ROW_ID,
-									groupID.intValue())
-							.withValue(GroupMembership.MIMETYPE,
-									GroupMembership.CONTENT_ITEM_TYPE)
+							.withValueBackReference(GroupMembership.GROUP_ROW_ID, groupID.intValue())
+							.withValue(GroupMembership.MIMETYPE, GroupMembership.CONTENT_ITEM_TYPE)
 							.withYieldAllowed(true).build());
 				}
 			}
@@ -408,23 +384,20 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 	}
 
 	@Override
-	public void onPerformSync(Account account, Bundle data, String authority,
-			ContentProviderClient client, SyncResult result) {
-		WidgetController controller = App.getInstance().getBean(
-				WidgetController.class);
+	public void onPerformSync(Account account, Bundle data, String authority, ContentProviderClient client,
+			SyncResult result) {
+		WidgetController controller = App.getInstance().getBean(WidgetController.class);
 		Root root = controller.getRootService();
 		if (null == root) { // No root service
 			Log.w(TAG, "No root service, skipping sync");
 			return;
 		}
 		try { // Remote exceptions
-			String file = App.getInstance().getStringPreference(
-					"contacts_file", "");
-			String path = App.getInstance().getStringPreference(
-					"contacts_path", "");
-			String exp = App.getInstance().getStringPreference(
-					R.string.contacts_exp, R.string.contacts_expDefault);
+			String file = App.getInstance().getStringPreference("contacts_file", "");
+			String path = App.getInstance().getStringPreference("contacts_path", "");
+			String exp = App.getInstance().getStringPreference(R.string.contacts_exp, R.string.contacts_expDefault);
 			if (TextUtils.isEmpty(exp)) {
+				// TODO: For development only
 				exp = "${*:g}.s5/${*:c}";
 			}
 			String[] pathArray = null;
@@ -441,8 +414,7 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 			controller.parseNode(exp, rootNode, new ParserListener() {
 
 				@Override
-				public boolean onItem(boolean finalItem,
-						Map<String, Object> values, Node node) {
+				public boolean onItem(boolean finalItem, Map<String, Object> values, Node node) {
 					if (!node.visible) { // Node not visible
 						return false;
 					}
@@ -452,8 +424,7 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 					return true;
 				}
 			});
-			Log.i(TAG, "Ready to add contacts: " + contacts.size()
-					+ ", groups: " + groups.size());
+			Log.i(TAG, "Ready to add contacts: " + contacts.size() + ", groups: " + groups.size());
 			saveData(account, authority, client);
 		} catch (Exception e) {
 			// TODO: handle exception

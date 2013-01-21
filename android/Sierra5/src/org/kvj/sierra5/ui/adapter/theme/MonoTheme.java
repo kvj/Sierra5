@@ -1,11 +1,16 @@
 package org.kvj.sierra5.ui.adapter.theme;
 
+import org.kvj.sierra5.common.theme.Theme;
+
 import android.graphics.Color;
 
-public class MonoTheme extends LightTheme {
+public class MonoTheme extends Theme {
 
 	public MonoTheme() {
-		super();
+		super("mono", "Monochrome");
+		dark = false;
+		colorBackground = Color.rgb(0xff, 0xff, 0xff);
+		colorText = Color.rgb(0x00, 0x00, 0x00);
 		c1Red = Color.rgb(0x10, 0x10, 0x10);
 		c2Green = Color.rgb(0x10, 0x10, 0x10);
 		c3Yellow = Color.rgb(0x10, 0x10, 0x10);

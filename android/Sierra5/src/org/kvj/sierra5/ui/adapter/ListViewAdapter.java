@@ -74,18 +74,13 @@ public class ListViewAdapter implements ListAdapter {
 		}
 
 		@Override
-		public void format(Node note, SpannableStringBuilder sb, Matcher m,
-				String text, boolean selected) {
-			int color = Node.TYPE_FOLDER == note.type ? theme.cbLYellow
-					: theme.ccLBlue;
+		public void format(Node note, SpannableStringBuilder sb, Matcher m, String text, boolean selected) {
+			int color = Node.TYPE_FOLDER == note.type ? theme.cbLYellow : theme.ccLBlue;
 			if (note.text.length() > 1) { // Color only First letter
-				PlainTextFormatter.addSpan(sb, text.substring(0, 1),
-						new ForegroundColorSpan(color));
-				PlainTextFormatter.addSpan(sb, text.substring(1),
-						new ForegroundColorSpan(theme.colorText));
+				PlainTextFormatter.addSpan(sb, text.substring(0, 1), new ForegroundColorSpan(color));
+				PlainTextFormatter.addSpan(sb, text.substring(1), new ForegroundColorSpan(theme.colorText));
 			} else {
-				PlainTextFormatter.addSpan(sb, text, new ForegroundColorSpan(
-						color));
+				PlainTextFormatter.addSpan(sb, text, new ForegroundColorSpan(color));
 			}
 		}
 
@@ -95,8 +90,7 @@ public class ListViewAdapter implements ListAdapter {
 	public ListViewAdapter(ListViewAdapterListener listener, Theme theme) {
 		this.listener = listener;
 		this.theme = theme;
-		textSize = App.getInstance().getIntPreference(R.string.docFont,
-				R.string.docFontDefault);
+		textSize = App.getInstance().getIntPreference(R.string.docFont, R.string.docFontDefault);
 
 		textFormatter = new PlainTextFormatter<Node>(defaultTextFormatter);
 	}
@@ -123,8 +117,7 @@ public class ListViewAdapter implements ListAdapter {
 				if (!child.visible) { // Not visible - skip
 					continue;
 				}
-				SearchInTreeResult r = moveThru(child, searchIndex
-						- result.size);
+				SearchInTreeResult r = moveThru(child, searchIndex - result.size);
 				if (null != r.foundNode) { // Node found
 					return r; // Don't need to go thru anymore
 				}
@@ -177,24 +170,19 @@ public class ListViewAdapter implements ListAdapter {
 		} else {
 			switch (node.type) {
 			case Node.TYPE_FOLDER:
-				return node.collapsed ? R.drawable.folder_col
-						: R.drawable.folder_exp;
+				return node.collapsed ? R.drawable.folder_col : R.drawable.folder_exp;
 			case Node.TYPE_FILE:
-				return node.collapsed ? R.drawable.file_col
-						: R.drawable.file_exp;
+				return node.collapsed ? R.drawable.file_col : R.drawable.file_exp;
 			case Node.TYPE_TEXT:
-				return node.collapsed ? R.drawable.text_col
-						: R.drawable.text_exp;
+				return node.collapsed ? R.drawable.text_col : R.drawable.text_exp;
 			}
 		}
 		return -1;
 	}
 
 	public void customize(View view, Node node, boolean selected) {
-		TextView textView = (TextView) view
-				.findViewById(R.id.listview_item_text);
-		ImageView menuIcon = (ImageView) view
-				.findViewById(R.id.listview_item_menu_icon);
+		TextView textView = (TextView) view.findViewById(R.id.listview_item_text);
+		ImageView menuIcon = (ImageView) view.findViewById(R.id.listview_item_menu_icon);
 		// menuIcon.setVisibility(selected ? View.VISIBLE : View.GONE);
 		textView.setTextColor(theme.colorText);
 		// textView.setBackgroundColor(theme.colorBackground);
@@ -207,11 +195,9 @@ public class ListViewAdapter implements ListAdapter {
 		for (int i = 0; i < levels; i++) {
 			left.append(' ');
 		}
-		TextView leftView = (TextView) view
-				.findViewById(R.id.listview_item_left);
+		TextView leftView = (TextView) view.findViewById(R.id.listview_item_left);
 		leftView.setText(left.toString());
-		textFormatter.writePlainText(node, text, theme.colorText, node.text,
-				selected);
+		textFormatter.writePlainText(node, text, theme.colorText, node.text, selected);
 		if (selected) { // Add italic
 			text.setSpan(new StyleSpan(Typeface.ITALIC), 0, text.length(), 0);
 		}
@@ -233,8 +219,8 @@ public class ListViewAdapter implements ListAdapter {
 			return null;
 		}
 		if (view == null) {
-			LayoutInflater inflater = (LayoutInflater) parent.getContext()
-					.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+			LayoutInflater inflater = (LayoutInflater) parent.getContext().getSystemService(
+					Context.LAYOUT_INFLATER_SERVICE);
 			view = inflater.inflate(R.layout.listview_item, parent, false);
 		}
 		ViewGroup root = (ViewGroup) view; // Actually linear layout
@@ -242,8 +228,7 @@ public class ListViewAdapter implements ListAdapter {
 			root.removeViewAt(1);
 		}
 		boolean selected = selectedIndex == index;
-		view.setMinimumHeight((int) (28 * view.getContext().getResources()
-				.getDisplayMetrics().density));
+		view.setMinimumHeight((int) (28 * view.getContext().getResources().getDisplayMetrics().density));
 		view.findViewById(R.id.listview_item_top).setVisibility(View.VISIBLE);
 		customize(view, node, index == selectedIndex);
 		if (Node.TYPE_TEXT == node.type) {
@@ -255,8 +240,7 @@ public class ListViewAdapter implements ListAdapter {
 					View renderResult = rv.apply(parent.getContext(), root);
 					root.addView(renderResult);
 					if (!selected) { // Hide top part when not selected
-						view.findViewById(R.id.listview_item_top)
-								.setVisibility(View.GONE);
+						view.findViewById(R.id.listview_item_top).setVisibility(View.GONE);
 					}
 				} else {
 					if (!remoteRenders.containsKey(node.text)) {
@@ -393,22 +377,18 @@ public class ListViewAdapter implements ListAdapter {
 		return showRoot;
 	}
 
-	public static RemoteViews renderRemote(Controller controller, Node node,
-			String left, String themeName) {
-		RemoteViews result = new RemoteViews(
-				App.getInstance().getPackageName(), R.layout.listview_item);
+	public static RemoteViews renderRemote(Controller controller, Node node, String left, String themeName) {
+		RemoteViews result = new RemoteViews(App.getInstance().getPackageName(), R.layout.listview_item);
 		Theme theme = ThemeProvider.getTheme(themeName);
 		ListViewAdapter instance = new ListViewAdapter(null, theme);
 		instance.setController(controller);
 		SpannableStringBuilder text = new SpannableStringBuilder();
-		instance.textFormatter.writePlainText(node, text, theme.colorText,
-				node.text, false);
+		instance.textFormatter.writePlainText(node, text, theme.colorText, node.text, false);
 		// result.setViewVisibility(R.id.listview_item_menu_icon, View.GONE);
 		result.setTextViewText(R.id.listview_item_text, text);
 		int iconID = getIcon(node);
 		if (-1 == iconID) {
-			result.setViewVisibility(R.id.listview_item_menu_icon,
-					View.INVISIBLE);
+			result.setViewVisibility(R.id.listview_item_menu_icon, View.INVISIBLE);
 		} else {
 			result.setViewVisibility(R.id.listview_item_menu_icon, View.VISIBLE);
 			result.setImageViewResource(R.id.listview_item_menu_icon, iconID);
@@ -451,19 +431,16 @@ public class ListViewAdapter implements ListAdapter {
 		}
 
 		@Override
-		public void format(Node note, SpannableStringBuilder sb, Matcher m,
-				String text, boolean selected) {
+		public void format(Node note, SpannableStringBuilder sb, Matcher m, String text, boolean selected) {
 			try { // Remote errors
-				FormatSpan[] spans = plugin.format(index, theme, note,
-						m.group(), selected);
+				FormatSpan[] spans = plugin.format(index, theme, note, m.group(), selected);
 				if (null == spans) { // No spans
 					// Log.i(TAG, "No format");
 					return;
 				}
 				// Log.i(TAG, "format: " + text + ", " + spans.length);
 				for (FormatSpan span : spans) { // Have span
-					PlainTextFormatter.addSpan(sb, span.getText(),
-							span.getSpans());
+					PlainTextFormatter.addSpan(sb, span.getText(), span.getSpans());
 				}
 			} catch (Exception e) {
 				// Log.w(TAG, "Error formatting");
@@ -489,20 +466,16 @@ public class ListViewAdapter implements ListAdapter {
 
 	public void resetPlugins() {
 		remoteRenders.clear();
-		remoteRenderPlugins = controller
-				.getPlugins(PluginInfo.PLUGIN_CAN_RENDER);
-		localPlugins = controller.getPlugins(LocalPlugin.class,
-				PluginInfo.PLUGIN_ANY);
+		remoteRenderPlugins = controller.getPlugins(PluginInfo.PLUGIN_CAN_RENDER);
+		localPlugins = controller.getPlugins(LocalPlugin.class, PluginInfo.PLUGIN_ANY);
 		List<NodeTextFormatter> formatters = new ArrayList<NodeTextFormatter>();
-		List<Plugin> plugins = controller
-				.getPlugins(PluginInfo.PLUGIN_CAN_FORMAT);
+		List<Plugin> plugins = controller.getPlugins(PluginInfo.PLUGIN_CAN_FORMAT);
 		// Log.i(TAG, "setController: plugins: " + plugins.size());
 		for (Plugin plugin : plugins) { // Create formatters for every plugin
 			formatters.addAll(formattersFromPlugin(plugin));
 		}
 		formatters.add(defaultTextFormatter);
-		textFormatter.setFormatters(formatters
-				.toArray(new NodeTextFormatter[0]));
+		textFormatter.setFormatters(formatters.toArray(new NodeTextFormatter[0]));
 	}
 
 }

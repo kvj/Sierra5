@@ -41,8 +41,7 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 
-public class ListViewFragment extends SherlockFragment implements
-		ListViewAdapterListener {
+public class ListViewFragment extends SherlockFragment implements ListViewAdapterListener {
 
 	public enum EditType {
 		Edit, Add, Remove
@@ -75,8 +74,7 @@ public class ListViewFragment extends SherlockFragment implements
 		Plugin plugin;
 		MenuItemInfo info;
 
-		public PluginMenuRecord(int index, Node node, Plugin plugin,
-				MenuItemInfo info) {
+		public PluginMenuRecord(int index, Node node, Plugin plugin, MenuItemInfo info) {
 			super(index, info.getText(), node);
 			this.plugin = plugin;
 			this.info = info;
@@ -86,6 +84,7 @@ public class ListViewFragment extends SherlockFragment implements
 
 	private static final int MENU_EDIT = 0;
 	private static final int MENU_OPEN = 1;
+	private static final int MENU_REMOVE = 2;
 
 	private static final String TAG = "ListFragment";
 	private ListView listView = null;
@@ -112,51 +111,42 @@ public class ListViewFragment extends SherlockFragment implements
 	}
 
 	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-			Bundle savedInstanceState) {
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		actionBar = getSherlockActivity().getSupportActionBar();
 		setHasOptionsMenu(true);
-		View view = inflater.inflate(R.layout.listview_fragment, container,
-				false);
+		View view = inflater.inflate(R.layout.listview_fragment, container, false);
 		listView = (ListView) view.findViewById(R.id.listview);
-		clipboardPanel = (ViewGroup) view
-				.findViewById(R.id.listview_clipboard_panel);
-		clipboardCaption = (TextView) view
-				.findViewById(R.id.listview_clipboard_caption);
-		view.findViewById(R.id.listview_cancel).setOnClickListener(
-				new OnClickListener() {
+		clipboardPanel = (ViewGroup) view.findViewById(R.id.listview_clipboard_panel);
+		clipboardCaption = (TextView) view.findViewById(R.id.listview_clipboard_caption);
+		view.findViewById(R.id.listview_cancel).setOnClickListener(new OnClickListener() {
 
-					@Override
-					public void onClick(View v) {
-						clearClipboard();
-					}
-				});
-		view.findViewById(R.id.listview_cut).setOnClickListener(
-				new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				clearClipboard();
+			}
+		});
+		view.findViewById(R.id.listview_cut).setOnClickListener(new OnClickListener() {
 
-					@Override
-					public void onClick(View arg0) {
-						doCutCopy(true);
-					}
-				});
-		view.findViewById(R.id.listview_copy).setOnClickListener(
-				new OnClickListener() {
+			@Override
+			public void onClick(View arg0) {
+				doCutCopy(true);
+			}
+		});
+		view.findViewById(R.id.listview_copy).setOnClickListener(new OnClickListener() {
 
-					@Override
-					public void onClick(View arg0) {
-						doCutCopy(false);
-					}
-				});
-		view.findViewById(R.id.listview_remove).setOnClickListener(
-				new OnClickListener() {
+			@Override
+			public void onClick(View arg0) {
+				doCutCopy(false);
+			}
+		});
+		view.findViewById(R.id.listview_remove).setOnClickListener(new OnClickListener() {
 
-					@Override
-					public void onClick(View arg0) {
-						doRemoveSelected();
-					}
-				});
-		String themeName = App.getInstance().getStringPreference(
-				R.string.theme, R.string.themeDefault);
+			@Override
+			public void onClick(View arg0) {
+				doRemoveSelected();
+			}
+		});
+		String themeName = App.getInstance().getStringPreference(R.string.theme, R.string.themeDefault);
 		Theme theme = ThemeProvider.getTheme(themeName);
 		if (null != listView) {
 			listView.setBackgroundColor(theme.colorBackground);
@@ -167,16 +157,14 @@ public class ListViewFragment extends SherlockFragment implements
 		listView.setOnItemClickListener(new OnItemClickListener() {
 
 			@Override
-			public void onItemClick(AdapterView<?> view, View arg1, int index,
-					long id) {
+			public void onItemClick(AdapterView<?> view, View arg1, int index, long id) {
 				itemClick(index);
 			}
 		});
 		listView.setOnItemLongClickListener(new OnItemLongClickListener() {
 
 			@Override
-			public boolean onItemLongClick(AdapterView<?> view, View arg1,
-					int index, long id) {
+			public boolean onItemLongClick(AdapterView<?> view, View arg1, int index, long id) {
 				Node node = adapter.getItem(index);
 				if (null == node) { // Node not found - strange
 					return true;
@@ -189,23 +177,20 @@ public class ListViewFragment extends SherlockFragment implements
 	}
 
 	private void doRemoveSelected() {
-		SuperActivity.showQuestionDialog(getActivity(), "Remove?",
-				"Remove selected items: "
-						+ controller.getClipboard().getItemCount() + "?",
-				new Runnable() {
+		SuperActivity.showQuestionDialog(getActivity(), "Remove?", "Remove selected items: "
+				+ controller.getClipboard().getItemCount() + "?", new Runnable() {
 
-					@Override
-					public void run() {
-						if (controller.getClipboard().remove()) { // Removed
-							updateClipboardStatus();
-							SuperActivity.notifyUser(getActivity(), "Removed");
-							refresh(null);
-						} else {
-							SuperActivity.notifyUser(getActivity(),
-									"Operation failed");
-						}
-					}
-				});
+			@Override
+			public void run() {
+				if (controller.getClipboard().remove()) { // Removed
+					updateClipboardStatus();
+					SuperActivity.notifyUser(getActivity(), "Removed");
+					refresh(null);
+				} else {
+					SuperActivity.notifyUser(getActivity(), "Operation failed");
+				}
+			}
+		});
 	}
 
 	private void doCutCopy(boolean cut) {
@@ -246,8 +231,7 @@ public class ListViewFragment extends SherlockFragment implements
 		}
 	}
 
-	private void onLongClick(final PluginMenuRecord parent, final Node node,
-			final int index) {
+	private void onLongClick(final PluginMenuRecord parent, final Node node, final int index) {
 		if (selectMode && null != listener) { // Have listener and select mode
 			listener.open(node);
 			return;
@@ -267,21 +251,21 @@ public class ListViewFragment extends SherlockFragment implements
 			@Override
 			protected Void doInBackground(Void... params) {
 				if (null == parent) { // Open/edit only for sub-menu
-					if (Node.TYPE_FILE == node.type
-							|| Node.TYPE_TEXT == node.type) {
+					if (Node.TYPE_FILE == node.type || Node.TYPE_TEXT == node.type) {
 						// File or text - edit
-						contextMenu.add(new MenuItemRecord<Node>(MENU_EDIT,
-								"Edit", node));
+						contextMenu.add(new MenuItemRecord<Node>(MENU_EDIT, "Edit", node));
 					}
-					if (Node.TYPE_FILE == node.type
-							|| Node.TYPE_FOLDER == node.type) {
+					if (Node.TYPE_FILE == node.type || Node.TYPE_FOLDER == node.type) {
 						// File or folder - open
-						contextMenu.add(new MenuItemRecord<Node>(MENU_OPEN,
-								"Open", node));
+						contextMenu.add(new MenuItemRecord<Node>(MENU_OPEN, "Open", node));
+					}
+					if (Node.TYPE_TEXT == node.type) {
+						// File or text - edit
+						contextMenu.add(new MenuItemRecord<Node>(MENU_REMOVE, "Remove", node));
 					}
 				}
 				try { // Get menus from plugins
-					int menuIndex = 2;
+					int menuIndex = 3;
 					// Log.i(TAG, "Getting menu from plugins");
 					List<Plugin> plugins = null;
 					if (null != parent) { // Sub menu, plugin found
@@ -294,9 +278,7 @@ public class ListViewFragment extends SherlockFragment implements
 					}
 					for (Plugin plugin : plugins) {
 						// menu from every plugin
-						MenuItemInfo[] menus = plugin
-								.getMenu(null != parent ? parent.info.getId()
-										: -1, node);
+						MenuItemInfo[] menus = plugin.getMenu(null != parent ? parent.info.getId() : -1, node);
 						if (null == menus) { // No menus
 							// Log.i(TAG, "Plugin: " + menuIndex +
 							// " no menus");
@@ -305,8 +287,7 @@ public class ListViewFragment extends SherlockFragment implements
 						// Log.i(TAG, "Plugin: " + menuIndex + " menus: "
 						// + menus.length);
 						for (MenuItemInfo info : menus) { // Add menus
-							contextMenu.add(new PluginMenuRecord(menuIndex++,
-									node, plugin, info));
+							contextMenu.add(new PluginMenuRecord(menuIndex++, node, plugin, info));
 							// Log.i(TAG, "Plugin: " + menuIndex + " menu: "
 							// + info.getText());
 						}
@@ -347,8 +328,7 @@ public class ListViewFragment extends SherlockFragment implements
 			Node n = adapter.getItem(selectedIndex);
 			outState.putString(Constants.LIST_INTENT_FILE, n.file);
 			if (null != n.textPath) { // Have path - text selected
-				outState.putStringArray(Constants.LIST_INTENT_ITEM,
-						n.textPath.toArray(new String[0]));
+				outState.putStringArray(Constants.LIST_INTENT_ITEM, n.textPath.toArray(new String[0]));
 			}
 		}
 	}
@@ -356,36 +336,30 @@ public class ListViewFragment extends SherlockFragment implements
 	/**
 	 * Loads data
 	 */
-	public void setController(Bundle data, Controller controller,
-			ListViewFragmentListener listener, boolean selectMode) {
+	public void setController(Bundle data, Controller controller, ListViewFragmentListener listener, boolean selectMode) {
 		this.selectMode = selectMode;
 		this.listener = listener;
 		this.controller = controller;
 		updateClipboardStatus();
-		boolean useTemplatePath = data.getBoolean(Constants.INTENT_TEMPLATE,
-				false);
+		boolean useTemplatePath = data.getBoolean(Constants.INTENT_TEMPLATE, false);
 		String file = data.getString(Constants.LIST_INTENT_ROOT);
 		boolean rootSet = false;
 		adapter.setController(controller);
 		if (null != file) { // Have file in Activity parameters
-			rootSet = adapter.setRoot(
-					controller.nodeFromPath(file, null, useTemplatePath), true);
+			rootSet = adapter.setRoot(controller.nodeFromPath(file, null, useTemplatePath), true);
 			if (rootSet) { // Result = OK - save
 				rootFile = adapter.getRoot().file;
 			}
 		} else { // No file - show root
 			String rootFolder = controller.getRootFolder();
-			rootSet = adapter.setRoot(
-					controller.nodeFromPath(rootFolder, null, false), false);
+			rootSet = adapter.setRoot(controller.nodeFromPath(rootFolder, null, false), false);
 		}
 		// Log.i(TAG, "rootSet: " + rootSet);
 		adapter.setSelectedIndex(-1);
 		if (rootSet) { // Root set - expand root
 			actionBar.setTitle(adapter.getRoot().text);
-			expandTree(adapter.getRoot(),
-					data.getString(Constants.LIST_INTENT_FILE),
-					data.getStringArray(Constants.LIST_INTENT_ITEM),
-					useTemplatePath);
+			expandTree(adapter.getRoot(), data.getString(Constants.LIST_INTENT_FILE),
+					data.getStringArray(Constants.LIST_INTENT_ITEM), useTemplatePath);
 		} else {
 			SuperActivity.notifyUser(getActivity(), "Invalid file/folder");
 		}
@@ -430,8 +404,7 @@ public class ListViewFragment extends SherlockFragment implements
 		// task.execute();
 	}
 
-	private void expandTree(final Node node, final String file,
-			final String[] path, final boolean useTemplate) {
+	private void expandTree(final Node node, final String file, final String[] path, final boolean useTemplate) {
 		if (null == controller) { // No controller - no refresh
 			return;
 		}
@@ -446,8 +419,7 @@ public class ListViewFragment extends SherlockFragment implements
 			boolean exp = controller.expand(node, true, Controller.EXPAND_ONE);
 			result = -1;
 		} else {
-			SearchNodeResult res = controller.searchInNode(node, file, path,
-					useTemplate);
+			SearchNodeResult res = controller.searchInNode(node, file, path, useTemplate);
 			if (null == res) { // Error expand
 				result = -1;
 			} else {
@@ -461,8 +433,7 @@ public class ListViewFragment extends SherlockFragment implements
 		// protected void onPostExecute(Integer result) {
 		if (result != null) { // State changed - notify adapter
 			if (-1 != result) { // Not expanded
-				adapter.setSelectedIndex(adapter.isShowRoot() ? result
-						: result - 1);
+				adapter.setSelectedIndex(adapter.isShowRoot() ? result : result - 1);
 			}
 			adapter.dataChanged();
 		} else {
@@ -476,8 +447,7 @@ public class ListViewFragment extends SherlockFragment implements
 	}
 
 	@Override
-	public void onCreateContextMenu(ContextMenu menu, View v,
-			ContextMenuInfo menuInfo) {
+	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
 		menu.clear();
 		for (int i = 0; i < contextMenu.size(); i++) {
 			MenuItemRecord info = contextMenu.get(i);
@@ -503,6 +473,9 @@ public class ListViewFragment extends SherlockFragment implements
 		case MENU_EDIT: // Edit item
 			editItem(item.data, false);
 			return;
+		case MENU_REMOVE: // Remove item
+			removeItem(item.data);
+			return;
 		}
 		if (item instanceof PluginMenuRecord) { // Plugin menu
 			int index = adapter.getSelectedIndex();
@@ -521,8 +494,7 @@ public class ListViewFragment extends SherlockFragment implements
 					try { // Remote errors
 							// Log.i(TAG, "Before exec: " + node.text);
 						synchronized (node) { // Lock access to node
-							return pitem.plugin.executeAction(
-									pitem.info.getId(), node);
+							return pitem.plugin.executeAction(pitem.info.getId(), node);
 						}
 					} catch (Exception e) {
 						Log.w(TAG, "Error executing action: " + pitem.title, e);
@@ -533,8 +505,7 @@ public class ListViewFragment extends SherlockFragment implements
 				@Override
 				protected void onPostExecute(Boolean result) {
 					if (!result) { // Execute failed
-						SuperActivity.notifyUser(getActivity(),
-								"Error in action");
+						SuperActivity.notifyUser(getActivity(), "Error in action");
 					} else {
 						// Update selection
 						// Log.i(TAG, "After exec: " + node.text);
@@ -559,9 +530,8 @@ public class ListViewFragment extends SherlockFragment implements
 		//
 		// @Override
 		// protected SearchNodeResult doInBackground(Void... params) {
-		SearchNodeResult res = controller
-				.searchInNode(adapter.getRoot(), node.file,
-						Node.list2array(node.textPath, new String[0]), false);
+		SearchNodeResult res = controller.searchInNode(adapter.getRoot(), node.file,
+				Node.list2array(node.textPath, new String[0]), false);
 		// }
 		//
 		// @Override
@@ -569,8 +539,7 @@ public class ListViewFragment extends SherlockFragment implements
 		if (null != res) { // Found
 			// Log.i(TAG, "selectNode: " + node.file + ", "
 			// + node.textPath + ", " + res.found);
-			adapter.setSelectedIndex(adapter.isShowRoot() ? res.index
-					: res.index - 1);
+			adapter.setSelectedIndex(adapter.isShowRoot() ? res.index : res.index - 1);
 		}
 		adapter.dataChanged();
 		toggleProgress(false);
@@ -588,9 +557,6 @@ public class ListViewFragment extends SherlockFragment implements
 		case R.id.menu_add: // Start add
 			editItem(adapter.getItem(adapter.getSelectedIndex()), true);
 			return true;
-		case R.id.menu_remove: // Remove
-			removeItem(adapter.getItem(adapter.getSelectedIndex()));
-			return true;
 		case R.id.menu_reload:
 			adapter.resetPlugins();
 			refresh(null);
@@ -606,8 +572,7 @@ public class ListViewFragment extends SherlockFragment implements
 	}
 
 	public void refresh(Node node) {
-		selectNode(node != null ? node : adapter.getItem(adapter
-				.getSelectedIndex()));
+		selectNode(node != null ? node : adapter.getItem(adapter.getSelectedIndex()));
 		updateClipboardStatus();
 	}
 

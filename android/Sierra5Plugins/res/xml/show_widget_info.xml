@@ -7,4 +7,6 @@
     android:updatePeriodMillis="21600000"
     android:configure="org.kvj.sierra5.plugins.ui.widget.show.ShowWidgetConfigPane"
     android:initialLayout="@layout/show_widget"
+    android:initialKeyguardLayout="@layout/show_widget"
+    android:widgetCategory="home_screen|keyguard"
     android:resizeMode="horizontal|vertical"/>

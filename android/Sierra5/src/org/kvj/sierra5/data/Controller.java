@@ -12,13 +12,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,7 +29,9 @@ import org.kvj.sierra5.common.data.Node;
 import org.kvj.sierra5.common.plugin.Plugin;
 import org.kvj.sierra5.common.plugin.PluginInfo;
 import org.kvj.sierra5.common.root.Root;
+import org.kvj.sierra5.common.theme.Theme;
 import org.kvj.sierra5.ui.adapter.ListViewAdapter;
+import org.kvj.sierra5.ui.adapter.theme.ThemeProvider;
 import org.kvj.sierra5.ui.plugin.LocalPlugin;
 import org.kvj.sierra5.ui.plugin.impl.ClipboardPlugin;
 
@@ -61,8 +60,7 @@ public class Controller {
 	private ClipboardPlugin clipboardPlugin = null;
 
 	public Controller() {
-		plugins = new RemoteServicesCollector<Plugin>(App.getInstance(),
-				Constants.PLUGIN_NS, new APIPluginFilter()) {
+		plugins = new RemoteServicesCollector<Plugin>(App.getInstance(), Constants.PLUGIN_NS, new APIPluginFilter()) {
 
 			@Override
 			public Plugin castAIDL(IBinder binder) {
@@ -71,15 +69,15 @@ public class Controller {
 
 			@Override
 			public void onChange() {
-				// List<Plugin> list = getPlugins();
-				// Log.i(TAG, "Plugins: " + list.size());
-				// try {
-				// for (Plugin plugin : list) {
-				// Log.i(TAG, "Plugin: " + plugin.getName());
-				// }
-				// } catch (RemoteException e) {
-				// e.printStackTrace();
-				// }
+				List<Plugin> list = getPlugins();
+				Log.i(TAG, "Plugins: " + list.size());
+				try {
+					for (Plugin plugin : list) {
+						Log.i(TAG, "Plugin: " + plugin.getName());
+					}
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
 			}
 		};
 		clipboardPlugin = new ClipboardPlugin(this);
@@ -93,8 +91,7 @@ public class Controller {
 		public boolean filter(int index, Node node);
 	}
 
-	private int writeOneNode(int index, int removeLeft, Node node,
-			LineEater eater) {
+	private int writeOneNode(int index, int removeLeft, Node node, LineEater eater) {
 		StringBuilder spaces = new StringBuilder();
 		String[] lines = null;
 		if (!eater.filter(index, node)) { // Filtered out
@@ -103,8 +100,7 @@ public class Controller {
 		boolean skipFirstLine = false;
 		if (null != node.raw) { // Have raw data
 			lines = node.raw.split("\n");
-			if (1 == lines.length && TextUtils.isEmpty(lines[0])
-					&& node.type == Node.TYPE_FILE) {
+			if (1 == lines.length && TextUtils.isEmpty(lines[0]) && node.type == Node.TYPE_FILE) {
 				// File + empty text = nothing to write
 				lines = new String[0];
 			}
@@ -133,8 +129,7 @@ public class Controller {
 				if (m.find()) { // Have spaces
 					leftSpaces = m.group(0);
 				}
-				eater.eat(result, node, spaces.toString() + leftSpaces,
-						line.trim());
+				eater.eat(result, node, spaces.toString() + leftSpaces, line.trim());
 			}
 			result++;
 		}
@@ -142,8 +137,7 @@ public class Controller {
 			// Process children
 			for (int i = 0; i < node.children.size(); i++) {
 				// Write every child
-				result = writeOneNode(result, removeLeft, node.children.get(i),
-						eater);
+				result = writeOneNode(result, removeLeft, node.children.get(i), eater);
 			}
 		}
 		if (null != node.raw && node.type == Node.TYPE_TEXT) {
@@ -180,20 +174,16 @@ public class Controller {
 	}
 
 	public int getTabSize() {
-		return App.getInstance().getIntPreference(R.string.tabSize,
-				R.string.tabSizeDefault);
+		return App.getInstance().getIntPreference(R.string.tabSize, R.string.tabSizeDefault);
 	}
 
 	public boolean saveFile(Node node, final Node remove) {
 		try { // Catch save errors
-			final String crlf = App.getInstance().getBooleanPreference(
-					R.string.useCRLF, false) ? "\r\n" : "\n";
-			final boolean expandTab = App.getInstance().getBooleanPreference(
-					R.string.expandTabs, false);
+			final String crlf = App.getInstance().getBooleanPreference(R.string.useCRLF, false) ? "\r\n" : "\n";
+			final boolean expandTab = App.getInstance().getBooleanPreference(R.string.expandTabs, false);
 			final String tabRepl;
 			if (!expandTab) { // Replace spaces with tab
-				int tabSize = App.getInstance().getIntPreference(
-						R.string.tabSize, R.string.tabSizeDefault);
+				int tabSize = App.getInstance().getIntPreference(R.string.tabSize, R.string.tabSizeDefault);
 				StringBuilder sb = new StringBuilder();
 				for (int i = 0; i < tabSize; i++) {
 					// Add spaces
@@ -240,15 +230,13 @@ public class Controller {
 	private boolean parseFile(Node node) {
 		try { // Catch all stream errors
 			List<Plugin> plugins = getPlugins(PluginInfo.PLUGIN_CAN_PARSE);
-			int spacesInTab = App.getInstance().getIntPreference(
-					R.string.tabSize, R.string.tabSizeDefault);
+			int spacesInTab = App.getInstance().getIntPreference(R.string.tabSize, R.string.tabSizeDefault);
 			StringBuilder tabReplacement = new StringBuilder();
 			for (int i = 0; i < spacesInTab; i++) { // Add spaces
 				tabReplacement.append(' ');
 			}
 			// Log.i(TAG, "Parse file: " + node.file);
-			BufferedReader br = new BufferedReader(new InputStreamReader(
-					new FileInputStream(node.file), "utf-8"));
+			BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(node.file), "utf-8"));
 			node.children = new ArrayList<Node>(); // Reset children
 			Stack<Node> parents = new Stack<Node>();
 			String line = null;
@@ -322,8 +310,7 @@ public class Controller {
 		}
 	}
 
-	private static Pattern mask = Pattern
-			.compile("\\*|\\?|(\\$\\{([a-zA-Z]+)((\\+|\\-|\\=)(\\d{1,3})(h|d|w|m|y|e))?\\})");
+	private static Pattern mask = Pattern.compile("\\*|\\?");
 
 	// 2: dd 3: +2d 4: + 5: 2
 
@@ -351,65 +338,8 @@ public class Controller {
 				if (!regexp) { // Revert
 					repl = "?";
 				}
-			} else {
-				// Date replacement
-				Calendar c = Calendar.getInstance();
-				if (null != m.group(3)) { // Have date modifier
-					int mul = 0;
-					if ("+".equals(m.group(4))) { // +
-						mul = 1;
-					} else if ("-".equals(m.group(4))) { // -
-						mul = -1;
-					}
-					int value = Integer.parseInt(m.group(5), 10);
-					if ("h".equals(m.group(6))) { // Hour
-						if (0 == mul) { // Set
-							c.set(Calendar.HOUR, value);
-						} else {
-							c.add(Calendar.HOUR, mul * value);
-						}
-					} else if ("d".equals(m.group(6))) { // Day
-						if (0 == mul) { // Set
-							c.add(Calendar.DAY_OF_MONTH, value);
-						} else {
-							c.add(Calendar.DAY_OF_YEAR, mul * value);
-						}
-					} else if ("w".equals(m.group(6))) { // Week
-						if (0 == mul) { // Set
-							c.set(Calendar.WEEK_OF_YEAR, value);
-						} else {
-							c.add(Calendar.DAY_OF_YEAR, mul * value * 7);
-						}
-					} else if ("e".equals(m.group(6))) { // Day of week
-						if (0 == mul) { // Set
-							int nowE = c.get(Calendar.DAY_OF_WEEK) - 1;
-							// 0 = SUNDAY
-							if (nowE == 0) { // It's Sunday now
-								// TODO: Make it configurable
-								nowE = 7;
-							}
-							c.add(Calendar.DAY_OF_YEAR, value - nowE);
-						}
-					} else if ("m".equals(m.group(6))) { // Month
-						if (0 == mul) { // Set month (from zero)
-							c.set(Calendar.MONTH, value - 1);
-						} else {
-							c.add(Calendar.MONTH, mul * value);
-						}
-					} else if ("y".equals(m.group(6))) { // Year
-						if (0 == mul) { // Set
-							c.set(Calendar.YEAR, value);
-						} else {
-							c.add(Calendar.YEAR, mul * value);
-						}
-					}
-				}
-				SimpleDateFormat dt = new SimpleDateFormat(m.group(2),
-						Locale.ENGLISH);
-				repl = dt.format(c.getTime());
-				// Log.i(TAG, "Date repl:" + m.group() + ", " + c.getTime() +
-				// ", "
-				// + repl);
+			} else { // Unknown?
+				repl = found;
 			}
 			m.appendReplacement(pattern, repl);
 		}
@@ -419,8 +349,7 @@ public class Controller {
 		}
 		res.converted = pattern.toString();
 		if (regexp) { // Compile pattern
-			res.pattern = Pattern.compile(res.converted,
-					Pattern.CASE_INSENSITIVE);
+			res.pattern = Pattern.compile(res.converted, Pattern.CASE_INSENSITIVE);
 		}
 		return res;
 	}
@@ -437,8 +366,7 @@ public class Controller {
 	 * @param restoreExpand
 	 */
 	public boolean expand(Node node, Boolean forceExpand, int expandType) {
-		boolean newStateCollapsed = null != forceExpand ? !forceExpand
-				: !node.collapsed;
+		boolean newStateCollapsed = null != forceExpand ? !forceExpand : !node.collapsed;
 		// Log.i(TAG, "expand " + node.text + ", " + node.collapsed + ", "
 		// + node.type + ", " + forceExpand + ", " + expandAll);
 		if (Node.TYPE_TEXT == node.type) { // Text - just change flag
@@ -458,12 +386,9 @@ public class Controller {
 				return true; // Done
 			}
 			ItemPattern filePattern = parsePattern(
-					App.getInstance().getStringPreference(R.string.filePattern,
-							R.string.filePatternDefault), true);
+					App.getInstance().getStringPreference(R.string.filePattern, R.string.filePatternDefault), true);
 			ItemPattern folderPattern = parsePattern(
-					App.getInstance().getStringPreference(
-							R.string.folderPattern,
-							R.string.folderPatternDefault), true);
+					App.getInstance().getStringPreference(R.string.folderPattern, R.string.folderPatternDefault), true);
 
 			File[] files = folder.listFiles();
 			if (null == files) { // Empty dir
@@ -474,15 +399,13 @@ public class Controller {
 			// "Load dir: " + files.length + ", "
 			// + folder.getAbsolutePath());
 			for (File file : files) { // For every file/folder in folder
-				ItemPattern patt = file.isDirectory() ? folderPattern
-						: filePattern;
+				ItemPattern patt = file.isDirectory() ? folderPattern : filePattern;
 				boolean matches = patt.pattern.matcher(file.getName()).find();
 				if ((matches && patt.inverted) || (!matches && !patt.inverted)) {
 					continue;
 				}
-				Node child = node.createChild(
-						file.isDirectory() ? Node.TYPE_FOLDER : Node.TYPE_FILE,
-						file.getName(), 0);
+				Node child = node
+						.createChild(file.isDirectory() ? Node.TYPE_FOLDER : Node.TYPE_FILE, file.getName(), 0);
 				child.file = file.getAbsolutePath();
 				nodes.add(child);
 			}
@@ -490,20 +413,19 @@ public class Controller {
 
 				@Override
 				public int compare(Node lhs, Node rhs) {
-					if (lhs.type == Node.TYPE_FOLDER
-							&& rhs.type == Node.TYPE_FILE) { // Folder first
+					if (lhs.type == Node.TYPE_FOLDER && rhs.type == Node.TYPE_FILE) { // Folder
+																						// first
 						return -1;
 					}
-					if (lhs.type == Node.TYPE_FILE
-							&& rhs.type == Node.TYPE_FOLDER) { // Folder first
+					if (lhs.type == Node.TYPE_FILE && rhs.type == Node.TYPE_FOLDER) { // Folder
+																						// first
 						return 1;
 					}
 					return lhs.text.compareToIgnoreCase(rhs.text);
 				}
 			});
 			node.children = nodes;
-			if (expandType == EXPAND_ALL || (expandType == EXPAND_FILES)
-					&& node.type == Node.TYPE_FOLDER) {
+			if (expandType == EXPAND_ALL || (expandType == EXPAND_FILES) && node.type == Node.TYPE_FOLDER) {
 				// If expand all or expand files and this is folder
 				for (Node ch : nodes) { // Expand
 					expand(ch, forceExpand, expandType);
@@ -525,8 +447,7 @@ public class Controller {
 	/**
 	 * Constructs Node by file path
 	 */
-	public Node nodeFromPath(String path, String[] textPath,
-			boolean expectTemplate) {
+	public Node nodeFromPath(String path, String[] textPath, boolean expectTemplate) {
 		// Log.i(TAG, "nodeFromPath: " + path);
 		if (TextUtils.isEmpty(path)) { // Invalid path
 			return null;
@@ -539,8 +460,7 @@ public class Controller {
 		node.file = file.getAbsolutePath();
 		node.text = file.getName();
 		node.type = file.isDirectory() ? Node.TYPE_FOLDER : Node.TYPE_FILE;
-		SearchNodeResult result = searchInNode(node, path, textPath,
-				expectTemplate);
+		SearchNodeResult result = searchInNode(node, path, textPath, expectTemplate);
 		if (null == result || !result.found) { // Not found
 			return null;
 		}
@@ -578,8 +498,7 @@ public class Controller {
 		return result;
 	}
 
-	public SearchNodeResult searchInNode(Node root, String file, String[] path,
-			boolean template) {
+	public SearchNodeResult searchInNode(Node root, String file, String[] path, boolean template) {
 		File rootFile = new File(root.file);
 		if (!rootFile.exists()) { // Invalid file
 			Log.w(TAG, "Root not exist: " + root.file + " " + rootFile.exists());
@@ -620,8 +539,7 @@ public class Controller {
 				if (!ch.visible) { // Not visible - skip
 					continue;
 				}
-				if ((template && ip.matches(ch.text))
-						|| (!template && ip.converted.equals(ch.text))) {
+				if ((template && ip.matches(ch.text)) || (!template && ip.converted.equals(ch.text))) {
 					// From end - found
 					n = ch;
 					index += siblingSize + 1;
@@ -654,8 +572,7 @@ public class Controller {
 			return new Node[0];
 		}
 		Node parent = nodeFromPath(node.file, null, false);
-		SearchNodeResult res = searchInNode(parent, node.file,
-				Node.list2array(node.textPath, new String[0]), false);
+		SearchNodeResult res = searchInNode(parent, node.file, Node.list2array(node.textPath, new String[0]), false);
 		if (null == res || !res.found) { // Not found - parent only
 			return new Node[] { parent };
 		}
@@ -667,12 +584,9 @@ public class Controller {
 	}
 
 	public String getRootFolder() {
-		String rootFolderParam = App.getInstance().getResources()
-				.getString(R.string.rootFolder);
-		String sdCardPath = Environment.getExternalStorageDirectory()
-				.getAbsolutePath();
-		String rootFolder = App.getInstance().getStringPreference(
-				rootFolderParam, sdCardPath);
+		String rootFolderParam = App.getInstance().getResources().getString(R.string.rootFolder);
+		String sdCardPath = Environment.getExternalStorageDirectory().getAbsolutePath();
+		String rootFolder = App.getInstance().getStringPreference(rootFolderParam, sdCardPath);
 		return rootFolder;
 
 	}
@@ -685,8 +599,7 @@ public class Controller {
 		}
 
 		@Override
-		public Node getNode(String file, String[] path, boolean template)
-				throws RemoteException {
+		public Node getNode(String file, String[] path, boolean template) throws RemoteException {
 			Node node = nodeFromPath(file, path, template);
 			if (null == node) { // Error searching
 				return null;
@@ -698,22 +611,19 @@ public class Controller {
 		}
 
 		@Override
-		public RemoteViews render(Node node, String left, String theme)
-				throws RemoteException {
-			return ListViewAdapter.renderRemote(Controller.this, node, left,
-					theme);
+		public RemoteViews render(Node node, String left, String theme) throws RemoteException {
+			return ListViewAdapter.renderRemote(Controller.this, node, left, theme);
 		}
 
 		@Override
-		public boolean update(Node node, String text, String raw)
-				throws RemoteException {
+		public boolean update(Node node, String text, String raw) throws RemoteException {
 			try { // Write errors
 				Node file = getNode(node.file, null, false);
 				if (null == file) { // File not found
 					throw new IOException("File not found: " + node.file);
 				}
-				SearchNodeResult result = searchInNode(file, node.file,
-						Node.list2array(node.textPath, new String[0]), false);
+				SearchNodeResult result = searchInNode(file, node.file, Node.list2array(node.textPath, new String[0]),
+						false);
 				if (null == result || !result.found) { // Item not found
 					throw new RuntimeException("Item not found");
 				}
@@ -746,12 +656,10 @@ public class Controller {
 
 		@Override
 		public Node append(Node node, String raw) throws RemoteException {
-			int tabSize = App.getInstance().getIntPreference(R.string.tabSize,
-					R.string.tabSizeDefault);
+			int tabSize = App.getInstance().getIntPreference(R.string.tabSize, R.string.tabSizeDefault);
 			Node[] nn = actualizeNode(node);
 			if (2 != nn.length) { // Actual node not found
-				Log.w(TAG, "Node not found: " + node.file + ", "
-						+ node.textPath);
+				Log.w(TAG, "Node not found: " + node.file + ", " + node.textPath);
 				return null;
 			}
 			Node n = nn[1]; // Last node
@@ -770,8 +678,7 @@ public class Controller {
 		}
 
 		@Override
-		public boolean putFile(String to, String path, String text)
-				throws RemoteException {
+		public boolean putFile(String to, String path, String text) throws RemoteException {
 			try { // IO errors
 				Log.i(TAG, "putFile: " + to + ", " + path + ", " + text);
 				InputStream reader = null;
@@ -798,10 +705,8 @@ public class Controller {
 					reader = new ByteArrayInputStream(text.getBytes("utf-8"));
 				}
 				int BUFFER_SIZE = 4096;
-				BufferedOutputStream writer = new BufferedOutputStream(
-						new FileOutputStream(toFile, false), BUFFER_SIZE);
-				BufferedInputStream breader = new BufferedInputStream(reader,
-						BUFFER_SIZE);
+				BufferedOutputStream writer = new BufferedOutputStream(new FileOutputStream(toFile, false), BUFFER_SIZE);
+				BufferedInputStream breader = new BufferedInputStream(reader, BUFFER_SIZE);
 				byte[] buffer = new byte[BUFFER_SIZE];
 				int bytesRead = 0;
 				while ((bytesRead = breader.read(buffer)) > 0) { // Have data
@@ -816,14 +721,18 @@ public class Controller {
 			}
 			return false;
 		}
+
+		@Override
+		public Theme[] getThemes() throws RemoteException {
+			return ThemeProvider.getThemes();
+		}
 	};
 
 	public Root.Stub getRootService() {
 		return stub;
 	}
 
-	private <T extends Plugin> boolean checkPlugin(Class<T> cl, Plugin plugin,
-			int[] types) throws RemoteException {
+	private <T extends Plugin> boolean checkPlugin(Class<T> cl, Plugin plugin, int[] types) throws RemoteException {
 		if (!cl.isAssignableFrom(plugin.getClass())) { // Invalid type
 			return false;
 		}

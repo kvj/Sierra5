@@ -25,7 +25,14 @@ public class Theme implements Parcelable {
 
 	public int colorText = Color.rgb(0xff, 0xff, 0xff);
 
-	public Theme() {
+	public String name = null;
+
+	public String code = null;
+	public boolean dark = true;
+
+	public Theme(String code, String name) {
+		this.code = code;
+		this.name = name;
 	}
 
 	@Override
@@ -35,6 +42,8 @@ public class Theme implements Parcelable {
 
 	@Override
 	public void writeToParcel(Parcel dest, int flags) {
+		dest.writeString(code);
+		dest.writeString(name);
 		dest.writeInt(colorBackground);
 		dest.writeInt(c1Red);
 		dest.writeInt(c2Green);
@@ -50,6 +59,7 @@ public class Theme implements Parcelable {
 		dest.writeInt(cdLPurple);
 		dest.writeInt(ceLCyan);
 		dest.writeInt(colorText);
+		dest.writeInt(dark ? 1 : 0);
 	}
 
 	public static final Parcelable.Creator<Theme> CREATOR = new Creator<Theme>() {
@@ -61,7 +71,7 @@ public class Theme implements Parcelable {
 
 		@Override
 		public Theme createFromParcel(Parcel source) {
-			Theme theme = new Theme();
+			Theme theme = new Theme(source.readString(), source.readString());
 			theme.colorBackground = source.readInt();
 			theme.c1Red = source.readInt();
 			theme.c2Green = source.readInt();
@@ -77,6 +87,7 @@ public class Theme implements Parcelable {
 			theme.cdLPurple = source.readInt();
 			theme.ceLCyan = source.readInt();
 			theme.colorText = source.readInt();
+			theme.dark = source.readInt() == 1;
 			return theme;
 		}
 	};

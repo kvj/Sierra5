@@ -1,8 +1,12 @@
 package org.kvj.sierra5.plugins;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,8 +47,7 @@ public class WidgetController {
 			public void onConnect() {
 				super.onConnect();
 				try {
-					Log.i(TAG, "Root interface connected: "
-							+ root.getRemote().getRoot());
+					Log.i(TAG, "Root interface connected: " + root.getRemote().getRoot());
 					App.getInstance().updateWidgets(-1);
 				} catch (RemoteException e) {
 					e.printStackTrace();
@@ -62,8 +65,7 @@ public class WidgetController {
 
 	public static interface ParserListener {
 
-		public boolean onItem(boolean finalItem, Map<String, Object> values,
-				Node node);
+		public boolean onItem(boolean finalItem, Map<String, Object> values, Node node);
 	}
 
 	private void escape(String what, StringBuffer to) {
@@ -98,8 +100,74 @@ public class WidgetController {
 		}
 	}
 
-	private static Pattern subs = Pattern
-			.compile("[\\$|\\?|\\#]\\{(([^\\}]+?)(:([A-Za-z0-9]+))?)\\}");
+	private static Pattern subs = Pattern.compile("[\\$|\\?|\\#]\\{(([^\\}]+?)(:([A-Za-z0-9\\+|\\-|\\=]+))?)\\}");
+	private static Pattern datePattern = Pattern.compile("([a-zA-Z]+)((\\+|\\-|\\=)(\\d{1,3})(h|d|w|m|y|e))?");
+
+	private String insertDateTimeValue(Date date, String format) {
+		Calendar c = Calendar.getInstance();
+		c.setTime(date);
+		Matcher m = datePattern.matcher(format);
+		if (null == m || !m.find()) { // Invalid data
+			Log.w(TAG, "Value: " + format + " is not correct date time definition");
+			return null;
+		}
+		if (null != m.group(2)) { // Have date modifier
+			int mul = 0;
+			if ("+".equals(m.group(3))) { // +
+				mul = 1;
+			} else if ("-".equals(m.group(3))) { // -
+				mul = -1;
+			}
+			int value = Integer.parseInt(m.group(4), 10);
+			char type = ' ';
+			if (m.group(5) != null) { // Have type
+				type = m.group(5).charAt(0);
+			}
+			if (type == 'h') { // Hour
+				if (0 == mul) { // Set
+					c.set(Calendar.HOUR, value);
+				} else {
+					c.add(Calendar.HOUR, mul * value);
+				}
+			} else if (type == 'd') { // Day
+				if (0 == mul) { // Set
+					c.add(Calendar.DAY_OF_MONTH, value);
+				} else {
+					c.add(Calendar.DAY_OF_YEAR, mul * value);
+				}
+			} else if (type == 'w') { // Week
+				if (0 == mul) { // Set
+					c.set(Calendar.WEEK_OF_YEAR, value);
+				} else {
+					c.add(Calendar.DAY_OF_YEAR, mul * value * 7);
+				}
+			} else if (type == 'e') { // Day of week
+				if (0 == mul) { // Set
+					int nowE = c.get(Calendar.DAY_OF_WEEK) - 1;
+					// 0 = SUNDAY
+					if (nowE == 0) { // It's Sunday now
+						// TODO: Make it configurable
+						nowE = 7;
+					}
+					c.add(Calendar.DAY_OF_YEAR, value - nowE);
+				}
+			} else if (type == 'm') { // Month
+				if (0 == mul) { // Set month (from zero)
+					c.set(Calendar.MONTH, value - 1);
+				} else {
+					c.add(Calendar.MONTH, mul * value);
+				}
+			} else if (type == 'y') { // Year
+				if (0 == mul) { // Set
+					c.set(Calendar.YEAR, value);
+				} else {
+					c.add(Calendar.YEAR, mul * value);
+				}
+			}
+		}
+		SimpleDateFormat dt = new SimpleDateFormat(m.group(1), Locale.ENGLISH);
+		return dt.format(c.getTime());
+	}
 
 	private List<ItemInfo> parseItem(StringBuffer result, String text) {
 		List<ItemInfo> items = new ArrayList<ItemInfo>();
@@ -114,8 +182,7 @@ public class WidgetController {
 				continue;
 			}
 			String endChar = m.group().startsWith("?") ? "?" : "";
-			String itemName = null == m.group(3) ? "i" + items.size() : m
-					.group(4);
+			String itemName = null == m.group(3) ? "i" + items.size() : m.group(4);
 			if (m.group(2).matches("^\\?+$")) { // ???
 				result.append("((");
 				for (int i = 0; i < m.group(2).length(); i++) { // add .
@@ -142,6 +209,13 @@ public class WidgetController {
 						sb.append("(\\S+)");
 						items.add(new ItemInfo(itemName));
 						itemAdded = true;
+					} else if (ch == 'd' && !itemAdded) { // Current date/time
+						String repl = insertDateTimeValue(new Date(), m.group(4));
+						// Log.i(TAG, "For " + m.group(4) + " repl is " + repl);
+						if (null != repl) { // Have replacement
+							sb.append(repl);
+						}
+						itemAdded = true;
 					} else {
 						// add as is
 						sb.append(ch);
@@ -158,8 +232,7 @@ public class WidgetController {
 		return items;
 	}
 
-	private boolean parseOneNode(boolean lastItem, List<String> parts,
-			int index, Node node, ParserListener listener,
+	private boolean parseOneNode(boolean lastItem, List<String> parts, int index, Node node, ParserListener listener,
 			Map<String, Object> values) throws RemoteException {
 		StringBuffer regexp = new StringBuffer();
 		Map<String, Object> _values = new LinkedHashMap<String, Object>(values);
@@ -184,8 +257,7 @@ public class WidgetController {
 						} else if (itemInfo.type == ITEM_NUMBER) {
 							// Parse number
 							try { // Conversion error
-								_values.put(itemInfo.name, Integer.parseInt(
-										m.group(groupIndex), 10));
+								_values.put(itemInfo.name, Integer.parseInt(m.group(groupIndex), 10));
 							} catch (Exception e) {
 							}
 						}
@@ -194,8 +266,7 @@ public class WidgetController {
 					// Log.i(TAG, "Match: " + ch.text + ", " + itemOK + ", "
 					// + values);
 					if (itemOK && !lastItem) { // Jump in
-						parseOneNode(index + 1 == parts.size() - 1, parts,
-								index + 1, ch, listener, _values);
+						parseOneNode(index + 1 == parts.size() - 1, parts, index + 1, ch, listener, _values);
 					}
 					// } else {
 					// Log.i(TAG, "Not match: " + ch.text + ", " + regexp);
@@ -236,8 +307,7 @@ public class WidgetController {
 				partsList.add(item.toString());
 			}
 			if (partsList.size() > 0) { // Have smth
-				parseOneNode(partsList.size() == 1, partsList, 0, start,
-						listener, values);
+				parseOneNode(partsList.size() == 1, partsList, 0, start, listener, values);
 			}
 		} catch (Exception e) {
 			Log.e(TAG, "Error in parse", e);
@@ -273,8 +343,7 @@ public class WidgetController {
 		return q4Plugin;
 	}
 
-	public Node findNodeFromPreferences(SharedPreferences preferences,
-			String fileName, String pathName) {
+	public Node findNodeFromPreferences(SharedPreferences preferences, String fileName, String pathName) {
 		String file = preferences.getString(fileName, "");
 		String path = preferences.getString(pathName, "");
 		String[] pathArray = null;

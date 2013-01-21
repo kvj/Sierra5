@@ -7,7 +7,8 @@ import android.graphics.Color;
 public class LightTheme extends Theme {
 
 	public LightTheme() {
-		super();
+		super("white", "Light");
+		dark = false;
 		colorBackground = Color.rgb(0xff, 0xff, 0xff);
 		colorText = Color.rgb(0x00, 0x00, 0x00);
 

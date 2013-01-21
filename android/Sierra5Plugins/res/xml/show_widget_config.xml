@@ -13,6 +13,10 @@
             android:key="background"
             android:entries="@array/widgetBG"
             android:entryValues="@array/widgetBGid"
+            android:title="Widget background" />
+        <ListPreference
+            android:key="@string/show_theme"
+            android:defaultValue="@string/show_themeDefault"
             android:title="Widget theme" />
         <CheckBoxPreference
             android:key="@string/node_protect"
@@ -26,6 +30,11 @@
         <Preference
             android:key="node"
             android:title="Select node" />
-    </PreferenceCategory>
+        <EditTextPreference
+            android:dialogTitle="Pattern, if any"
+            android:key="@string/show_pattern"
+            android:defaultValue="@string/show_patternDefault"
+            android:title="Pattern, if any" />
+        </PreferenceCategory>
 
 </PreferenceScreen>

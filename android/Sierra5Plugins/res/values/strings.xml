@@ -5,6 +5,10 @@
     <string name="account_name">Sierra5 link</string>
     <string name="node_protect">node_protect</string>
     <string name="node_protectDefault">false</string>
+    <string name="show_pattern">show_pattern</string>
+    <string name="show_patternDefault"></string>
+    <string name="show_theme">show_theme</string>
+    <string name="show_themeDefault">black</string>
     <string name="template_insertDateTime">template_insertDateTime</string>
     <string name="template_insertDateTimeDefault">M/d HH:mm</string>
     <string name="template_insertTime">template_insertTime</string>

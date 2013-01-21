@@ -44,13 +44,11 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 		if (getItemCount() == 0 && id == -1) { // No items selected and top menu
 			List<MenuItemInfo> result = new ArrayList<MenuItemInfo>();
 			if (Node.TYPE_TEXT == node.type) { // Text - can mark
-				result.add(new MenuItemInfo(0, MenuItemInfo.MENU_ITEM_ACTION,
-						"Select"));
+				result.add(new MenuItemInfo(0, MenuItemInfo.MENU_ITEM_ACTION, "Select"));
 			}
 			if (Node.TYPE_FOLDER != node.type && provider.getNodeCount() > 0) {
 				// File or text, have nodes in clipboard
-				result.add(new MenuItemInfo(1, MenuItemInfo.MENU_ITEM_ACTION,
-						"Paste items: " + provider.getNodeCount()));
+				result.add(new MenuItemInfo(1, MenuItemInfo.MENU_ITEM_ACTION, "Paste items: " + provider.getNodeCount()));
 			}
 			return result.toArray(new MenuItemInfo[0]);
 		}
@@ -58,19 +56,16 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 	}
 
 	@Override
-	public MenuItemInfo[] getEditorMenu(int id, Node node)
-			throws RemoteException {
+	public MenuItemInfo[] getEditorMenu(int id, Node node) throws RemoteException {
 		if (provider.getNodeCount() > 0) { // Have items in clipboard
-			return new MenuItemInfo[] { new MenuItemInfo(0,
-					MenuItemInfo.MENU_ITEM_INSERT_TEXT, "Paste items: "
-							+ provider.getNodeCount()) };
+			return new MenuItemInfo[] { new MenuItemInfo(0, MenuItemInfo.MENU_ITEM_INSERT_TEXT, "Paste items: "
+					+ provider.getNodeCount()) };
 		}
 		return super.getEditorMenu(id, node);
 	}
 
 	@Override
-	public String executeEditAction(int id, String text, Node node)
-			throws RemoteException {
+	public String executeEditAction(int id, String text, Node node) throws RemoteException {
 		List<String> lines = provider.pasteText();
 		StringBuffer sb = new StringBuffer();
 		for (String line : lines) { // Add lines
@@ -128,8 +123,8 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 
 	@Override
 	public int[] getCapabilities() throws RemoteException {
-		return new int[] { PluginInfo.PLUGIN_HAVE_MENU_UNSELECTED,
-				PluginInfo.PLUGIN_HAVE_MENU, PluginInfo.PLUGIN_HAVE_EDIT_MENU };
+		return new int[] { PluginInfo.PLUGIN_HAVE_MENU_UNSELECTED, PluginInfo.PLUGIN_HAVE_MENU,
+				PluginInfo.PLUGIN_HAVE_EDIT_MENU };
 	}
 
 	public int getItemCount() {
@@ -167,8 +162,7 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 	}
 
 	@Override
-	public void customize(Theme theme, View view, Node node,
-			boolean nodeSelected) {
+	public void customize(Theme theme, View view, Node node, boolean nodeSelected) {
 		if (getItemCount() == 0 || Node.TYPE_TEXT != node.type) {
 			// When no selection and not text - ignore
 			return;
@@ -178,17 +172,14 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 			if (PARENT_NOT == parentType) { // Ignore, out of selection
 				continue;
 			}
-			TextView textView = (TextView) view
-					.findViewById(R.id.listview_item_left);
+			TextView textView = (TextView) view.findViewById(R.id.listview_item_left);
 			CharSequence text = textView.getText();
 			SpannableStringBuilder builder = new SpannableStringBuilder();
 			if (text.length() > 1) { // Have text
 				builder.append(text, 0, text.length() - 2);
 			}
-			PlainTextFormatter
-					.addSpan(builder, " *", new ForegroundColorSpan(
-							parentType == PARENT_SAME ? theme.ceLCyan
-									: theme.caLGreen));
+			PlainTextFormatter.addSpan(builder, " *", new ForegroundColorSpan(parentType == PARENT_SAME ? theme.ceLCyan
+					: theme.caLGreen));
 			textView.setText(builder);
 		}
 	}
@@ -212,8 +203,7 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 	}
 
 	private void addNode(Node to, Node what) {
-		Node child = to.createChild(Node.TYPE_TEXT, what.text,
-				controller.getTabSize());
+		Node child = to.createChild(Node.TYPE_TEXT, what.text, controller.getTabSize());
 		if (null != what.children) { // add children also
 			for (Node ch : what.children) {
 				addNode(child, ch);

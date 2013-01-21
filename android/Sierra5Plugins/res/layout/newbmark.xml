@@ -45,14 +45,20 @@
 
             <RadioButton
                 android:id="@+id/bmark_type_show"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:text="Show" />
 
             <RadioButton
                 android:id="@+id/bmark_type_edit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:text="Edit" />
 
             <RadioButton
                 android:id="@+id/bmark_type_add"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:text="Append to" />
         </RadioGroup>
 
