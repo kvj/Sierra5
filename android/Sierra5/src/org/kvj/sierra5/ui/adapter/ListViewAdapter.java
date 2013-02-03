@@ -32,7 +32,6 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.RemoteViews;
 import android.widget.TextView;
@@ -163,26 +162,8 @@ public class ListViewAdapter implements ListAdapter {
 		return 0;
 	}
 
-	private static int getIcon(Node node) {
-		if (node.type == Node.TYPE_TEXT && node.children.size() == 0) {
-			// Hide icon
-			return -1;
-		} else {
-			switch (node.type) {
-			case Node.TYPE_FOLDER:
-				return node.collapsed ? R.drawable.folder_col : R.drawable.folder_exp;
-			case Node.TYPE_FILE:
-				return node.collapsed ? R.drawable.file_col : R.drawable.file_exp;
-			case Node.TYPE_TEXT:
-				return node.collapsed ? R.drawable.text_col : R.drawable.text_exp;
-			}
-		}
-		return -1;
-	}
-
 	public void customize(View view, Node node, boolean selected) {
 		TextView textView = (TextView) view.findViewById(R.id.listview_item_text);
-		ImageView menuIcon = (ImageView) view.findViewById(R.id.listview_item_menu_icon);
 		// menuIcon.setVisibility(selected ? View.VISIBLE : View.GONE);
 		textView.setTextColor(theme.colorText);
 		// textView.setBackgroundColor(theme.colorBackground);
@@ -201,13 +182,6 @@ public class ListViewAdapter implements ListAdapter {
 		if (selected) { // Add italic
 			text.setSpan(new StyleSpan(Typeface.ITALIC), 0, text.length(), 0);
 		}
-		int iconID = getIcon(node);
-		if (-1 == iconID) { //
-			menuIcon.setVisibility(View.INVISIBLE);
-		} else {
-			menuIcon.setVisibility(View.VISIBLE);
-			menuIcon.setImageResource(iconID);
-		}
 		textView.setText(text);
 	}
 
@@ -224,10 +198,12 @@ public class ListViewAdapter implements ListAdapter {
 			view = inflater.inflate(R.layout.listview_item, parent, false);
 		}
 		ViewGroup root = (ViewGroup) view; // Actually linear layout
-		while (root.getChildCount() > 1) { // Remove remote
-			root.removeViewAt(1);
+		while (root.getChildCount() > 2) { // Remove remote
+			root.removeViewAt(2);
 		}
+		View indicator = root.findViewById(R.id.listview_item_indicator);
 		boolean selected = selectedIndex == index;
+		indicator.setBackgroundColor(getColor(node, selected, theme));
 		view.setMinimumHeight((int) (28 * view.getContext().getResources().getDisplayMetrics().density));
 		view.findViewById(R.id.listview_item_top).setVisibility(View.VISIBLE);
 		customize(view, node, index == selectedIndex);
@@ -255,6 +231,13 @@ public class ListViewAdapter implements ListAdapter {
 			plugin.customize(theme, view, node, selected);
 		}
 		return view;
+	}
+
+	private static int getColor(Node node, boolean selected, Theme theme) {
+		if (node.collapsed) { // Collapsed
+			return theme.colorCollapsed;
+		}
+		return 0;
 	}
 
 	private void remoteRender(final Node node, final View parent) {
@@ -386,17 +369,6 @@ public class ListViewAdapter implements ListAdapter {
 		instance.textFormatter.writePlainText(node, text, theme.colorText, node.text, false);
 		// result.setViewVisibility(R.id.listview_item_menu_icon, View.GONE);
 		result.setTextViewText(R.id.listview_item_text, text);
-		int iconID = getIcon(node);
-		if (-1 == iconID) {
-			result.setViewVisibility(R.id.listview_item_menu_icon, View.INVISIBLE);
-		} else {
-			result.setViewVisibility(R.id.listview_item_menu_icon, View.VISIBLE);
-			result.setImageViewResource(R.id.listview_item_menu_icon, iconID);
-		}
-		// float dens =
-		// App.getInstance().getResources().getDisplayMetrics().density;
-		// result.setInt(R.id.listview_item_left, "setMinimumWidth",
-		// (int) (LEFT_GAP * dens * node.level));
 		StringBuffer leftBuffer = new StringBuffer();
 		for (int i = 0; i < node.level; i++) {
 			leftBuffer.append(' ');

@@ -3,7 +3,6 @@ package org.kvj.sierra5.ui.plugin.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.kvj.bravo7.format.PlainTextFormatter;
 import org.kvj.sierra5.R;
 import org.kvj.sierra5.common.data.Node;
 import org.kvj.sierra5.common.plugin.DefaultPlugin;
@@ -16,11 +15,8 @@ import org.kvj.sierra5.ui.plugin.impl.clipboard.ClipboardProvider;
 import org.kvj.sierra5.ui.plugin.impl.clipboard.GingerBreadProvider;
 
 import android.os.RemoteException;
-import android.text.SpannableStringBuilder;
-import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.View;
-import android.widget.TextView;
 
 public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 
@@ -172,15 +168,8 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 			if (PARENT_NOT == parentType) { // Ignore, out of selection
 				continue;
 			}
-			TextView textView = (TextView) view.findViewById(R.id.listview_item_left);
-			CharSequence text = textView.getText();
-			SpannableStringBuilder builder = new SpannableStringBuilder();
-			if (text.length() > 1) { // Have text
-				builder.append(text, 0, text.length() - 2);
-			}
-			PlainTextFormatter.addSpan(builder, " *", new ForegroundColorSpan(parentType == PARENT_SAME ? theme.ceLCyan
-					: theme.caLGreen));
-			textView.setText(builder);
+			View indicator = view.findViewById(R.id.listview_item_indicator);
+			indicator.setBackgroundColor(PARENT_SAME == parentType ? theme.c2Green : theme.c6Cyan);
 		}
 	}
 

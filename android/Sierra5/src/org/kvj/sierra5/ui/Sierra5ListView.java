@@ -226,9 +226,14 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 		outData.putExtra(Constants.LIST_INTENT_ITEM,
 				Node.list2array(node.textPath, new String[0]));
 		setResult(RESULT_OK, outData);
-		if (close && null == listViewFragment) {
-			// Editor and asked for close - close
-			finish();
+		if (close) {
+			if (null == listViewFragment) { // Only editor
+				// Editor and asked for close - close
+				finish();
+			} else {
+				// Both here - disable editor
+				editorViewFragment.disable();
+			}
 		}
 	}
 

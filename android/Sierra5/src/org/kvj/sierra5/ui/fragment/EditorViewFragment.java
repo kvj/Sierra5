@@ -75,6 +75,7 @@ public class EditorViewFragment extends SherlockFragment {
 		editText.setBackgroundColor(theme.colorBackground);
 		editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, App.getInstance()
 				.getIntPreference(R.string.docFont, R.string.docFontDefault));
+		disable();
 		return view;
 	}
 
@@ -145,6 +146,7 @@ public class EditorViewFragment extends SherlockFragment {
 		}
 		oldText = text;
 		editText.setText(text);
+		editText.setEnabled(true);
 		if (-1 == cursorPos) { // Don't have position - move to the end
 			cursorPos = text.length();
 		}
@@ -201,6 +203,12 @@ public class EditorViewFragment extends SherlockFragment {
 
 		};
 		task.execute();
+	}
+
+	public void disable() {
+		editText.setEnabled(false);
+		editText.setText("");
+		oldText = "";
 	}
 
 	public boolean onMenuSelected(MenuItem item) {

@@ -24,6 +24,7 @@ public class Theme implements Parcelable {
 	public int ceLCyan = Color.rgb(0x00, 0xff, 0xff);
 
 	public int colorText = Color.rgb(0xff, 0xff, 0xff);
+	public int colorCollapsed = Color.rgb(0x10, 0x33, 0x10);
 
 	public String name = null;
 
