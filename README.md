@@ -12,7 +12,7 @@
 * Have basic text editor
 * Provides double pane interface (tree on left, editor on right) for tablets in landscape
 * Supports tab characters, windows/unix line endings
-* Color themes support (builtin)
+* Color themes support (built in)
 * Renders part of tree to RemoteViews
 
 ### Plugins collection
