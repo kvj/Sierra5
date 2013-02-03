@@ -2,8 +2,8 @@
 
 ### General idea
 * Two-way inter-process communication
-  * Simple application extended with plugins using AIDL [Source](src-aidl/org/kvj/sierra5/common/plugin/Plugin.aidl)
-  * Plugins and other application can access data provided by application using AIDL [Source](src-aidl/org/kvj/sierra5/common/root/Root.aidl)
+  * Simple application extended with plugins using AIDL [Source](android/Sierra5/src-aidl/org/kvj/sierra5/common/plugin/Plugin.aidl)
+  * Plugins and other application can access data provided by application using AIDL [Source](android/Sierra5/src-aidl/org/kvj/sierra5/common/root/Root.aidl)
 * Structured data, via selectors can be used as a source for other Android OS components (Calendar, Contacts)
 
 ### Main application features
@@ -12,6 +12,7 @@
 * Have basic text editor
 * Provides double pane interface (tree on left, editor on right) for tablets in landscape
 * Supports tab characters, windows/unix line endings
+* Color themes support (builtin)
 * Renders part of tree to RemoteViews
 
 ### Plugins collection
