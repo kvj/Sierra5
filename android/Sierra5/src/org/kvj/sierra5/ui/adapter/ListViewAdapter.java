@@ -27,6 +27,7 @@ import android.os.AsyncTask;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
+import android.text.style.UnderlineSpan;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -162,7 +163,7 @@ public class ListViewAdapter implements ListAdapter {
 		return 0;
 	}
 
-	public void customize(View view, Node node, boolean selected) {
+	public SpannableStringBuilder customize(View view, Node node, boolean selected) {
 		TextView textView = (TextView) view.findViewById(R.id.listview_item_text);
 		// menuIcon.setVisibility(selected ? View.VISIBLE : View.GONE);
 		textView.setTextColor(theme.colorText);
@@ -182,7 +183,15 @@ public class ListViewAdapter implements ListAdapter {
 		if (selected) { // Add italic
 			text.setSpan(new StyleSpan(Typeface.ITALIC), 0, text.length(), 0);
 		}
+		if (node.collapsed) { // Underline - collapsed
+			text.setSpan(new UnderlineSpan(), 0, text.length(), 0);
+		}
+		for (LocalPlugin plugin : localPlugins) {
+			// Customize using local plugins
+			plugin.customize(theme, view, node, text, selected);
+		}
 		textView.setText(text);
+		return text;
 	}
 
 	@Override
@@ -192,21 +201,13 @@ public class ListViewAdapter implements ListAdapter {
 			Log.w(TAG, "getView: is null " + index);
 			return null;
 		}
-		if (view == null) {
-			LayoutInflater inflater = (LayoutInflater) parent.getContext().getSystemService(
-					Context.LAYOUT_INFLATER_SERVICE);
-			view = inflater.inflate(R.layout.listview_item, parent, false);
-		}
+		LayoutInflater inflater = (LayoutInflater) parent.getContext()
+				.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		view = inflater.inflate(R.layout.listview_item, parent, false);
 		ViewGroup root = (ViewGroup) view; // Actually linear layout
-		while (root.getChildCount() > 2) { // Remove remote
-			root.removeViewAt(2);
-		}
-		View indicator = root.findViewById(R.id.listview_item_indicator);
 		boolean selected = selectedIndex == index;
-		indicator.setBackgroundColor(getColor(node, selected, theme));
 		view.setMinimumHeight((int) (28 * view.getContext().getResources().getDisplayMetrics().density));
-		view.findViewById(R.id.listview_item_top).setVisibility(View.VISIBLE);
-		customize(view, node, index == selectedIndex);
+		SpannableStringBuilder text = customize(view, node, index == selectedIndex);
 		if (Node.TYPE_TEXT == node.type) {
 			// Remote render only for text
 			synchronized (remoteRenders) { // Lock for modifications
@@ -216,7 +217,6 @@ public class ListViewAdapter implements ListAdapter {
 					View renderResult = rv.apply(parent.getContext(), root);
 					root.addView(renderResult);
 					if (!selected) { // Hide top part when not selected
-						view.findViewById(R.id.listview_item_top).setVisibility(View.GONE);
 					}
 				} else {
 					if (!remoteRenders.containsKey(node.text)) {
@@ -225,10 +225,6 @@ public class ListViewAdapter implements ListAdapter {
 					}
 				}
 			}
-		}
-		for (LocalPlugin plugin : localPlugins) {
-			// Customize using local plugins
-			plugin.customize(theme, view, node, selected);
 		}
 		return view;
 	}

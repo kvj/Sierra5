@@ -7,7 +7,7 @@ public class App extends ApplicationContext {
 
 	@Override
 	protected void init() {
-		publishBean(new Controller());
+		publishBean(new Controller(this));
 	}
 
 }

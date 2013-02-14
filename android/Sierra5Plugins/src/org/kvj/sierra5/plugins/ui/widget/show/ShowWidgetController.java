@@ -113,8 +113,6 @@ public class ShowWidgetController extends AppWidgetProvider {
 					}
 				});
 			}
-			widget.addView(R.id.show_widget_list, new RemoteViews(App.getInstance().getPackageName(),
-					R.layout.show_widget_last));
 		} catch (Exception e) {
 			Log.e(TAG, "Error rendering:", e);
 		}
@@ -144,8 +142,8 @@ public class ShowWidgetController extends AppWidgetProvider {
 		try { // Remote errors
 			node.level = level;
 			RemoteViews line = rootService.render(node, null, themeCode);
-			// Log.i(TAG, "Render line: " + node.text + ", " + node.collapsed
-			// + ", " + node.children);
+			// Log.i(TAG, "Render line: " + node.text + ", " + node.collapsed +
+			// ", " + node.children);
 			widget.addView(R.id.show_widget_list, line);
 			if (null != node.children && !node.collapsed) { // Have children
 				for (Node ch : node.children) { // Render children

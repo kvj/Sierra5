@@ -65,5 +65,7 @@
     <string name="filePatternDefault">*</string>
     <string name="folderPattern">folderPattern</string>
     <string name="folderPatternDefault">*</string>
-        
+    <string name="usePlugins">usePlugins</string>
+    <string name="usePluginsDefault">true</string>
+    
 </resources>

@@ -58,9 +58,11 @@ public class Controller {
 	private List<LocalPlugin> localPlugins = new ArrayList<LocalPlugin>();
 
 	private ClipboardPlugin clipboardPlugin = null;
+	private App app = null;
 
-	public Controller() {
-		plugins = new RemoteServicesCollector<Plugin>(App.getInstance(), Constants.PLUGIN_NS, new APIPluginFilter()) {
+	public Controller(App app) {
+		this.app = app;
+		plugins = new RemoteServicesCollector<Plugin>(app, Constants.PLUGIN_NS, new APIPluginFilter()) {
 
 			@Override
 			public Plugin castAIDL(IBinder binder) {
@@ -69,15 +71,15 @@ public class Controller {
 
 			@Override
 			public void onChange() {
-				List<Plugin> list = getPlugins();
-				Log.i(TAG, "Plugins: " + list.size());
-				try {
-					for (Plugin plugin : list) {
-						Log.i(TAG, "Plugin: " + plugin.getName());
-					}
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
+				// List<Plugin> list = getPlugins();
+				// Log.i(TAG, "Plugins: " + list.size());
+				// try {
+				// for (Plugin plugin : list) {
+				// Log.i(TAG, "Plugin: " + plugin.getName());
+				// }
+				// } catch (RemoteException e) {
+				// e.printStackTrace();
+				// }
 			}
 		};
 		clipboardPlugin = new ClipboardPlugin(this);
@@ -764,6 +766,10 @@ public class Controller {
 
 	public <T extends Plugin> List<T> getPlugins(Class<T> cl, int... types) {
 		List<T> result = new ArrayList<T>();
+		boolean pluginsEnabled = app.getBooleanPreference(R.string.usePlugins, R.string.usePluginsDefault);
+		if (!pluginsEnabled) { // Not enabled
+			return result;
+		}
 		List<Plugin> pls = plugins.getPlugins();
 		for (Plugin plugin : localPlugins) {
 			// Local plugins

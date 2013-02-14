@@ -53,5 +53,13 @@
             android:summary="Text size for outline list"
             android:title="Text size" />
     </PreferenceCategory>
+    <PreferenceCategory android:title="Plugins">
+        <CheckBoxPreference
+            android:key="@string/usePlugins"
+            android:defaultValue="@string/usePluginsDefault"
+            android:summary="Extend application functions with external plugins"
+            android:title="Enable plugins" />
+        
+    </PreferenceCategory>
 
 </PreferenceScreen>
