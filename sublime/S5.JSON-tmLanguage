@@ -1,0 +1,110 @@
+{
+  "name": "Sierra5",
+  "scopeName": "text.s5",
+  "fileTypes": ["s5", "s5b"],
+  "patterns": [
+    {
+      "match": "@([A-Z][A-Za-z0-9\\-]+)",
+      "captures": {
+          "1": { "name": "entity.name.class.s5" }
+      },
+      "comment": "Contact"
+    }, {
+      "match": "#([A-Za-z0-9\\-]+)\\:",
+      "captures": {
+          "1": { "name": "constant.numeric.s5" }
+      },
+      "comment": "Activity"
+    }, {
+      "match": "(\\ |^)([A-Z][A-Za-z0-9\\-]+),(\\ |$)",
+      "captures": {
+          "2": { "name": "keyword.s5" }
+      },
+      "comment": "Project"
+    }, {
+      "match": "\\ -([a-z0-9\\_]+)",
+      "captures": {
+          "1": { "name": "support.function.s5" }
+      },
+      "comment": "Tag"
+    }, {
+      "match": "\\[\\[(.+)\\]\\]",
+      "name": "string.s5",
+      "comment": "Link"
+    }, {
+      "match": "\\[X\\]\\s(.+?)($|(\\[\\ \\]))",
+      "captures": {
+          "1": { "name": "comment.s5" }
+      },
+      "comment": "Done task"
+    }, {
+      "match": "\\[\\ \\]",
+      "comment": "Task"
+    }, {
+      "begin": "\\[",
+      "end": "\\]",
+      "name": "string.s5",
+      "patterns": [
+        {  
+          "name": "markup.deleted.s5",
+          "match": "-"
+        }, {  
+          "name": "markup.inserted.s5",
+          "match": "#"
+        }, {  
+          "name": "support.function.s5",
+          "match": ">"
+        }
+      ],
+      "comment": "Progress"
+    }, {
+      "match": "^##.+$",
+      "name": "comment.s5",
+      "comment": "Comment"
+    }, {
+      "match": "^\\s*([a-z][a-z\\ ,\\+-_]+)\\:(\\ |$)",
+      "captures": {
+          "1": { "name": "entity.name.tag.s5" }
+      },
+      "comment": "Contact etc parameter"
+    }, {
+      "name": "string.s5",
+      "begin": "#begin(\\s|$)",
+      "end": "^\\s*#end$"
+    }, {
+      "match": "^\\s*(\\+)\\s(.+)",
+      "captures": {
+          "1": { "name": "markup.inserted.s5" }
+      },
+      "comment": "Good point"
+    }, {
+      "match": "^\\s*(-)\\s(.+)",
+      "captures": {
+          "1": { "name": "markup.deleted.s5" }
+      },
+      "comment": "Not good point"
+    }, {
+      "match": "^\\s*(\\*)\\s(.+)",
+      "captures": {
+          "1": { "name": "support.function.s5" }
+      },
+      "comment": "Neutral item"
+    }, {
+      "match": "^\\s*(\\?)\\s(.+)",
+      "captures": {
+          "1": { "name": "variable.parameter.s5" }
+      },
+      "comment": "Neutral item"
+    }, {
+      "match": "^\\s*(\\d\\d?):(\\d\\d)(\\s*\\-\\s*(\\d\\d?):(\\d\\d))?",
+      "captures": {
+          "1": { "name": "constant.numeric.s5 date.text.s5" },
+          "2": { "name": "constant.numeric.s5 date.text.s5" },
+          "4": { "name": "constant.numeric.s5 date.text.s5" },
+          "5": { "name": "constant.numeric.s5 date.text.s5" }
+      },
+      "comment": "Date/time"
+    }
+  ],
+  "uuid": "4dfb0318-51b0-4d49-a0bc-35d1deaa2929"
+}
