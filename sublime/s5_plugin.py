@@ -60,7 +60,7 @@ class S5CollapseListener(sublime_plugin.EventListener):
 		collapseFrom(view, -1)
 		
 
-compileRe = re.compile('^(\s*)\[\[(.+)\]\] #begin( ([a-z]+)(.*))?$')
+compileRe = re.compile('^(.*?)\[\[(.+)\]\] #begin( ([a-z]+)(.*))?$')
 
 def showError(text):
 	def cb():
@@ -137,7 +137,7 @@ class S5CompileBlockCommand(sublime_plugin.TextCommand):
 				showError('Error compiling block')
 		thread = threading.Thread(None, doCompile).start()
 
-linkRe = re.compile('^\s*\[\[(.+)\]\].*$')
+linkRe = re.compile('^.*?\[\[(.+)\]\].*$')
 
 def findLink(view, fromLine):
 	(startLine, endLine) = getBlock(view, fromLine)
