@@ -222,8 +222,8 @@ public class LinkPlugin extends DefaultPlugin {
 			}
 		}
 		if (node.type == Node.TYPE_TEXT && node.text.startsWith("#")) { // Comment
-			node.visible = false;
 			if (node.text.startsWith("##")) { // Special config
+				node.visible = false;
 				String[] pairs = node.text.substring(2).split(",");
 				ParseInfo info = new ParseInfo();
 				info.level = node.level;
