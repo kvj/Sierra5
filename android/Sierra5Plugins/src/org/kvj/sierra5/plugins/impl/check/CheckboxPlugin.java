@@ -13,8 +13,8 @@ import org.kvj.sierra5.plugins.WidgetController;
 
 import android.graphics.Typeface;
 import android.os.RemoteException;
+import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
-import android.util.Log;
 
 public class CheckboxPlugin extends DefaultPlugin {
 
@@ -51,13 +51,17 @@ public class CheckboxPlugin extends DefaultPlugin {
 	@Override
 	public FormatSpan[] format(int index, Theme theme, Node node, String text,
 			boolean selected) throws RemoteException {
+		if ("[X]".equals(text)) {
+			// Checked
+			return new FormatSpan[] { new FormatSpan(text, new ForegroundColorSpan(
+					theme.c7White)) };
+		}
 		return new FormatSpan[] { new FormatSpan(text, new StyleSpan(
 				Typeface.BOLD)) };
 	}
 
 	@Override
 	public MenuItemInfo[] getMenu(int id, Node node) throws RemoteException {
-		Log.i(TAG, "getMenu: " + id + ", " + node.type + ", " + node.text);
 		if (Node.TYPE_TEXT == node.type && id == -1) {
 			// Root menu, text
 			Matcher m = Pattern.compile(regexp).matcher(node.text);

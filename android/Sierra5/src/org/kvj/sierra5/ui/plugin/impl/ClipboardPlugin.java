@@ -43,9 +43,13 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 			if (Node.TYPE_TEXT == node.type) { // Text - can mark
 				result.add(new MenuItemInfo(0, MenuItemInfo.MENU_ITEM_ACTION, "Select"));
 			}
+			if (Node.TYPE_TEXT == node.type || Node.TYPE_FILE == node.type) {
+				// Text or file - can mark children
+				result.add(new MenuItemInfo(1, MenuItemInfo.MENU_ITEM_ACTION, "Select children"));
+			}
 			if (Node.TYPE_FOLDER != node.type && provider.getNodeCount() > 0) {
 				// File or text, have nodes in clipboard
-				result.add(new MenuItemInfo(1, MenuItemInfo.MENU_ITEM_ACTION, "Paste items: " + provider.getNodeCount()));
+				result.add(new MenuItemInfo(2, MenuItemInfo.MENU_ITEM_ACTION, "Paste items: " + provider.getNodeCount()));
 			}
 			return result.toArray(new MenuItemInfo[0]);
 		}
@@ -84,7 +88,15 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 			// node.textPath);
 			selected.add(node);
 			return true;
-		case 1: // Paste items
+		case 1: // Select children
+			if (node.collapsed) { // Collapsed - expand first
+				controller.expand(node, null, Controller.EXPAND_ONE);
+			}
+			if (null != node.children) { // Have children
+				selected.addAll(node.children);
+			}
+			return true;
+		case 2: // Paste items
 			// Log.i(TAG, "Pasting items: " + provider.getNodeCount());
 			return pasteNodes(node);
 		}

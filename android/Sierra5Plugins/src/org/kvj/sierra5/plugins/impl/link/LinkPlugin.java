@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -65,45 +67,88 @@ public class LinkPlugin extends DefaultPlugin {
 
 	private String getLinkCaption(String link) {
 		link = link.substring(2, link.length() - 2);
-		Log.i(TAG, "Format:" + link);
+		// Log.i(TAG, "Format:" + link);
 		if (link.startsWith("geo:")) { // geo
-			return "GEO";
+			return "[GEO]";
 		}
-		if (link.endsWith(".jpg")) { // image
-			return "Image";
+		if (isImage(link)) { // image
+			return "[Image]";
 		}
 		if (link.endsWith(".kml")) { // KML file
-			return "KML";
+			return "[KML]";
 		}
-		return "Attachment";
+		return "[Attachment]";
 	}
 
 	@Override
 	public FormatSpan[] format(int index, Theme theme, Node node, String text,
 			boolean selected) throws RemoteException {
 		switch (index) {
-		case 0: // Name
+		case 0: // Item
+			FormatSpan item = null;
+			switch (text.charAt(0)) {
+			case '+':
+				item = new FormatSpan("+", new ForegroundColorSpan(theme.caLGreen));
+				break;
+			case '-':
+				item = new FormatSpan("-", new ForegroundColorSpan(theme.c9LRed));
+				break;
+			case '*':
+				item = new FormatSpan("*", new ForegroundColorSpan(theme.ccLBlue));
+				break;
+			case '?':
+				item = new FormatSpan("?", new ForegroundColorSpan(theme.cbLYellow));
+				break;
+			}
+			return new FormatSpan[] { item, new FormatSpan(text.substring(1), new ForegroundColorSpan(theme.colorText)) };
+		case 1: // Name
 			return new FormatSpan[] { new FormatSpan(text,
 					new ForegroundColorSpan(theme.caLGreen)) };
-		case 1: // Activity
+		case 2: // Activity
 			return new FormatSpan[] {
 					new FormatSpan(text.substring(0, text.length() - 1),
 							new ForegroundColorSpan(theme.ceLCyan)),
 					new FormatSpan(":",
 							new ForegroundColorSpan(theme.colorText)) };
-		case 2: // Project
+		case 3: // Project
 			String project = text.substring(0, text.indexOf(','));
 			return new FormatSpan[] {
 					new FormatSpan(project, new ForegroundColorSpan(
 							theme.c9LRed)),
 					new FormatSpan(", ", new ForegroundColorSpan(
 							theme.colorText)) };
-		case 3: // Tag
+		case 4: // Tag
 			return new FormatSpan[] { new FormatSpan(text,
 					new ForegroundColorSpan(theme.ccLBlue)) };
-		case 4: // Link
+		case 5: // Link
 			return new FormatSpan[] { new FormatSpan(getLinkCaption(text),
 					new ForegroundColorSpan(theme.cbLYellow)) };
+		case 6: // Time
+			return new FormatSpan[] { new FormatSpan(text,
+					new ForegroundColorSpan(theme.cdLPurple)) };
+		case 7: // Progress bar
+			List<FormatSpan> spans = new ArrayList<FormatSpan>();
+			spans.add(new FormatSpan("[", new ForegroundColorSpan(theme.c3Yellow)));
+			for (int i = 1; i < text.length() - 1; i++) { //
+				switch (text.charAt(i)) {
+				case '-':
+					spans.add(new FormatSpan("-", new ForegroundColorSpan(theme.c1Red)));
+					break;
+				case '#':
+					spans.add(new FormatSpan("#", new ForegroundColorSpan(theme.c2Green)));
+					break;
+				case '>':
+					spans.add(new FormatSpan(">", new ForegroundColorSpan(theme.ccLBlue)));
+					break;
+				}
+			}
+			spans.add(new FormatSpan("]", new ForegroundColorSpan(theme.c3Yellow)));
+			return spans.toArray(new FormatSpan[0]);
+		case 8: // property:
+			int colonIndex = text.indexOf(":");
+			return new FormatSpan[] { new FormatSpan(text.substring(0, colonIndex),
+					new ForegroundColorSpan(theme.c5Purple)), new FormatSpan(text.substring(colonIndex),
+					new ForegroundColorSpan(theme.colorText)) };
 		}
 		return null;
 	}
@@ -171,7 +216,7 @@ public class LinkPlugin extends DefaultPlugin {
 
 	@Override
 	public int getFormatterCount() throws RemoteException {
-		return 5;
+		return 9;
 	}
 
 	@Override
@@ -181,16 +226,24 @@ public class LinkPlugin extends DefaultPlugin {
 			return null;
 		}
 		switch (index) {
-		case 0: // Name
+		case 0: // Item
+			return "^\\s*[\\+-\\?\\*]\\ .+$";
+		case 1: // Name
 			return "@[A-Z][A-Za-z0-9\\-]+";
-		case 1: // Activity
+		case 2: // Activity
 			return "#[A-Za-z0-9\\-]+\\:";
-		case 2: // Project
+		case 3: // Project
 			return "(\\ |^)[A-Z][A-Za-z0-9\\-]+,(\\ |$)";
-		case 3: // Tag
+		case 4: // Tag
 			return "\\ -[a-z0-9\\_]+";
-		case 4: // Link
+		case 5: // Link
 			return linkPattern.pattern();
+		case 6: // Time
+			return "^\\s*(\\d\\d?):(\\d\\d)(\\s*\\-\\s*(\\d\\d?):(\\d\\d))?";
+		case 7: // Progress bar
+			return "\\[[-#>]+\\]";
+		case 8: // property:
+			return "^\\s*([a-z][a-z\\ ,\\+-_]+)\\:(\\ |$)";
 		}
 		return null;
 	}
@@ -302,13 +355,27 @@ public class LinkPlugin extends DefaultPlugin {
 		return null;
 	}
 
+	private boolean isImage(String file) {
+		if (null == file) {
+			// Not found
+			return false;
+		}
+		boolean isImage = file.toLowerCase().endsWith(".jpg")
+				|| file.toLowerCase().endsWith(".png");
+		return isImage;
+	}
+
 	@Override
 	public RemoteViews render(Node node, Theme theme, int width)
 			throws RemoteException {
 		File file = getLink(node);
 		// Log.i(TAG, "render: " + node.text + ", " + file);
-		if (null == file || !file.getName().toLowerCase().endsWith(".jpg")) {
-			// Not an image
+		if (null == file) {
+			// Not found
+			return null;
+		}
+		boolean isImage = isImage(file.getName());
+		if (!isImage) { // Skip
 			return null;
 		}
 		Bitmap image = decodeFile(file, width);
