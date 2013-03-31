@@ -13,8 +13,6 @@ import org.kvj.sierra5.common.plugin.Plugin;
 import org.kvj.sierra5.common.plugin.PluginInfo;
 import org.kvj.sierra5.common.theme.Theme;
 import org.kvj.sierra5.data.Controller;
-import org.kvj.sierra5.data.Controller.ItemPattern;
-import org.kvj.sierra5.data.Controller.SearchNodeResult;
 import org.kvj.sierra5.ui.adapter.theme.ThemeProvider;
 import org.kvj.sierra5.ui.fragment.ListViewFragment.MenuItemRecord;
 import org.kvj.sierra5.ui.fragment.ListViewFragment.PluginMenuRecord;
@@ -271,37 +269,10 @@ public class EditorViewFragment extends SherlockFragment {
 		task.execute();
 	}
 
-	public void loadNode(String file, String[] path, boolean newNode,
-			String template, boolean useTemplatePath) {
-		final Node n = controller.nodeFromPath(file, null, useTemplatePath);
-		// File found
-		if (null == n) { // Invalid file
-			SuperActivity.notifyUser(getActivity(), "File not found");
-			return;
-		}
-		SearchNodeResult res = controller.searchInNode(n, file, path,
-				useTemplatePath);
-		if (null == res || !res.found) { // Text not found
-			SuperActivity.showQuestionDialog(getActivity(), "Append to file?",
-					"Text not found. Append to file?", new Runnable() {
-
-						@Override
-						public void run() {
-							parent = n;
-							isAdding = true;
-							editNode(n, null);
-						}
-					}, new Runnable() {
-
-						@Override
-						public void run() {
-						}
-					});
-			return;
-		}
-		parent = n;
+	public void loadNode(Node<?> node, boolean newNode) {
+		parent = node;
 		isAdding = newNode;
-		editNode(res.node, template);
+		editNode(node);
 	}
 
 	public static boolean stringChanged(String s1, String s2,

@@ -55,12 +55,7 @@ public class SelectItemView extends SherlockFragmentActivity implements
 	@Override
 	public void open(Node node) {
 		Intent data = new Intent();
-		data.putExtra(Constants.SELECT_ITEM_FILE, node.file);
-		if (null != node.textPath) { // Have path
-			data.putExtra(Constants.SELECT_ITEM_ITEM,
-					node.textPath.toArray(new String[0]));
-		}
-		data.putExtra(Constants.SELECT_ITEM_TYPE, node.type);
+		data.putExtra(Constants.SELECT_ITEM_FILE, controller.getPath(node));
 		setResult(RESULT_OK, data);
 		finish();
 	}

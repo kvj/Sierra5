@@ -6,26 +6,34 @@ import java.util.List;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class Node implements Parcelable {
+public class Node<E extends Parcelable> implements Parcelable {
 
-	public static final int TYPE_FOLDER = 0;
-	public static final int TYPE_FILE = 1;
-	public static final int TYPE_TEXT = 2;
+	public static final int CAPABILITY_ADD = 0;
+	public static final int CAPABILITY_EDIT = 1;
+	public static final int CAPABILITY_REMOVE = 2;
+	public static final int CAPABILITY_ROOT = 3;
 
-	public String file = null;
+	public static final int STYLE_0 = 0;
+	public static final int STYLE_1 = 1;
+	public static final int STYLE_2 = 2;
+	public static final int STYLE_3 = 3;
+	public static final int STYLE_4 = 4;
+	public static final int STYLE_5 = 5;
+	public static final int STYLE_6 = 6;
 
-	public List<String> textPath = null;
+	public static final int EXPAND_ONE = 1;
+	public static final int EXPAND_GROUP = 2;
 
-	public String left = "";
-	public List<Node> children = null;
+	public E id = null;
+	public List<Node<E>> children = null;
 	public boolean collapsed = true;
 
 	public String text = "";
-	public String raw = null;
 
-	public int type = TYPE_FOLDER;
 	public int level = 0;
 	public boolean visible = true;
+	public int style = STYLE_0;
+	public int[] capabilities = {};
 
 	public static <T> T[] list2array(List<T> list, T[] zero) {
 		if (null == list) { // Empty
@@ -34,52 +42,14 @@ public class Node implements Parcelable {
 		return list.toArray(zero);
 	}
 
-	public Node createChild(int childType, String childText, int tabSize) {
-		StringBuilder sb = new StringBuilder();
-		if (type == Node.TYPE_TEXT) { // Padding only for text
-			for (int i = 0; i < tabSize; i++) { // Add spaces
-				sb.append(' ');
-			}
-		}
-		Node child = new Node();
-		child.file = file;
-		child.children = new ArrayList<Node>();
-		child.text = childText;
-		child.type = childType;
-		child.left = left + sb.toString();
-		child.level = level + 1;
-		if (TYPE_TEXT == childType) { // textPath is necessary
-			child.textPath = new ArrayList<String>();
-			if (TYPE_TEXT == type && null != textPath) { // Parent is TEXT
-				child.textPath.addAll(textPath);
-			}
-			child.textPath.add(childText);
-		}
-		if (null == children) { // No children yet
-			children = new ArrayList<Node>();
-		}
-		children.add(child);
-		return child;
-	}
-
-	public void setText(String text) {
-		this.text = text;
-		if (TYPE_TEXT == type) { // Replace last text
-			textPath.remove(textPath.size() - 1);
-			textPath.add(text);
-		}
-	}
-
 	@Override
 	public void writeToParcel(Parcel p, int flags) {
-		p.writeString(file); // file
-		p.writeStringList(textPath == null ? new ArrayList<String>() : textPath); // textPath
-		p.writeString(left); // left
+		p.writeParcelable(id, flags);
+		p.writeInt(style);
+		p.writeIntArray(capabilities);
 		p.writeList(children == null ? new ArrayList<Node>() : children);
 		p.writeByte((byte) (collapsed ? 1 : 0));
 		p.writeString(text);
-		p.writeString(raw);
-		p.writeInt(type);
 		p.writeInt(level);
 		p.writeByte((byte) (visible ? 1 : 0));
 	}
@@ -90,16 +60,13 @@ public class Node implements Parcelable {
 	}
 
 	public void readFromParcel(Parcel p) {
-		file = p.readString();
-		textPath = new ArrayList<String>();
-		p.readStringList(textPath);
-		left = p.readString();
-		children = new ArrayList<Node>();
+		id = p.readParcelable(Node.class.getClassLoader());
+		style = p.readInt();
+		capabilities = p.createIntArray();
+		children = new ArrayList<Node<E>>();
 		p.readList(children, Node.class.getClassLoader());
 		collapsed = p.readByte() == 1;
 		text = p.readString();
-		raw = p.readString();
-		type = p.readInt();
 		level = p.readInt();
 		visible = p.readByte() == 1;
 
@@ -119,5 +86,14 @@ public class Node implements Parcelable {
 			return node;
 		}
 	};
+
+	public boolean can(int capability) {
+		for (int c : capabilities) { // Search
+			if (c == capability) { // Found
+				return true;
+			}
+		}
+		return false; // Not found
+	}
 
 }

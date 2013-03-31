@@ -113,7 +113,7 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 	@Override
 	public void open(Node node) {
 		Intent intent = new Intent(this, Sierra5ListView.class);
-		intent.putExtra(Constants.LIST_INTENT_ROOT, node.file);
+		intent.putExtra(Constants.LIST_INTENT_ID, node.id);
 		startActivityForResult(intent, RESULT_DONE);
 	}
 
@@ -129,17 +129,18 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 
 	@Override
 	public void edit(final Node node, final EditType editType) {
+		if (node == null) {
+			// Only for text and file
+			SuperActivity.notifyUser(this, "Invalid item");
+			return;
+		}
 		if (EditType.Remove == editType) { // Do remove
-			if (node == null || Node.TYPE_TEXT != node.type) { // Only for text
+			if (!node.can(Node.CAPABILITY_REMOVE)) {
+				// Can't remove
 				SuperActivity.notifyUser(this, "Invalid item");
 				return;
 			}
 			removeNode(node);
-			return;
-		}
-		if (node == null || Node.TYPE_FOLDER == node.type) {
-			// Only for text and file
-			SuperActivity.notifyUser(this, "Invalid item");
 			return;
 		}
 		if (null != editorViewFragment) { // Double pane - load
@@ -148,22 +149,16 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 				@Override
 				public void run() {
 					editorViewFragment.loadNode(
-							node.file,
-							node.textPath == null ? null : node.textPath
-									.toArray(new String[0]),
-							editType == EditType.Add, null, false);
+							node,
+							editType == EditType.Add);
 				}
 			});
 		} else { // Single pane - new Activity
 			Intent intent = new Intent(this, Sierra5ListView.class);
 			intent.putExtra(Constants.LIST_FORCE_EDITOR, true);
-			intent.putExtra(Constants.EDITOR_INTENT_FILE, node.file);
+			intent.putExtra(Constants.EDITOR_INTENT_ID, node.id);
 			intent.putExtra(Constants.EDITOR_INTENT_ADD,
 					editType == EditType.Add);
-			if (null != node.textPath) { // Have textPath
-				intent.putExtra(Constants.EDITOR_INTENT_ITEM,
-						node.textPath.toArray(new String[0]));
-			}
 			startActivityForResult(intent, RESULT_DONE);
 		}
 	}
@@ -175,10 +170,8 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 				Node changedNode = null;
 				if (null != intent && null != intent.getExtras()) {
 					// Have extras
-					changedNode = controller.nodeFromPath(intent
-							.getStringExtra(Constants.LIST_INTENT_FILE), intent
-							.getStringArrayExtra(Constants.LIST_INTENT_ITEM),
-							false);
+					changedNode = controller.nodeFromParcelable(intent
+							.getParcelableExtra(Constants.LIST_INTENT_ID));
 				}
 				listViewFragment.refresh(changedNode);
 			}
@@ -187,7 +180,7 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 	}
 
 	private void removeNode(final Node node) {
-		if (null == node || node.type != Node.TYPE_TEXT) { // Invalid node
+		if (null == node || !node.can(Node.CAPABILITY_REMOVE)) { // Invalid node
 			return;
 		}
 		SuperActivity.showQuestionDialog(this, "Remove?", "Remove item ["
@@ -195,20 +188,13 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 
 			@Override
 			public void run() {
-				Node[] actual = controller.actualizeNode(node);
-				if (2 != actual.length) { // Not a full result
-					SuperActivity.notifyUser(Sierra5ListView.this,
-							"Item not found");
-					return;
-				}
-				if (!controller.removeNode(actual[0], actual[1])) { // Error
-																	// removing
+				if (!controller.removeNode(node)) { // Error removing
 					SuperActivity.notifyUser(Sierra5ListView.this,
 							"Error removing item");
 					return;
 				}
 				if (null != listViewFragment) { // Reload list
-					listViewFragment.selectNode(actual[1]);
+					listViewFragment.selectNode(node);
 				}
 			}
 		});
@@ -222,9 +208,7 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 			listViewFragment.selectNode(node);
 		}
 		Intent outData = new Intent();
-		outData.putExtra(Constants.LIST_INTENT_FILE, node.file);
-		outData.putExtra(Constants.LIST_INTENT_ITEM,
-				Node.list2array(node.textPath, new String[0]));
+		outData.putExtra(Constants.LIST_INTENT_ID, node.id);
 		setResult(RESULT_OK, outData);
 		if (close) {
 			if (null == listViewFragment) { // Only editor

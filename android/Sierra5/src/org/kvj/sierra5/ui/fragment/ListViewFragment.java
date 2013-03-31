@@ -13,7 +13,6 @@ import org.kvj.sierra5.common.plugin.Plugin;
 import org.kvj.sierra5.common.plugin.PluginInfo;
 import org.kvj.sierra5.common.theme.Theme;
 import org.kvj.sierra5.data.Controller;
-import org.kvj.sierra5.data.Controller.SearchNodeResult;
 import org.kvj.sierra5.ui.ConfigurationView;
 import org.kvj.sierra5.ui.adapter.ListViewAdapter;
 import org.kvj.sierra5.ui.adapter.ListViewAdapter.ListViewAdapterListener;
@@ -22,6 +21,7 @@ import org.kvj.sierra5.ui.adapter.theme.ThemeProvider;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -90,7 +90,7 @@ public class ListViewFragment extends SherlockFragment implements ListViewAdapte
 	private ListView listView = null;
 	private ListViewAdapter adapter = null;
 	protected Controller controller = null;
-	private String rootFile = null;
+	private Parcelable root = null;
 	List<MenuItemRecord<Node>> contextMenu = new ArrayList<MenuItemRecord<Node>>();
 	ListViewFragmentListener listener = null;
 	private ActionBar actionBar = null;
@@ -251,16 +251,13 @@ public class ListViewFragment extends SherlockFragment implements ListViewAdapte
 			@Override
 			protected Void doInBackground(Void... params) {
 				if (null == parent) { // Open/edit only for sub-menu
-					if (Node.TYPE_FILE == node.type || Node.TYPE_TEXT == node.type) {
-						// File or text - edit
+					if (node.can(Node.CAPABILITY_EDIT)) {
 						contextMenu.add(new MenuItemRecord<Node>(MENU_EDIT, "Edit", node));
 					}
-					if (Node.TYPE_FILE == node.type || Node.TYPE_FOLDER == node.type) {
-						// File or folder - open
+					if (node.can(Node.CAPABILITY_ROOT)) {
 						contextMenu.add(new MenuItemRecord<Node>(MENU_OPEN, "Open", node));
 					}
-					if (Node.TYPE_TEXT == node.type) {
-						// File or text - edit
+					if (node.can(Node.CAPABILITY_REMOVE)) {
 						contextMenu.add(new MenuItemRecord<Node>(MENU_REMOVE, "Remove", node));
 					}
 				}
@@ -319,47 +316,43 @@ public class ListViewFragment extends SherlockFragment implements ListViewAdapte
 
 	public void onSaveState(Bundle outState) {
 		// Save root, if have, file, +path
-		if (null != rootFile) { // Save root
-			outState.putString(Constants.LIST_INTENT_ROOT, rootFile);
+		if (null != root) { // Save root
+			outState.putParcelable(Constants.LIST_INTENT_ROOT, root);
 		}
 		int selectedIndex = adapter.getSelectedIndex();
-		Log.i(TAG, "onSaveInstanceState: " + rootFile + ", " + selectedIndex);
+		Log.i(TAG, "onSaveInstanceState: " + root + ", " + selectedIndex);
 		if (-1 != selectedIndex) { // Have selected
 			Node n = adapter.getItem(selectedIndex);
-			outState.putString(Constants.LIST_INTENT_FILE, n.file);
-			if (null != n.textPath) { // Have path - text selected
-				outState.putStringArray(Constants.LIST_INTENT_ITEM, n.textPath.toArray(new String[0]));
-			}
+			outState.putParcelable(Constants.LIST_INTENT_ID, n.id);
 		}
 	}
 
 	/**
 	 * Loads data
 	 */
+	@SuppressWarnings("rawtypes")
 	public void setController(Bundle data, Controller controller, ListViewFragmentListener listener, boolean selectMode) {
 		this.selectMode = selectMode;
 		this.listener = listener;
 		this.controller = controller;
 		updateClipboardStatus();
-		boolean useTemplatePath = data.getBoolean(Constants.INTENT_TEMPLATE, false);
-		String file = data.getString(Constants.LIST_INTENT_ROOT);
+		Parcelable file = data.getParcelable(Constants.LIST_INTENT_ROOT);
 		boolean rootSet = false;
 		adapter.setController(controller);
 		if (null != file) { // Have file in Activity parameters
-			rootSet = adapter.setRoot(controller.nodeFromPath(file, null, useTemplatePath), true);
+			rootSet = adapter.setRoot(controller.nodeFromParcelable(file), true);
 			if (rootSet) { // Result = OK - save
-				rootFile = adapter.getRoot().file;
+				root = adapter.getRoot().id;
 			}
 		} else { // No file - show root
-			String rootFolder = controller.getRootFolder();
-			rootSet = adapter.setRoot(controller.nodeFromPath(rootFolder, null, false), false);
+			Node rootFolder = controller.getRoot();
+			rootSet = adapter.setRoot(rootFolder, false);
 		}
 		// Log.i(TAG, "rootSet: " + rootSet);
 		adapter.setSelectedIndex(-1);
 		if (rootSet) { // Root set - expand root
 			actionBar.setTitle(adapter.getRoot().text);
-			expandTree(adapter.getRoot(), data.getString(Constants.LIST_INTENT_FILE),
-					data.getStringArray(Constants.LIST_INTENT_ITEM), useTemplatePath);
+			expandTree(adapter.getRoot(), controller.nodeFromParcelable(data.getParcelable(Constants.LIST_INTENT_ID)));
 		} else {
 			SuperActivity.notifyUser(getActivity(), "Invalid file/folder");
 		}
@@ -384,66 +377,75 @@ public class ListViewFragment extends SherlockFragment implements ListViewAdapte
 		if (null == controller) { // No controller - no refresh
 			return;
 		}
-		// toggleProgress(true);
-		// AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>()
-		// {
-		//
-		// @Override
-		// protected Void doInBackground(Void... params) {
-		controller.expand(node, forceExpand, Controller.EXPAND_ONE);
-		// return null;
-		// }
-		//
-		// @Override
-		// protected void onPostExecute(Void result) {
-		adapter.dataChanged();
-		// toggleProgress(false);
-		// }
-		//
-		// };
-		// task.execute();
+		toggleProgress(true);
+		AsyncTask<Void, Void, List<Node>> task = new AsyncTask<Void, Void, List<Node>>()
+		{
+
+			@Override
+			protected List<Node> doInBackground(Void... params) {
+				if (node.collapsed || forceExpand) { // Expand
+					return controller.expand(node, Node.EXPAND_ONE);
+				} else {
+					return node.children;
+				}
+			}
+
+			@SuppressWarnings("unchecked")
+			@Override
+			protected void onPostExecute(List<Node> result) {
+				if (node.collapsed || forceExpand) { // Expand
+					node.collapsed = false;
+					if (null != result) { // Have data
+						node.children = result;
+					}
+				} else {
+					node.collapsed = true;
+					if (null != result) { // Have data
+						node.children = result;
+					}
+				}
+				adapter.dataChanged();
+				toggleProgress(false);
+			}
+
+		};
+		task.execute();
 	}
 
-	private void expandTree(final Node node, final String file, final String[] path, final boolean useTemplate) {
+	private void expandTree(final Node node, final Node selectNode) {
 		if (null == controller) { // No controller - no refresh
 			return;
 		}
-		// toggleProgress(true);
-		// AsyncTask<Void, Void, Integer> task = new AsyncTask<Void, Void,
-		// Integer>() {
-		//
-		// @Override
-		// protected Integer doInBackground(Void... params) {
-		Integer result = null;
-		if (null == file) { // Don't need to search
-			boolean exp = controller.expand(node, true, Controller.EXPAND_ONE);
-			result = -1;
-		} else {
-			SearchNodeResult res = controller.searchInNode(node, file, path, useTemplate);
-			if (null == res) { // Error expand
-				result = -1;
-			} else {
-				result = res.index;
+		toggleProgress(true);
+		AsyncTask<Void, Void, List<Node>> task = new AsyncTask<Void, Void, List<Node>>() {
+
+			@SuppressWarnings({ "unchecked", "rawtypes" })
+			@Override
+			protected List<Node> doInBackground(Void... params) {
+				if (null == selectNode) { // Not found
+					return controller.expand(node, Node.EXPAND_ONE);
+				}
+				boolean found = controller.expandTo(node, selectNode);
+				if (!found) { // Failed to expand
+					return controller.expand(node, Node.EXPAND_ONE);
+				}
+				return node.children;
 			}
-		}
-		// return result;
-		// }
-		//
-		// @Override
-		// protected void onPostExecute(Integer result) {
-		if (result != null) { // State changed - notify adapter
-			if (-1 != result) { // Not expanded
-				adapter.setSelectedIndex(adapter.isShowRoot() ? result : result - 1);
+
+			@Override
+			protected void onPostExecute(List<Node> result) {
+				if (result != null) { // State changed - notify adapter
+					node.children = result;
+					node.collapsed = false;
+					adapter.dataChanged();
+				} else {
+					SuperActivity.notifyUser(getActivity(), "Item not found");
+				}
+				toggleProgress(false);
 			}
-			adapter.dataChanged();
-		} else {
-			SuperActivity.notifyUser(getActivity(), "Item not found");
-		}
-		// toggleProgress(false);
-		// }
-		//
-		// }
-		// task.execute();
+
+		};
+		task.execute();
 	}
 
 	@Override
@@ -524,29 +526,7 @@ public class ListViewFragment extends SherlockFragment implements ListViewAdapte
 		if (null == adapter.getRoot()) { // Don't have root - stop
 			return;
 		}
-		// toggleProgress(true);
-		// AsyncTask<Void, Void, SearchNodeResult> task = new AsyncTask<Void,
-		// Void, Controller.SearchNodeResult>() {
-		//
-		// @Override
-		// protected SearchNodeResult doInBackground(Void... params) {
-		SearchNodeResult res = controller.searchInNode(adapter.getRoot(), node.file,
-				Node.list2array(node.textPath, new String[0]), false);
-		// }
-		//
-		// @Override
-		// protected void onPostExecute(SearchNodeResult res) {
-		if (null != res) { // Found
-			// Log.i(TAG, "selectNode: " + node.file + ", "
-			// + node.textPath + ", " + res.found);
-			adapter.setSelectedIndex(adapter.isShowRoot() ? res.index : res.index - 1);
-		}
-		adapter.dataChanged();
-		toggleProgress(false);
-		// }
-		//
-		// };
-		// task.execute();
+		expandTree(adapter.getRoot(), node);
 	}
 
 	public boolean onMenuSelected(MenuItem item) {
