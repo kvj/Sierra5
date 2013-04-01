@@ -106,7 +106,8 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 			return false;
 		}
 		for (int i = 0; i < selected.size(); i++) { // Check parents
-			if (selected.get(i).id.equals(node.id)) { // Same selected again - remove
+			if (selected.get(i).id.equals(node.id)) { // Same selected again -
+														// remove
 				selected.remove(i);
 				return true;
 			}
@@ -163,7 +164,7 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 	}
 
 	private boolean addNode(Node to, Node what) {
-		return controller.editNode(EditType.Append, to, controller.getEditableContents(what));
+		return controller.editNode(EditType.Append, to, controller.getEditableContents(what)) != null;
 	}
 
 	private boolean removeNodes(List<Node> nodes) {

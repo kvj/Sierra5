@@ -439,7 +439,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 				result.node.id.raw = text;
 				break;
 			}
-			boolean saveResult = saveFile(new FileOutputStream(file), result.fileNode, result.node);
+			boolean saveResult = saveFile(new FileOutputStream(file), result.fileNode, null);
 			if (!saveResult) { // Save failed
 				Log.e(TAG, "Error saving");
 				return null;
@@ -460,14 +460,17 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 	@Override
 	public List<Node<SDCardProviderID>> getPath(Node<SDCardProviderID> node) {
 		List<Node<SDCardProviderID>> result = new ArrayList<Node<SDCardProviderID>>();
+		if (0 == node.id.path.length) { // Root
+			return result;
+		}
 		result.add(node);
-		for (int i = node.id.path.length - 1; i >= 0; i--) {
+		for (int i = node.id.path.length - 1; i > 0; i--) {
 			Node_ parent = new Node_(new SDCardProviderID());
 			parent.id.path = new String[i];
 			System.arraycopy(node.id.path, 0, parent.id.path, 0, i);
 			parent.level = i;
 			if (i > 0) { // Have text
-				parent.text = node.id.path[i];
+				parent.text = node.id.path[i - 1];
 			}
 			result.add(0, parent);
 		}
@@ -495,6 +498,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 	private Pattern left = Pattern.compile("^\\s*");
 
 	private int writeOneNode(int index, int startLevel, Node_ node, LineEater eater) {
+		Log.i(TAG, "WriteOne: " + node + ", " + node.id.raw);
 		StringBuilder spaces = new StringBuilder();
 		String[] lines = null;
 		if (!eater.filter(index, node)) { // Filtered out
@@ -532,9 +536,13 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 				if (m.find()) { // Have spaces
 					leftSpaces = m.group(0);
 				}
+				Log.i(TAG, "WriteOne eat: " + line);
 				eater.eat(result, node, spaces.toString() + leftSpaces, line.trim());
 			}
 			result++;
+		}
+		if (null == node.children) { // No children - try to load
+			node.children = expand(node, Node.EXPAND_ONE);
 		}
 		if (null == node.id.raw && null != node.children) {
 			// Process children
@@ -548,6 +556,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 			// Have raw data and it's text - update text
 			node.id.raw = null;
 			node.text = lines[0];
+			node.id.path[node.id.path.length - 1] = node.text;
 		}
 		return result;
 	}
@@ -669,7 +678,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 					// Log.i(TAG, "Parse " + parent.text + " and " + n.text +
 					// ", "
 					// + parent.left.length() + ", " + n.left.length());
-					if (parent.level < spacesInTab + node.level) {
+					if (parent.level <= level + node.level) {
 						// Real parent
 						fromParents = true;
 						break;

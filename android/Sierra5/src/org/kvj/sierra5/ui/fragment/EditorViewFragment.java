@@ -144,27 +144,25 @@ public class EditorViewFragment extends SherlockFragment {
 		}
 		toggleProgress(true);
 		final String text = editText.getText().toString();
-		AsyncTask<Void, Void, Boolean> task = new AsyncTask<Void, Void, Boolean>() {
+		AsyncTask<Void, Void, Node> task = new AsyncTask<Void, Void, Node>() {
 
 			@Override
-			protected Boolean doInBackground(Void... params) {
-				if (!controller.editNode(isAdding ? EditType.Append : EditType.Replace, saveMe, text)) { // Save failed
-					return false; // Save failed
-				}
-				return true;
+			protected Node doInBackground(Void... params) {
+				return controller.editNode(isAdding ? EditType.Append : EditType.Replace, saveMe, text);
 			}
 
 			@Override
-			protected void onPostExecute(Boolean result) {
+			protected void onPostExecute(Node result) {
 				toggleProgress(false);
-				if (!result) { // Save failed
+				if (null == result) { // Save failed
 					SuperActivity.notifyUser(getActivity(), "Save failed");
 					return; // Save failed
 				}
 				SuperActivity.notifyUser(getActivity(), "Saved");
 				oldText = text; // To detect changes
 				if (isAdding) { // Added
-					saveMe = (Node) node.children.get(node.children.size() - 1); // Last child
+					saveMe = (Node) result.children.get(result.children.size() - 1);
+					// Last child
 				}
 				isAdding = false; // Edit existing from now
 				node = saveMe; // Save this

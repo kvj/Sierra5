@@ -306,7 +306,7 @@ public class Controller<E> {
 
 		@Override
 		public boolean update(Node node, String raw) throws RemoteException {
-			return editNode(EditType.Replace, node, raw);
+			return editNode(EditType.Replace, node, raw) != null;
 		}
 
 		@Override
@@ -317,11 +317,7 @@ public class Controller<E> {
 
 		@Override
 		public Node append(Node node, String raw) throws RemoteException {
-			boolean result = editNode(EditType.Append, node, raw);
-			if (!result) { // Failed
-				return null;
-			}
-			return (Node) node.children.get(node.children.size() - 1);
+			return editNode(EditType.Append, node, raw);
 		}
 	};
 
