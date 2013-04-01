@@ -22,9 +22,7 @@ public class HoneyCombProvider implements ClipboardProvider {
 		public NodeClipDataItem(Intent intent, Node node, boolean cut) {
 			super(intent);
 			intent.setAction(Constants.ITEM_ACTION);
-			intent.putExtra(Constants.LIST_INTENT_FILE, node.file);
-			intent.putExtra(Constants.LIST_INTENT_ITEM,
-					Node.list2array(node.textPath, new String[0]));
+			intent.putExtra(Constants.LIST_INTENT_ID, node.id);
 			intent.putExtra(Constants.LIST_INTENT_CUT, cut);
 		}
 
@@ -66,9 +64,7 @@ public class HoneyCombProvider implements ClipboardProvider {
 	}
 
 	private Node fromIntent(Intent intent) {
-		return controller.nodeFromPath(
-				intent.getStringExtra(Constants.LIST_INTENT_FILE),
-				intent.getStringArrayExtra(Constants.LIST_INTENT_ITEM), false);
+		return controller.nodeFromParcelable(intent.getParcelableExtra(Constants.LIST_INTENT_ID));
 	}
 
 	private Controller controller = null;
@@ -76,8 +72,7 @@ public class HoneyCombProvider implements ClipboardProvider {
 
 	public HoneyCombProvider(Controller controller) {
 		this.controller = controller;
-		this.manager = (ClipboardManager) App.getInstance().getSystemService(
-				Context.CLIPBOARD_SERVICE);
+		this.manager = (ClipboardManager) App.getInstance().getSystemService(Context.CLIPBOARD_SERVICE);
 	}
 
 	@Override
@@ -87,12 +82,10 @@ public class HoneyCombProvider implements ClipboardProvider {
 			return false;
 		}
 		try { //
-			ClipData data = new ClipData("Sierra5 nodes",
-					new String[] { Constants.ITEM_MIME_TYPE },
+			ClipData data = new ClipData("Sierra5 nodes", new String[] { Constants.ITEM_MIME_TYPE },
 					new NodeClipDataItem(new Intent(), items.get(0), cut));
 			for (int i = 1; i < items.size(); i++) { // Add all other items
-				data.addItem(new NodeClipDataItem(new Intent(), items.get(i),
-						false));
+				data.addItem(new NodeClipDataItem(new Intent(), items.get(i), false));
 			}
 			manager.setPrimaryClip(data);
 			return true;
@@ -108,8 +101,7 @@ public class HoneyCombProvider implements ClipboardProvider {
 		if (null == data) {
 			return false;
 		}
-		return data.getItemAt(0).getIntent()
-				.getBooleanExtra(Constants.LIST_INTENT_CUT, false);
+		return data.getItemAt(0).getIntent().getBooleanExtra(Constants.LIST_INTENT_CUT, false);
 	}
 
 	@Override

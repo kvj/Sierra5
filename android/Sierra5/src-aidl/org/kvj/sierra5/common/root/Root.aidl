@@ -4,7 +4,7 @@ import org.kvj.sierra5.common.data.Node;
 import org.kvj.sierra5.common.theme.Theme;
 interface Root {
 	
-	Node getNode(in byte[] id);
+	Node getNode(in String[] path);
 	RemoteViews render(in Node node, String left, String theme); 
 	boolean update(in Node node, String raw);
 	boolean expand(in Node node, boolean expand);

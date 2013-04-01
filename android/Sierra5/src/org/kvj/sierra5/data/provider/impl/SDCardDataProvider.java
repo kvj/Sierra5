@@ -90,6 +90,16 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 		}
 
 		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("ID: " + type);
+			for (String item : path) { // Add path
+				sb.append(", " + item);
+			}
+			return sb.toString();
+		}
+
+		@Override
 		public void writeToParcel(Parcel dest, int flags) {
 			dest.writeStringArray(path);
 		}
@@ -197,6 +207,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 		Node_ root = new Node_(new SDCardProviderID());
 		root.capabilities = new int[] { Node.CAPABILITY_ROOT };
 		root.id.type = TYPE_FOLDER;
+		root.text = "Root";
 		return root;
 	}
 
@@ -219,7 +230,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 			for (Node<SDCardProviderID> child : children) { // Search by name
 				if (child.text.equals(id.path[index])) { // Found
 					if (child.id.type == TYPE_FILE) { // Found file
-						result.fileNode = node;
+						result.fileNode = (Node_) child;
 					}
 					index++;
 					found = true;
@@ -352,10 +363,11 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 				result.add(n);
 			}
 		}
-		return null;
+		return result;
 	}
 
 	private File getFile(SDCardProviderID id) {
+		Log.i(TAG, "Get file: " + id.type + ", " + id.path.length);
 		File file = new File(getRootFolder());
 		int index = 0; // In path
 		while (file.exists()) { // Break when file not exists - error
@@ -394,21 +406,30 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 	}
 
 	@Override
-	public boolean edit(EditType type, Node<SDCardProviderID> node, String text) {
+	public Node<SDCardProviderID> edit(EditType type, Node<SDCardProviderID> node, String text) {
 		SearchResult result = searchNode(node.id);
 		if (null == result.node) { // Not found
 			Log.e(TAG, "Node not found for remove: " + node.text);
-			return false;
+			return null;
 		}
 		File file = getFile(result.fileNode.id);
 		if (null == file) { // Not found
 			Log.e(TAG, "File not found: " + file);
-			return false;
+			return null;
 		}
+		Log.i(TAG, "edit: " + type + ", " + node.text + ", " + file.getAbsolutePath() + ", " + result.fileNode.text);
 		try {
 			Node_ n = null;
 			switch (type) {
 			case Append:
+				if (null == result.node.children) { // Not expanded
+					List<Node<SDCardProviderID>> children = expand(result.node, Node.EXPAND_ONE);
+					if (null == children) { // Failed
+						Log.e(TAG, "Error loading current contents");
+						return null;
+					}
+					result.node.children = children;
+				}
 				n = result.node.createChild(TYPE_TEXT, "");
 				n.children = new ArrayList<Node<SDCardProviderID>>();
 				n.id.raw = text;
@@ -421,13 +442,13 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 			boolean saveResult = saveFile(new FileOutputStream(file), result.fileNode, result.node);
 			if (!saveResult) { // Save failed
 				Log.e(TAG, "Error saving");
-				return false;
+				return null;
 			}
 		} catch (FileNotFoundException e) {
 			Log.e(TAG, "File not found: " + file, e);
-			return false;
+			return null;
 		}
-		return true;
+		return result.node;
 	}
 
 	@Override
@@ -576,8 +597,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 			} else {
 				tabRepl = null;
 			}
-			final BufferedWriter writer = new BufferedWriter(
-					new OutputStreamWriter(stream, "utf-8"));
+			final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stream, "utf-8"));
 			writeNode(node, new LineEater() {
 
 				@Override

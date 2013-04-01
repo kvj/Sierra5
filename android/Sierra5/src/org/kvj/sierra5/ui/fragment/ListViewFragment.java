@@ -348,7 +348,7 @@ public class ListViewFragment extends SherlockFragment implements ListViewAdapte
 			Node rootFolder = controller.getRoot();
 			rootSet = adapter.setRoot(rootFolder, false);
 		}
-		// Log.i(TAG, "rootSet: " + rootSet);
+		Log.i(TAG, "rootSet: " + rootSet);
 		adapter.setSelectedIndex(-1);
 		if (rootSet) { // Root set - expand root
 			actionBar.setTitle(adapter.getRoot().text);
@@ -374,16 +374,16 @@ public class ListViewFragment extends SherlockFragment implements ListViewAdapte
 	}
 
 	private void collapseExpand(final Node node, final Boolean forceExpand) {
-		if (null == controller) { // No controller - no refresh
+		if (null == controller || node == null) { // No controller - no refresh
+			Log.w(TAG, "Node is null? " + node);
 			return;
 		}
 		toggleProgress(true);
-		AsyncTask<Void, Void, List<Node>> task = new AsyncTask<Void, Void, List<Node>>()
-		{
+		AsyncTask<Void, Void, List<Node>> task = new AsyncTask<Void, Void, List<Node>>() {
 
 			@Override
 			protected List<Node> doInBackground(Void... params) {
-				if (node.collapsed || forceExpand) { // Expand
+				if (node.collapsed || (null != forceExpand && forceExpand)) { // Expand
 					return controller.expand(node, Node.EXPAND_ONE);
 				} else {
 					return node.children;
@@ -393,7 +393,8 @@ public class ListViewFragment extends SherlockFragment implements ListViewAdapte
 			@SuppressWarnings("unchecked")
 			@Override
 			protected void onPostExecute(List<Node> result) {
-				if (node.collapsed || forceExpand) { // Expand
+				Log.i(TAG, "collapseExpand: " + result);
+				if (node.collapsed || (null != forceExpand && forceExpand)) { // Expand
 					node.collapsed = false;
 					if (null != result) { // Have data
 						node.children = result;
@@ -422,6 +423,7 @@ public class ListViewFragment extends SherlockFragment implements ListViewAdapte
 			@SuppressWarnings({ "unchecked", "rawtypes" })
 			@Override
 			protected List<Node> doInBackground(Void... params) {
+				Log.i(TAG, "Expand: " + selectNode);
 				if (null == selectNode) { // Not found
 					return controller.expand(node, Node.EXPAND_ONE);
 				}
@@ -434,6 +436,7 @@ public class ListViewFragment extends SherlockFragment implements ListViewAdapte
 
 			@Override
 			protected void onPostExecute(List<Node> result) {
+				Log.i(TAG, "Expand: " + result);
 				if (result != null) { // State changed - notify adapter
 					node.children = result;
 					node.collapsed = false;

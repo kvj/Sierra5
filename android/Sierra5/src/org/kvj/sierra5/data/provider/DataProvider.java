@@ -26,7 +26,7 @@ public interface DataProvider<E extends NodeID> {
 
 	public String getEditable(Node<E> node);
 
-	public boolean edit(EditType type, Node<E> node, String text);
+	public Node<E> edit(EditType type, Node<E> node, String text);
 
 	public boolean upload(Node<E> node, String resource, String location);
 

@@ -59,6 +59,11 @@ public class Node<E extends Parcelable> implements Parcelable {
 		return 0;
 	}
 
+	@Override
+	public String toString() {
+		return id.toString();
+	}
+
 	public void readFromParcel(Parcel p) {
 		id = p.readParcelable(Node.class.getClassLoader());
 		style = p.readInt();

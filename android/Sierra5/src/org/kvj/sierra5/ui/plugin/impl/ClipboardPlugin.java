@@ -9,6 +9,7 @@ import org.kvj.sierra5.common.plugin.MenuItemInfo;
 import org.kvj.sierra5.common.plugin.PluginInfo;
 import org.kvj.sierra5.common.theme.Theme;
 import org.kvj.sierra5.data.Controller;
+import org.kvj.sierra5.data.provider.DataProvider.EditType;
 import org.kvj.sierra5.ui.plugin.LocalPlugin;
 import org.kvj.sierra5.ui.plugin.impl.clipboard.ClipboardProvider;
 import org.kvj.sierra5.ui.plugin.impl.clipboard.GingerBreadProvider;
@@ -40,14 +41,14 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 	public MenuItemInfo[] getMenu(int id, Node node) throws RemoteException {
 		if (getItemCount() == 0 && id == -1) { // No items selected and top menu
 			List<MenuItemInfo> result = new ArrayList<MenuItemInfo>();
-			if (Node.TYPE_TEXT == node.type) { // Text - can mark
+			if (node.can(Node.CAPABILITY_REMOVE)) { // Removable - can mark
 				result.add(new MenuItemInfo(0, MenuItemInfo.MENU_ITEM_ACTION, "Select"));
 			}
-			if (Node.TYPE_TEXT == node.type || Node.TYPE_FILE == node.type) {
+			if (node.can(Node.CAPABILITY_EDIT)) {
 				// Text or file - can mark children
 				result.add(new MenuItemInfo(1, MenuItemInfo.MENU_ITEM_ACTION, "Select children"));
 			}
-			if (Node.TYPE_FOLDER != node.type && provider.getNodeCount() > 0) {
+			if (node.can(Node.CAPABILITY_ADD)) {
 				// File or text, have nodes in clipboard
 				result.add(new MenuItemInfo(2, MenuItemInfo.MENU_ITEM_ACTION, "Paste items: " + provider.getNodeCount()));
 			}
@@ -89,9 +90,6 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 			selected.add(node);
 			return true;
 		case 1: // Select children
-			if (node.collapsed) { // Collapsed - expand first
-				controller.expand(node, null, Controller.EXPAND_ONE);
-			}
 			if (null != node.children) { // Have children
 				selected.addAll(node.children);
 			}
@@ -104,26 +102,13 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 	}
 
 	public boolean addSelection(Node node) {
-		if (Node.TYPE_TEXT != node.type) { // Not text - ignore
+		if (!node.can(Node.CAPABILITY_REMOVE)) { // Not text - ignore
 			return false;
 		}
 		for (int i = 0; i < selected.size(); i++) { // Check parents
-			int parentType = is1stIsParentOf2nd(selected.get(i), node);
-			if (parentType == PARENT_SAME) { // Same selected again - remove
+			if (selected.get(i).id.equals(node.id)) { // Same selected again - remove
 				selected.remove(i);
 				return true;
-			}
-			if (parentType == PARENT_PARENT) { // Have parent already - ignore
-				return false;
-			}
-		}
-		// Opposite check
-		for (int i = 0; i < selected.size(); i++) {
-			// Check if node is parent
-			int parentType = is1stIsParentOf2nd(node, selected.get(i));
-			if (parentType == PARENT_PARENT) { // Node is parent - remove
-				selected.remove(i);
-				i--; // Check again
 			}
 		}
 		selected.add(node); // Finally add node
@@ -148,40 +133,14 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 	public static final int PARENT_SAME = 1;
 	public static final int PARENT_PARENT = 2;
 
-	public static int is1stIsParentOf2nd(Node first, Node second) {
-		if (!first.file.equals(second.file)) { // Wrong files
-			return PARENT_NOT;
-		}
-		String[] firstPath = Node.list2array(first.textPath, new String[0]);
-		String[] secondPath = Node.list2array(second.textPath, new String[0]);
-		for (int i = 0; i < firstPath.length; i++) {
-			// Start from top of first
-			if (i >= secondPath.length) { // second is shorter - not a parent
-				return PARENT_NOT;
-			}
-			if (!firstPath[i].equals(secondPath[i])) {
-				// Not equals - not a parent
-				return PARENT_NOT;
-			}
-		}
-		if (secondPath.length > firstPath.length) { // Second is longer - parent
-			return PARENT_PARENT;
-		}
-		return PARENT_SAME; // No differences found
-	}
-
 	@Override
 	public void customize(Theme theme, View view, Node node, SpannableStringBuilder text, boolean nodeSelected) {
-		if (getItemCount() == 0 || Node.TYPE_TEXT != node.type) {
+		if (getItemCount() == 0) {
 			// When no selection and not text - ignore
 			return;
 		}
 		for (Node sel : selected) {
-			int parentType = is1stIsParentOf2nd(sel, node);
-			if (PARENT_NOT == parentType) { // Ignore, out of selection
-				continue;
-			}
-			text.setSpan(new ForegroundColorSpan(parentType == PARENT_SAME ? theme.ceLCyan : theme.caLGreen), 0, 2, 0);
+			text.setSpan(new ForegroundColorSpan(theme.ceLCyan), 0, 2, 0);
 		}
 	}
 
@@ -203,21 +162,13 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 		return provider.getNodeCount();
 	}
 
-	private void addNode(Node to, Node what) {
-		Node child = to.createChild(Node.TYPE_TEXT, what.text, controller.getTabSize());
-		if (null != what.children) { // add children also
-			for (Node ch : what.children) {
-				addNode(child, ch);
-			}
-		}
+	private boolean addNode(Node to, Node what) {
+		return controller.editNode(EditType.Append, to, controller.getEditableContents(what));
 	}
 
 	private boolean removeNodes(List<Node> nodes) {
 		for (Node node : nodes) {
-			Node[] nn = controller.actualizeNode(node);
-			if (nn.length == 2) { // Node actual
-				controller.saveFile(nn[0], nn[1]);
-			}
+			controller.removeNode(node);
 		}
 		return true; // Not implemented
 	}
@@ -231,20 +182,17 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 	}
 
 	public boolean pasteNodes(Node node) {
-		Node[] nn = controller.actualizeNode(node);
-		if (nn.length != 2) { // Node not found
-			Log.w(TAG, "Can't paste, node not found");
-		}
 		List<Node> nodes = provider.paste();
 		for (Node n : nodes) { // Paste node one by one
-			addNode(nn[1], n);
+			if (!addNode(node, n)) {
+				return false;
+			}
 		}
 		// Save new file
-		boolean result = controller.saveFile(nn[0], null);
-		if (result && provider.wasCut()) { // Need to remove pasted nodes
+		if (provider.wasCut()) { // Need to remove pasted nodes
 			removeNodes(nodes);
 			provider.clearCut();
 		}
-		return result;
+		return true;
 	}
 }

@@ -8,7 +8,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.kvj.bravo7.format.PlainTextFormatter;
-import org.kvj.bravo7.format.TextFormatter;
 import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
 import org.kvj.sierra5.common.data.Node;
@@ -67,20 +66,31 @@ public class ListViewAdapter implements ListAdapter {
 
 		@Override
 		public Pattern getPattern(Node note, boolean selected) {
-			if (Node.TYPE_TEXT == note.type) { // Text - skip
-				return null;
-			}
-			return TextFormatter.eatAll;
+			return null;
 		}
 
 		@Override
 		public void format(Node note, SpannableStringBuilder sb, Matcher m, String text, boolean selected) {
-			int color = Node.TYPE_FOLDER == note.type ? theme.cbLYellow : theme.ccLBlue;
-			if (note.text.length() > 1) { // Color only First letter
-				PlainTextFormatter.addSpan(sb, text.substring(0, 1), new ForegroundColorSpan(color));
-				PlainTextFormatter.addSpan(sb, text.substring(1), new ForegroundColorSpan(theme.colorText));
-			} else {
-				PlainTextFormatter.addSpan(sb, text, new ForegroundColorSpan(color));
+			int color = 0;
+			switch (note.style) {
+			case Node.STYLE_1: // Folder like
+				color = theme.cbLYellow;
+				if (note.text.length() > 1) { // Color only First letter
+					PlainTextFormatter.addSpan(sb, text.substring(0, 1), new ForegroundColorSpan(color));
+					PlainTextFormatter.addSpan(sb, text.substring(1), new ForegroundColorSpan(theme.colorText));
+				} else {
+					PlainTextFormatter.addSpan(sb, text, new ForegroundColorSpan(color));
+				}
+				break;
+			case Node.STYLE_2: // File like
+				color = theme.ccLBlue;
+				if (note.text.length() > 1) { // Color only First letter
+					PlainTextFormatter.addSpan(sb, text.substring(0, 1), new ForegroundColorSpan(color));
+					PlainTextFormatter.addSpan(sb, text.substring(1), new ForegroundColorSpan(theme.colorText));
+				} else {
+					PlainTextFormatter.addSpan(sb, text, new ForegroundColorSpan(color));
+				}
+				break;
 			}
 		}
 
@@ -112,17 +122,16 @@ public class ListViewAdapter implements ListAdapter {
 			Log.w(TAG, "Expanded wout children: " + node.text);
 			return result;
 		}
-		synchronized (node.children) { // Lock modifications
-			for (Node child : node.children) { // Every children
-				if (!child.visible) { // Not visible - skip
-					continue;
-				}
-				SearchInTreeResult r = moveThru(child, searchIndex - result.size);
-				if (null != r.foundNode) { // Node found
-					return r; // Don't need to go thru anymore
-				}
-				result.size += r.size;
+		List<Node> children = node.children;
+		for (Node child : children) { // Every children
+			if (!child.visible) { // Not visible - skip
+				continue;
 			}
+			SearchInTreeResult r = moveThru(child, searchIndex - result.size);
+			if (null != r.foundNode) { // Node found
+				return r; // Don't need to go thru anymore
+			}
+			result.size += r.size;
 		}
 		return result;
 	}
@@ -208,21 +217,18 @@ public class ListViewAdapter implements ListAdapter {
 		boolean selected = selectedIndex == index;
 		view.setMinimumHeight((int) (28 * view.getContext().getResources().getDisplayMetrics().density));
 		SpannableStringBuilder text = customize(view, node, index == selectedIndex);
-		if (Node.TYPE_TEXT == node.type) {
-			// Remote render only for text
-			synchronized (remoteRenders) { // Lock for modifications
-				RemoteViews rv = remoteRenders.get(node.text);
-				if (null != rv) { // Have remote views
-					// Log.i(TAG, "getView: " + node.text + ", remote found");
-					View renderResult = rv.apply(parent.getContext(), root);
-					root.addView(renderResult);
-					if (!selected) { // Hide top part when not selected
-					}
-				} else {
-					if (!remoteRenders.containsKey(node.text)) {
-						// Not started yet - start
-						remoteRender(node, root);
-					}
+		synchronized (remoteRenders) { // Lock for modifications
+			RemoteViews rv = remoteRenders.get(node.text);
+			if (null != rv) { // Have remote views
+				// Log.i(TAG, "getView: " + node.text + ", remote found");
+				View renderResult = rv.apply(parent.getContext(), root);
+				root.addView(renderResult);
+				if (!selected) { // Hide top part when not selected
+				}
+			} else {
+				if (!remoteRenders.containsKey(node.text)) {
+					// Not started yet - start
+					remoteRender(node, root);
 				}
 			}
 		}
@@ -321,7 +327,8 @@ public class ListViewAdapter implements ListAdapter {
 	private void fixLevel(Node node, int level) {
 		node.level = level;
 		if (null != node.children) { // Have children
-			for (Node ch : node.children) { // ch = child
+			List<Node> children = node.children;
+			for (Node ch : children) { // ch = child
 				fixLevel(ch, level + 1);
 			}
 		}

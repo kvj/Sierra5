@@ -13,6 +13,7 @@ import org.kvj.sierra5.common.plugin.Plugin;
 import org.kvj.sierra5.common.plugin.PluginInfo;
 import org.kvj.sierra5.common.theme.Theme;
 import org.kvj.sierra5.data.Controller;
+import org.kvj.sierra5.data.provider.DataProvider.EditType;
 import org.kvj.sierra5.ui.adapter.theme.ThemeProvider;
 import org.kvj.sierra5.ui.fragment.ListViewFragment.MenuItemRecord;
 import org.kvj.sierra5.ui.fragment.ListViewFragment.PluginMenuRecord;
@@ -59,20 +60,17 @@ public class EditorViewFragment extends SherlockFragment {
 	List<MenuItemRecord<Node>> contextMenu = new ArrayList<MenuItemRecord<Node>>();
 
 	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-			Bundle savedInstanceState) {
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		actionBar = getSherlockActivity().getSupportActionBar();
 		setHasOptionsMenu(true);
-		View view = inflater.inflate(R.layout.editorview_fragment, container,
-				false);
+		View view = inflater.inflate(R.layout.editorview_fragment, container, false);
 		editText = (EditText) view.findViewById(R.id.editorview);
-		String themeName = App.getInstance().getStringPreference(
-				R.string.theme, R.string.themeDefault);
+		String themeName = App.getInstance().getStringPreference(R.string.theme, R.string.themeDefault);
 		Theme theme = ThemeProvider.getTheme(themeName);
 		editText.setTextColor(theme.colorText);
 		editText.setBackgroundColor(theme.colorBackground);
-		editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, App.getInstance()
-				.getIntPreference(R.string.docFont, R.string.docFontDefault));
+		editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP,
+				App.getInstance().getIntPreference(R.string.docFont, R.string.docFontDefault));
 		disable();
 		return view;
 	}
@@ -90,37 +88,25 @@ public class EditorViewFragment extends SherlockFragment {
 	/**
 	 * Loads data
 	 */
-	public void setController(Bundle data, Controller controller,
-			EditorViewFragmentListener listener) {
+	public void setController(Bundle data, Controller controller, EditorViewFragmentListener listener) {
 		this.listener = listener;
 		this.controller = controller;
-		String file = data.getString(Constants.EDITOR_INTENT_FILE);
 		oldText = data.getString(KEY_TEXT_ORIG);
 		isAdding = data.getBoolean(Constants.EDITOR_INTENT_ADD, false);
-		if (null == file) { // No file - empty editor
+		node = controller.nodeFromParcelable(data.getParcelable(Constants.EDITOR_INTENT_ID));
+		if (null == node) { // Failed
+			SuperActivity.notifyUser(getActivity(), "Node not found");
 			return;
 		}
-		boolean useTemplatePath = data.getBoolean(Constants.INTENT_TEMPLATE,
-				false);
-		loadNode(file, data.getStringArray(Constants.EDITOR_INTENT_ITEM),
-				isAdding, data.getString(Constants.EDITOR_INTENT_ADD_TEMPLATE),
-				useTemplatePath);
+		loadNode(node, isAdding);
 	}
 
-	private void editNode(Node n, String template) {
+	private void editNode(Node n) {
 		if (null == actionBar || null == editText) {
 			return;
 		}
 		node = n;
-		if (isAdding) { // Create new Node, switch to this node
-			saveMe = node.createChild(
-					Node.TYPE_TEXT,
-					"",
-					App.getInstance().getIntPreference(R.string.tabSize,
-							R.string.tabSizeDefault));
-		} else { // Existing Node
-			saveMe = n;
-		}
+		saveMe = n;
 		if (isAdding) { // New item
 			actionBar.setTitle('+' + n.text);
 		} else { // Existing item
@@ -128,15 +114,6 @@ public class EditorViewFragment extends SherlockFragment {
 		}
 		String text = "";
 		int cursorPos = -1;
-		if (null != template) { // Have template - convert
-			ItemPattern pattern = controller.parsePattern(template, false);
-			text = pattern.converted;
-			int cursorIndex = text.indexOf("${|}");
-			if (-1 != cursorIndex) { // Found cursor position
-				cursorPos = cursorIndex;
-				text = text.replace("${|}", "");
-			}
-		}
 		// Log.i(TAG, "Edit node: " + text + ", " + template + ", " +
 		// cursorPos);
 		if (!isAdding) { // Text is empty
@@ -153,11 +130,7 @@ public class EditorViewFragment extends SherlockFragment {
 
 	public void onSaveState(Bundle outState) {
 		if (null != node) { // Have node
-			outState.putString(Constants.EDITOR_INTENT_FILE, node.file);
-			if (null != node.textPath) { // Have text path
-				outState.putStringArray(Constants.EDITOR_INTENT_ITEM,
-						node.textPath.toArray(new String[0]));
-			}
+			outState.putParcelable(Constants.EDITOR_INTENT_ID, node.id);
 			outState.putString(KEY_TEXT, editText.getText().toString());
 			outState.putString(KEY_TEXT_ORIG, oldText);
 			outState.putBoolean(Constants.EDITOR_INTENT_ADD, isAdding);
@@ -175,8 +148,7 @@ public class EditorViewFragment extends SherlockFragment {
 
 			@Override
 			protected Boolean doInBackground(Void... params) {
-				saveMe.raw = text;
-				if (!controller.saveFile(parent, null)) { // Save failed
+				if (!controller.editNode(isAdding ? EditType.Append : EditType.Replace, saveMe, text)) { // Save failed
 					return false; // Save failed
 				}
 				return true;
@@ -191,6 +163,9 @@ public class EditorViewFragment extends SherlockFragment {
 				}
 				SuperActivity.notifyUser(getActivity(), "Saved");
 				oldText = text; // To detect changes
+				if (isAdding) { // Added
+					saveMe = (Node) node.children.get(node.children.size() - 1); // Last child
+				}
 				isAdding = false; // Edit existing from now
 				node = saveMe; // Save this
 				actionBar.setTitle(node.text);
@@ -234,19 +209,15 @@ public class EditorViewFragment extends SherlockFragment {
 				try { // Get menus from plugins
 					int menuIndex = 0;
 					// Log.i(TAG, "Getting menu from plugins");
-					for (Plugin plugin : controller
-							.getPlugins(PluginInfo.PLUGIN_HAVE_EDIT_MENU)) {
+					List<Plugin> plugins = controller.getPlugins(PluginInfo.PLUGIN_HAVE_EDIT_MENU);
+					for (Plugin plugin : plugins) {
 						// menu from every plugin
-						MenuItemInfo[] menus = plugin
-								.getEditorMenu(
-										null != parent ? parent.info.getId()
-												: -1, node);
+						MenuItemInfo[] menus = plugin.getEditorMenu(null != parent ? parent.info.getId() : -1, node);
 						if (null == menus) { // No menus
 							continue;
 						}
 						for (MenuItemInfo info : menus) { // Add menus
-							contextMenu.add(new PluginMenuRecord(menuIndex++,
-									node, plugin, info));
+							contextMenu.add(new PluginMenuRecord(menuIndex++, node, plugin, info));
 						}
 					}
 				} catch (Exception e) {
@@ -275,8 +246,7 @@ public class EditorViewFragment extends SherlockFragment {
 		editNode(node);
 	}
 
-	public static boolean stringChanged(String s1, String s2,
-			String... emptyStrings) {
+	public static boolean stringChanged(String s1, String s2, String... emptyStrings) {
 		boolean s1empty = s1 == null || "".equals(s1.trim());
 		boolean s2empty = s2 == null || "".equals(s2.trim());
 		if (s1empty && s2empty) {
@@ -296,8 +266,7 @@ public class EditorViewFragment extends SherlockFragment {
 	}
 
 	public boolean isModified() {
-		if (null != oldText
-				&& stringChanged(oldText, editText.getText().toString())) {
+		if (null != oldText && stringChanged(oldText, editText.getText().toString())) {
 			// Input changed
 			return true;
 		}
@@ -311,8 +280,7 @@ public class EditorViewFragment extends SherlockFragment {
 	}
 
 	@Override
-	public void onCreateContextMenu(ContextMenu menu, View v,
-			ContextMenuInfo menuInfo) {
+	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
 		menu.clear();
 		for (int i = 0; i < contextMenu.size(); i++) {
 			MenuItemRecord info = contextMenu.get(i);
@@ -344,8 +312,7 @@ public class EditorViewFragment extends SherlockFragment {
 				protected String doInBackground(Void... params) {
 					try { // Remote errors
 							// Log.i(TAG, "Before exec: " + node.text);
-						return pitem.plugin.executeEditAction(
-								pitem.info.getId(), text, node);
+						return pitem.plugin.executeEditAction(pitem.info.getId(), text, node);
 					} catch (Exception e) {
 						Log.w(TAG, "Error executing action: " + pitem.title, e);
 					}
@@ -355,26 +322,22 @@ public class EditorViewFragment extends SherlockFragment {
 				@Override
 				protected void onPostExecute(String result) {
 					if (null == result) { // Execute failed
-						SuperActivity.notifyUser(getActivity(),
-								"Error in action");
+						SuperActivity.notifyUser(getActivity(), "Error in action");
 					} else {
 						int cursorPos = editText.getSelectionStart();
-						ItemPattern pattern = controller.parsePattern(result,
-								false);
-						String newText = pattern.converted;
-						int cursorIndex = newText.indexOf("${|}");
+						int cursorIndex = result.indexOf("${|}");
 						if (-1 != cursorIndex) { // Found cursor position
-							newText = newText.replace("${|}", "");
+							result = result.replace("${|}", "");
 						} else {
-							cursorIndex = newText.length();
+							cursorIndex = result.length();
 						}
 						if (pitem.info.getType() == MenuItemInfo.MENU_ITEM_INSERT_TEXT) {
 							// Insert template
-							editText.getText().insert(cursorPos, newText);
+							editText.getText().insert(cursorPos, result);
 							editText.setSelection(cursorPos + cursorIndex);
 						} else if (pitem.info.getType() == MenuItemInfo.MENU_ITEM_REPLACE_TEXT) {
 							// Replace text
-							editText.setText(newText);
+							editText.setText(result);
 							editText.setSelection(cursorIndex);
 						}
 

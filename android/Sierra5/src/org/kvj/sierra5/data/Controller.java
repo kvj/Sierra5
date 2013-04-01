@@ -32,7 +32,6 @@ import org.kvj.sierra5.ui.plugin.LocalPlugin;
 import org.kvj.sierra5.ui.plugin.impl.ClipboardPlugin;
 
 import android.os.IBinder;
-import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.RemoteException;
 import android.util.Log;
@@ -135,41 +134,46 @@ public class Controller<E> {
 		return result;
 	}
 
-	@SuppressWarnings("unchecked")
-	public boolean editNode(EditType type, Node node, String raw) {
+	public Node getRoot() {
+		DataProvider provider = providers.values().iterator().next();
+		return provider.getRoot();
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public String getEditableContents(Node node) {
 		DataProvider provider = getProvider((NodeID) node.id);
 		if (null == provider) { // Not found
 			Log.e(TAG, "Provider not found");
-			return false;
+			return null;
+		}
+		return provider.getEditable(node);
+	}
+
+	@SuppressWarnings("unchecked")
+	public Node editNode(EditType type, Node node, String raw) {
+		DataProvider provider = getProvider((NodeID) node.id);
+		if (null == provider) { // Not found
+			Log.e(TAG, "Provider not found");
+			return null;
 		}
 		return provider.edit(type, node, raw);
 	}
 
-	public boolean expandTo(Node root, Node select) {
-		DataProvider provider = getProvider((NodeID) root.id);
-		if (null == provider) { // Not found
-			Log.e(TAG, "Provider not found");
-			return false;
-		}
+	private Node expandTo(DataProvider provider, Node root, String[] selectPath) {
 		String[] rootPath = getPath(root);
-		String[] selectPath = getPath(select);
-		if (null == rootPath || null == selectPath) { // Invalid path
-			Log.e(TAG, "Path is invalid: " + rootPath + ", " + selectPath);
-			return false;
-		}
 		Node node = root; // Will use in cycle
 		for (int i = 0; i < selectPath.length; i++) { // Check every item
 			if (i < rootPath.length) { // Part of root check if root is same
 				if (!rootPath[i].equals(selectPath[i])) { // Failed
 					Log.e(TAG, "Path item is invalid: " + rootPath[i] + ", " + selectPath[i]);
-					return false;
+					return null;
 				}
 			} else {
 				// After root - expand
 				List<Node> children = provider.expand(node, Node.EXPAND_ONE);
 				if (null == children) { // Failed to expand
 					Log.e(TAG, "Expand failed: " + node.text);
-					return false;
+					return null;
 				}
 				node.children = children;
 				node.collapsed = false;
@@ -183,11 +187,27 @@ public class Controller<E> {
 				}
 				if (!found) { // Not found
 					Log.e(TAG, "Child not found: " + selectPath[i]);
-					return false;
+					return null;
 				}
 			}
 		}
-		return true;
+		return node;
+	}
+
+	public boolean expandTo(Node root, Node select) {
+		DataProvider provider = getProvider((NodeID) root.id);
+		if (null == provider) { // Not found
+			Log.e(TAG, "Provider not found");
+			return false;
+		}
+		Log.i(TAG, "Expand to: " + root.id + " and " + select.id);
+		String[] rootPath = getPath(root);
+		String[] selectPath = getPath(select);
+		if (null == rootPath || null == selectPath) { // Invalid path
+			Log.e(TAG, "Path is invalid: " + rootPath + ", " + selectPath);
+			return false;
+		}
+		return null != expandTo(provider, root, selectPath);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -276,21 +296,12 @@ public class Controller<E> {
 			return ThemeProvider.getThemes();
 		}
 
+		@SuppressWarnings({ "rawtypes" })
 		@Override
-		public Node getNode(byte[] id) throws RemoteException {
-			try { // Parcel errors
-				Parcel p = Parcel.obtain();
-				p.unmarshall(id, 0, id.length);
-				Parcelable nodeID = p.readParcelable(Controller.class.getClassLoader());
-				if (null == nodeID) { // Failed
-					Log.e(TAG, "Failed to load nodeID");
-					return null;
-				}
-				return nodeFromParcelable(nodeID);
-			} catch (Exception e) {
-				Log.e(TAG, "Error in unmarshal", e);
-			}
-			return null;
+		public Node getNode(String[] path) throws RemoteException {
+			DataProvider provider = providers.values().iterator().next();
+			Node root = provider.getRoot();
+			return expandTo(provider, root, path);
 		}
 
 		@Override
@@ -380,11 +391,6 @@ public class Controller<E> {
 
 	public ClipboardPlugin getClipboard() {
 		return clipboardPlugin;
-	}
-
-	public Node getRoot() {
-		DataProvider provider = providers.values().iterator().next();
-		return provider.getRoot();
 	}
 
 }
