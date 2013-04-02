@@ -19,8 +19,8 @@ import android.os.Bundle;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Window;
 
-public class SelectItemView extends SherlockFragmentActivity implements
-		ControllerReceiver<Controller>, ListViewFragmentListener {
+public class SelectItemView extends SherlockFragmentActivity implements ControllerReceiver<Controller>,
+		ListViewFragmentListener {
 
 	ControllerConnector<App, Controller, ControllerService> conn = null;
 	private Controller controller = null;
@@ -33,16 +33,14 @@ public class SelectItemView extends SherlockFragmentActivity implements
 		super.onCreate(inData);
 		data = SuperActivity.getData(this, inData);
 		setContentView(R.layout.select_item);
-		listViewFragment = (ListViewFragment) getSupportFragmentManager()
-				.findFragmentById(R.id.listview_left);
+		listViewFragment = (ListViewFragment) getSupportFragmentManager().findFragmentById(R.id.listview_left);
 		setSupportProgressBarIndeterminateVisibility(false);
 	}
 
 	@Override
 	protected void onStart() {
 		super.onStart();
-		conn = new ControllerConnector<App, Controller, ControllerService>(
-				this, this);
+		conn = new ControllerConnector<App, Controller, ControllerService>(this, this);
 		conn.connectController(ControllerService.class);
 	}
 
@@ -55,7 +53,7 @@ public class SelectItemView extends SherlockFragmentActivity implements
 	@Override
 	public void open(Node node) {
 		Intent data = new Intent();
-		data.putExtra(Constants.SELECT_ITEM_FILE, controller.getPath(node));
+		data.putExtra(Constants.SELECT_ITEM_PATH, controller.getPath(node));
 		setResult(RESULT_OK, data);
 		finish();
 	}

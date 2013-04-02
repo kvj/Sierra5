@@ -1,4 +1,4 @@
-package org.kvj.sierra5.data.provider;
+package org.kvj.sierra5.common.data.provider;
 
 import android.os.Parcelable;
 

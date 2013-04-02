@@ -55,14 +55,12 @@ public class WordsWidgetController extends WidgetProvider {
 		return data.get(id);
 	}
 
-	private Words loadConfig(int id, WidgetController controller, Node node,
-			String exp, final int lines) {
+	private Words loadConfig(int id, WidgetController controller, Node node, String exp, final int lines) {
 		final Words words = new Words();
 		controller.parseNode(exp, node, new ParserListener() {
 
 			@Override
-			public boolean onItem(boolean finalItem,
-					Map<String, Object> values, Node node) {
+			public boolean onItem(boolean finalItem, Map<String, Object> values, Node node) {
 				if (finalItem) { // Copy
 					// Log.i(TAG, "Load word: " + values);
 					Word word = new Word();
@@ -82,21 +80,17 @@ public class WordsWidgetController extends WidgetProvider {
 	}
 
 	@Override
-	protected RemoteViews update(SharedPreferences preferences, int id,
-			Bundle data) {
+	protected RemoteViews update(SharedPreferences preferences, int id, Bundle data) {
 		WidgetController controller = app.getBean(WidgetController.class);
 		if (null == controller) { // No controller
 			Log.w(TAG, "No controller");
 			return null;
 		}
-		RemoteViews widget = new RemoteViews(app.getPackageName(),
-				R.layout.words_widget);
-		String theme = getString(preferences, R.string.words_theme,
-				R.string.words_themeDefault);
+		RemoteViews widget = new RemoteViews(app.getPackageName(), R.layout.words_widget);
+		String theme = getString(preferences, R.string.words_theme, R.string.words_themeDefault);
 		// Log.i(TAG, "Widget theme: " + theme);
 		boolean lite = "lite".equals(theme);
-		widget.setImageViewResource(R.id.words_widget_bg,
-				lite ? R.drawable.words_bg_lite : R.drawable.words_bg_dark);
+		widget.setImageViewResource(R.id.words_widget_bg, lite ? R.drawable.words_bg_lite : R.drawable.words_bg_dark);
 		String command = data.getString(COMMAND);
 		// Log.i(TAG, "Command: " + command);
 		Words words = getConfig(id);
@@ -104,10 +98,8 @@ public class WordsWidgetController extends WidgetProvider {
 		if (null == words) { // No config - need to load
 			needLoadConfig = true;
 		}
-		int lines = getInt(preferences, R.string.words_lines,
-				R.string.words_linesDefault);
-		int linesVisible = getInt(preferences, R.string.words_lines_visible,
-				R.string.words_lines_visibleDefault);
+		int lines = getInt(preferences, R.string.words_lines, R.string.words_linesDefault);
+		int linesVisible = getInt(preferences, R.string.words_lines_visible, R.string.words_lines_visibleDefault);
 		if (COMMAND_LINE_TOGGLE.equals(command)) { // Toggle visibility
 			int mask = 1 << data.getInt(LINE, 0);
 			// Log.i(TAG, "Toggle visible1: " + mask + ", "
@@ -133,13 +125,11 @@ public class WordsWidgetController extends WidgetProvider {
 			}
 		}
 		if (needLoadConfig) { // Need to load
-			Node node = controller.findNodeFromPreferences(preferences,
-					"words_file", "words_path");
+			Node node = controller.findNodeFromPreferences(preferences, "words_id");
 			if (null == node) { // No node
 				return null;
 			}
-			String exp = getString(preferences, R.string.words_exp,
-					R.string.words_expDefault);
+			String exp = getString(preferences, R.string.words_exp, R.string.words_expDefault);
 			if (TextUtils.isEmpty(exp)) { // FIXME: For debugging
 				exp = "${#}#{\\s+}${#}#{\\s+}${*}";
 			}
@@ -157,11 +147,9 @@ public class WordsWidgetController extends WidgetProvider {
 		// Create stars
 		widget.removeAllViews(R.id.words_widget_icons);
 		for (int i = 0; i < lines; i++) { // Create icons
-			widget.addView(R.id.words_widget_icons,
-					addIcon(id, i, currentWord, lineVisibility[i]));
+			widget.addView(R.id.words_widget_icons, addIcon(id, i, currentWord, lineVisibility[i]));
 		}
-		String[] sizes = getString(preferences, R.string.words_sizes,
-				R.string.words_sizesDefault).split(",");
+		String[] sizes = getString(preferences, R.string.words_sizes, R.string.words_sizesDefault).split(",");
 		if (sizes.length != lines) { // Invalid sizes
 			sizes = new String[lines];
 			for (int i = 0; i < sizes.length; i++) {
@@ -172,12 +160,10 @@ public class WordsWidgetController extends WidgetProvider {
 		int color = lite ? Color.BLACK : Color.WHITE;
 		// Log.i(TAG, "add line:" + lines + ", " + sizes.length + ", "
 		// + lineVisibility.length);
-		for (int i = 0; i < lines && i < word.lines.length && i < sizes.length
-				&& i < lineVisibility.length; i++) { // Create lines
-			widget.addView(
-					R.id.words_widget_lines,
-					addLine(word.lines[i], sizes[i], lineVisibility[i]
-							|| forceAllLines, color));
+		for (int i = 0; i < lines && i < word.lines.length && i < sizes.length && i < lineVisibility.length; i++) { // Create
+																													// lines
+			widget.addView(R.id.words_widget_lines,
+					addLine(word.lines[i], sizes[i], lineVisibility[i] || forceAllLines, color));
 		}
 		Intent intent = new Intent();
 		if (allLinesVisible || forceAllLines) { // All visible - next
@@ -186,23 +172,18 @@ public class WordsWidgetController extends WidgetProvider {
 			intent.putExtra(COMMAND, COMMAND_SHOW_ALL);
 			intent.putExtra(WORD, currentWord);
 		}
-		widget.setOnClickPendingIntent(R.id.words_widget_root,
-				createCommand(id, 1, intent));
+		widget.setOnClickPendingIntent(R.id.words_widget_root, createCommand(id, 1, intent));
 		Intent loadIntent = new Intent();
 		loadIntent.putExtra(COMMAND, COMMAND_FORCE_LOAD);
-		widget.setOnClickPendingIntent(R.id.words_widget_reload,
-				createCommand(id, 2, loadIntent));
+		widget.setOnClickPendingIntent(R.id.words_widget_reload, createCommand(id, 2, loadIntent));
 		return widget;
 	}
 
-	private RemoteViews addLine(String line, String size, boolean visible,
-			int color) {
-		RemoteViews views = new RemoteViews(app.getPackageName(),
-				R.layout.words_widget_line);
+	private RemoteViews addLine(String line, String size, boolean visible, int color) {
+		RemoteViews views = new RemoteViews(app.getPackageName(), R.layout.words_widget_line);
 		views.setTextColor(R.id.words_widget_line, color);
 		views.setTextViewText(R.id.words_widget_line, line);
-		views.setViewVisibility(R.id.words_widget_line, visible ? View.VISIBLE
-				: View.INVISIBLE);
+		views.setViewVisibility(R.id.words_widget_line, visible ? View.VISIBLE : View.INVISIBLE);
 		float dp = app.getResources().getDisplayMetrics().density;
 		try { // Conversion errors
 			float sz = Float.parseFloat(size);
@@ -214,26 +195,22 @@ public class WordsWidgetController extends WidgetProvider {
 	}
 
 	private RemoteViews addIcon(int id, int index, int word, boolean visible) {
-		RemoteViews views = new RemoteViews(app.getPackageName(),
-				R.layout.words_widget_icon);
+		RemoteViews views = new RemoteViews(app.getPackageName(), R.layout.words_widget_icon);
 		if (!visible) { // Not visible
-			views.setImageViewResource(R.id.words_widget_icon,
-					R.drawable.line_hide);
+			views.setImageViewResource(R.id.words_widget_icon, R.drawable.line_hide);
 		}
 		Intent intent = new Intent();
 		intent.putExtra(COMMAND, COMMAND_LINE_TOGGLE);
 		intent.putExtra(LINE, index);
 		intent.putExtra(WORD, word);
-		views.setOnClickPendingIntent(R.id.words_widget_icon,
-				createCommand(id, 3 + index, intent));
+		views.setOnClickPendingIntent(R.id.words_widget_icon, createCommand(id, 3 + index, intent));
 		return views;
 	}
 
 	private PendingIntent createCommand(int id, int type, Intent intent) {
 		intent.setAction(BCAST_ACTION);
 		intent.putExtra(BCAST_WIDGET_ID, id);
-		PendingIntent pendingIntent = PendingIntent.getBroadcast(app, type,
-				intent, PendingIntent.FLAG_UPDATE_CURRENT);
+		PendingIntent pendingIntent = PendingIntent.getBroadcast(app, type, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 		return pendingIntent;
 	}
 

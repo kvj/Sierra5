@@ -9,9 +9,9 @@ public class Constants {
 	public static final String ITEM_MIME_TYPE = "org.kvj.sierra5.node/link";
 	public static final String SHOW_EDIT_ITEM_NS = "org.kvj.sierra5.SHOW_EDIT_ITEM";
 	public static final String SELECT_ITEM_NS = "org.kvj.sierra5.SELECT_ITEM";
-	public static final String SELECT_ITEM_FILE = "org.kvj.sierra5.SELECT_ITEM_PATH";
+	public static final String SELECT_ITEM_PATH = "org.kvj.sierra5.SELECT_ITEM_PATH";
 
-	public static final String LIST_INTENT_ROOT = "list_root";
+	public static final String LIST_INTENT_SELECTION = "list_selection";
 	public static final String LIST_INTENT_ID = "list_id";
 	public static final String LIST_INTENT_BYTES = "list_bytes";
 	public static final String LIST_FORCE_EDITOR = "force_editor";

@@ -140,12 +140,13 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 		StringBuffer sb = new StringBuffer();
 		if (null != node.children) { // Have children
 			for (int i = 0; i < node.children.size(); i++) { // Every child
+				Node child = (Node) node.children.get(i);
 				if (i > 0) { // Add \n
 					sb.append('\n');
 				}
 				sb.append(left);
-				sb.append(node.children.get(i).text);
-				String childText = getChildText(node.children.get(i), left + left);
+				sb.append(child.text);
+				String childText = getChildText(child, left + left);
 				if (!TextUtils.isEmpty(childText)) { // Have
 					sb.append('\n');
 					sb.append(childText);
@@ -306,7 +307,8 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 				StructuredName.CONTENT_ITEM_TYPE));
 		contacts.add(ce);
 		if (null != node.children) { // parse every children
-			for (Node ch : node.children) { // ch = child
+			List<Node> children = node.children;
+			for (Node ch : children) { // ch = child
 				int colonPos = ch.text.indexOf(":");
 				if (-1 == colonPos) { // No colon
 					continue;
@@ -393,18 +395,13 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 			return;
 		}
 		try { // Remote exceptions
-			String file = App.getInstance().getStringPreference("contacts_file", "");
-			String path = App.getInstance().getStringPreference("contacts_path", "");
+			String file = App.getInstance().getStringPreference("contacts_id", "");
 			String exp = App.getInstance().getStringPreference(R.string.contacts_exp, R.string.contacts_expDefault);
 			if (TextUtils.isEmpty(exp)) {
 				// TODO: For development only
 				exp = "${*:g}.s5/${*:c}";
 			}
-			String[] pathArray = null;
-			if (!TextUtils.isEmpty(path)) { // Have path
-				pathArray = path.split("/");
-			}
-			Node rootNode = root.getNode(file, pathArray, false);
+			Node rootNode = root.getNode(controller.pathFromString(file));
 			if (null == rootNode) { // No root node for contacts
 				Log.w(TAG, "No root node, skipping sync");
 				return;

@@ -59,16 +59,14 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 		} else if ("m".equals(key)) { // month
 			return c.get(Calendar.YEAR) * 12 + c.get(Calendar.MONTH);
 		} else if ("d".equals(key)) { // Day
-			return c.get(Calendar.YEAR) * 12 + c.get(Calendar.MONTH) * 31
-					+ c.get(Calendar.DAY_OF_MONTH);
+			return c.get(Calendar.YEAR) * 12 + c.get(Calendar.MONTH) * 31 + c.get(Calendar.DAY_OF_MONTH);
 		} else if ("w".equals(key)) { // Week
 			return c.get(Calendar.YEAR) * 60 + c.get(Calendar.WEEK_OF_YEAR);
 		}
 		return 0;
 	}
 
-	private Calendar createCalendar(Calendar from, Calendar to,
-			Map<String, Object> values) {
+	private Calendar createCalendar(Calendar from, Calendar to, Map<String, Object> values) {
 		Calendar c = Calendar.getInstance();
 		c.set(from.get(Calendar.YEAR), 0, 1);
 		for (String key : values.keySet()) { // Check
@@ -106,8 +104,7 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 			.compile("^(\\[.\\]|(\\d\\d?):(\\d\\d)(\\s*\\-\\s*(\\d\\d?):(\\d\\d))?)?(.*)$");
 	// 1: [X]; 2, 3: dtstart, 4: - dtend; 5, 6: dtend; 7: event
 
-	private static Pattern entryPartsPattern = Pattern
-			.compile("(\\s\\~((\\d{1,2})h)?((\\d{1,2})m)?)|(\\s\\/-)");
+	private static Pattern entryPartsPattern = Pattern.compile("(\\s\\~((\\d{1,2})h)?((\\d{1,2})m)?)|(\\s\\/-)");
 
 	// 1: hrmin value; 3: hr; 5: min
 
@@ -132,8 +129,7 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 		return true;
 	}
 
-	private void parseEntry(Node node, Calendar c, Map<String, Object> values,
-			int reminder, String durationDefault) {
+	private void parseEntry(Node node, Calendar c, Map<String, Object> values, int reminder, String durationDefault) {
 		Matcher m = entryPattern.matcher(node.text);
 		if (!m.find()) { // Which is strange
 			return;
@@ -180,11 +176,11 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 		entry.event.a(Events.DTSTART, c.getTimeInMillis());
 		entry.event.a(Events.DTEND, ce.getTimeInMillis());
 		entry.event.a(Events.ALL_DAY, allDay ? 1 : 0);
-		entry.event.a(Events.EVENT_TIMEZONE, TimeZone.getDefault()
-				.getDisplayName());
+		entry.event.a(Events.EVENT_TIMEZONE, TimeZone.getDefault().getDisplayName());
 		StringBuffer description = new StringBuffer();
 		if (null != node.children) { // parse every children
-			for (Node ch : node.children) { // ch = child
+			List<Node> children = node.children;
+			for (Node ch : children) { // ch = child
 				int colonPos = ch.text.indexOf(":");
 				String type = "";
 				String value = "";
@@ -196,8 +192,7 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 						value = ContactSyncAdapter.getChildText(ch, "");
 					}
 				} else {
-					value = ch.text + "\n"
-							+ ContactSyncAdapter.getChildText(ch, "  ");
+					value = ch.text + "\n" + ContactSyncAdapter.getChildText(ch, "  ");
 				}
 				String[] types = type.split(",");
 				for (String oneType : types) { // For every type
@@ -221,8 +216,7 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 		entries.add(entry);
 	}
 
-	private boolean parseTypeValue(CalendarEntry entry, String type,
-			String value) {
+	private boolean parseTypeValue(CalendarEntry entry, String type, String value) {
 		// Log.i(TAG, "Parse: " + type + " = " + value);
 		if ("who".equals(type)) { // Parse attendees
 			String[] att = value.split("\\s");
@@ -231,10 +225,8 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 				// Log.i(TAG, "Found att: " + at);
 				a.a(Attendees.ATTENDEE_NAME, at);
 				a.a(Attendees.ATTENDEE_EMAIL, at);
-				a.a(Attendees.ATTENDEE_STATUS,
-						Attendees.ATTENDEE_STATUS_ACCEPTED);
-				a.a(Attendees.ATTENDEE_RELATIONSHIP,
-						Attendees.RELATIONSHIP_ATTENDEE);
+				a.a(Attendees.ATTENDEE_STATUS, Attendees.ATTENDEE_STATUS_ACCEPTED);
+				a.a(Attendees.ATTENDEE_RELATIONSHIP, Attendees.RELATIONSHIP_ATTENDEE);
 				entry.attendees.add(a);
 			}
 			return true;
@@ -247,66 +239,50 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 	}
 
 	@Override
-	public void onPerformSync(Account account, Bundle data, String authority,
-			ContentProviderClient client, SyncResult result) {
-		WidgetController controller = App.getInstance().getBean(
-				WidgetController.class);
+	public void onPerformSync(Account account, Bundle data, String authority, ContentProviderClient client,
+			SyncResult result) {
+		WidgetController controller = App.getInstance().getBean(WidgetController.class);
 		Root root = controller.getRootService();
 		if (null == root) { // No root service
 			Log.w(TAG, "No root service, skipping sync");
 			return;
 		}
 		try { // Remote exceptions
-			String file = App.getInstance().getStringPreference(
-					"calendar_file", root.getRoot());
-			String path = App.getInstance().getStringPreference(
-					"calendar_path", "");
-			String exp = App.getInstance().getStringPreference(
-					R.string.calendar_exp, R.string.calendar_expDefault);
+			String file = App.getInstance().getStringPreference("calendar_id", "");
+			String exp = App.getInstance().getStringPreference(R.string.calendar_exp, R.string.calendar_expDefault);
 			if (TextUtils.isEmpty(exp)) { // FIXME: For debug
 				exp = "${0:y}/${0:m}_*/${0:d}?{//0:m} */${*:e}";
 			}
-			final String duration = App.getInstance().getStringPreference(
-					R.string.calendar_duration,
+			final String duration = App.getInstance().getStringPreference(R.string.calendar_duration,
 					R.string.calendar_durationDefault);
-			final int reminderMinutes = App.getInstance().getIntPreference(
-					R.string.calendar_reminder,
+			final int reminderMinutes = App.getInstance().getIntPreference(R.string.calendar_reminder,
 					R.string.calendar_reminderDefault);
 			int color = Color.BLACK;
-			String colorString = App.getInstance().getStringPreference(
-					R.string.calendar_color, R.string.calendar_colorDefault);
+			String colorString = App.getInstance().getStringPreference(R.string.calendar_color,
+					R.string.calendar_colorDefault);
 			if (!TextUtils.isEmpty(colorString)) { // Parse color
 				try { // Parse error
 					color = Color.parseColor(colorString);
 				} catch (Exception e) {
 				}
 			}
-			String[] pathArray = null;
-			if (!TextUtils.isEmpty(path)) { // Have path
-				pathArray = path.split("/");
-			}
-			Node rootNode = root.getNode(file, pathArray, false);
+			Node rootNode = root.getNode(controller.pathFromString(file));
 			if (null == rootNode) { // No root node for contacts
 				Log.w(TAG, "No root node, skipping sync");
 				return;
 			}
 			entries.clear();
 			final Calendar from = Calendar.getInstance();
-			from.add(
-					Calendar.DAY_OF_YEAR,
-					-App.getInstance().getIntPreference(
-							R.string.calendar_syncPast,
-							R.string.calendar_syncPastDefault));
+			from.add(Calendar.DAY_OF_YEAR,
+					-App.getInstance().getIntPreference(R.string.calendar_syncPast, R.string.calendar_syncPastDefault));
 			final Calendar to = Calendar.getInstance();
 			to.add(Calendar.DAY_OF_YEAR,
-					App.getInstance().getIntPreference(
-							R.string.calendar_syncFuture,
+					App.getInstance().getIntPreference(R.string.calendar_syncFuture,
 							R.string.calendar_syncFutureDefault));
 			controller.parseNode(exp, rootNode, new ParserListener() {
 
 				@Override
-				public boolean onItem(boolean finalItem,
-						Map<String, Object> values, Node node) {
+				public boolean onItem(boolean finalItem, Map<String, Object> values, Node node) {
 					if (!node.visible) { // Node not visible
 						return false;
 					}
@@ -321,8 +297,7 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 						// Log.i(TAG, "Found event: " + node.text + ", " +
 						// values
 						// + ", " + c.getTime());
-						parseEntry(node, c, values, reminderMinutes, " ~"
-								+ duration);
+						parseEntry(node, c, values, reminderMinutes, " ~" + duration);
 						// parseContact((String) values.get("g"), node);
 					}
 					return true;
@@ -337,29 +312,23 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 	}
 
 	private Uri addIsSync(Uri uri, Account account) {
-		android.net.Uri.Builder uriBuilder = uri.buildUpon()
-				.appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER,
-						"true");
+		android.net.Uri.Builder uriBuilder = uri.buildUpon().appendQueryParameter(
+				CalendarContract.CALLER_IS_SYNCADAPTER, "true");
 		if (null != account) { // Append account data
-			uriBuilder.appendQueryParameter(Calendars.ACCOUNT_NAME,
-					account.name);
-			uriBuilder.appendQueryParameter(Calendars.ACCOUNT_TYPE,
-					account.type);
+			uriBuilder.appendQueryParameter(Calendars.ACCOUNT_NAME, account.name);
+			uriBuilder.appendQueryParameter(Calendars.ACCOUNT_TYPE, account.type);
 		}
 		return uriBuilder.build();
 	}
 
-	private void saveData(Account account, String authority,
-			ContentProviderClient client, int color) {
+	private void saveData(Account account, String authority, ContentProviderClient client, int color) {
 		try { // Save errors
 			ArrayList<ContentProviderOperation> ops = new ArrayList<ContentProviderOperation>();
 			// Check if calendar exists or not
 			long calID = -1;
-			final Cursor cursor = client.query(
-					addIsSync(Calendars.CONTENT_URI, null),
-					new String[] { Calendars._ID }, Calendars.ACCOUNT_NAME
-							+ "=? AND " + Calendars.ACCOUNT_TYPE + "=?",
-					new String[] { account.name, account.type }, null);
+			final Cursor cursor = client.query(addIsSync(Calendars.CONTENT_URI, null), new String[] { Calendars._ID },
+					Calendars.ACCOUNT_NAME + "=? AND " + Calendars.ACCOUNT_TYPE + "=?", new String[] { account.name,
+							account.type }, null);
 			if (cursor != null) {
 				try {
 					if (cursor.moveToFirst()) {
@@ -378,29 +347,20 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 				contentValues.put(Calendars.NAME, "Sierra5");
 				contentValues.put(Calendars.CALENDAR_DISPLAY_NAME, "Sierra5");
 				contentValues.put(Calendars.CALENDAR_COLOR, color);
-				contentValues
-						.put(Calendars.ALLOWED_REMINDERS,
-								Reminders.METHOD_DEFAULT + ","
-										+ Reminders.METHOD_ALERT);
+				contentValues.put(Calendars.ALLOWED_REMINDERS, Reminders.METHOD_DEFAULT + "," + Reminders.METHOD_ALERT);
 				contentValues.put(Calendars.SYNC_EVENTS, 1);
-				ops.add(ContentProviderOperation
-						.newInsert(addIsSync(Calendars.CONTENT_URI, account))
+				ops.add(ContentProviderOperation.newInsert(addIsSync(Calendars.CONTENT_URI, account))
 						.withValues(contentValues).build());
 			} else {
 				// Remove old entries
-				ops.add(ContentProviderOperation
-						.newDelete(Events.CONTENT_URI)
-						.withSelection(Events.CALENDAR_ID + "=?",
-								new String[] { Long.toString(calID) }).build());
-				ops.add(ContentProviderOperation
-						.newUpdate(addIsSync(Calendars.CONTENT_URI, account))
+				ops.add(ContentProviderOperation.newDelete(Events.CONTENT_URI)
+						.withSelection(Events.CALENDAR_ID + "=?", new String[] { Long.toString(calID) }).build());
+				ops.add(ContentProviderOperation.newUpdate(addIsSync(Calendars.CONTENT_URI, account))
 						.withValue(Calendars.CALENDAR_COLOR, color)
-						.withSelection(Calendars._ID + "=?",
-								new String[] { Long.toString(calID) }).build());
+						.withSelection(Calendars._ID + "=?", new String[] { Long.toString(calID) }).build());
 			}
 			for (CalendarEntry ce : entries) { // Insert entries
-				Builder builder = ContentProviderOperation
-						.newInsert(Events.CONTENT_URI);
+				Builder builder = ContentProviderOperation.newInsert(Events.CONTENT_URI);
 				int eventID = ops.size();
 				if (calID == -1) { // No calendar
 					builder.withValueBackReference(Events.CALENDAR_ID, 0);
@@ -409,16 +369,13 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 				}
 				ops.add(builder.withValues(ce.event.getValues()).build());
 				if (null != ce.reminder) { // Have reminder
-					ops.add(ContentProviderOperation
-							.newInsert(Reminders.CONTENT_URI)
-							.withValueBackReference(Reminders.EVENT_ID, eventID)
-							.withValues(ce.reminder.getValues()).build());
+					ops.add(ContentProviderOperation.newInsert(Reminders.CONTENT_URI)
+							.withValueBackReference(Reminders.EVENT_ID, eventID).withValues(ce.reminder.getValues())
+							.build());
 				}
 				for (ProviderEntryInfo att : ce.attendees) { // Insert attendees
-					ops.add(ContentProviderOperation
-							.newInsert(Attendees.CONTENT_URI)
-							.withValueBackReference(Attendees.EVENT_ID, eventID)
-							.withValues(att.getValues()).build());
+					ops.add(ContentProviderOperation.newInsert(Attendees.CONTENT_URI)
+							.withValueBackReference(Attendees.EVENT_ID, eventID).withValues(att.getValues()).build());
 				}
 			}
 			client.applyBatch(ops);

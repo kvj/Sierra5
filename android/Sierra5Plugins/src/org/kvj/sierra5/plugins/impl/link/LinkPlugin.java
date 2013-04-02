@@ -60,8 +60,7 @@ public class LinkPlugin extends DefaultPlugin {
 
 	@Override
 	public int[] getCapabilities() throws RemoteException {
-		return new int[] { PluginInfo.PLUGIN_CAN_FORMAT,
-				PluginInfo.PLUGIN_CAN_PARSE, PluginInfo.PLUGIN_CAN_RENDER,
+		return new int[] { PluginInfo.PLUGIN_CAN_FORMAT, PluginInfo.PLUGIN_CAN_PARSE, PluginInfo.PLUGIN_CAN_RENDER,
 				PluginInfo.PLUGIN_HAVE_EDIT_MENU, PluginInfo.PLUGIN_HAVE_MENU };
 	}
 
@@ -81,8 +80,7 @@ public class LinkPlugin extends DefaultPlugin {
 	}
 
 	@Override
-	public FormatSpan[] format(int index, Theme theme, Node node, String text,
-			boolean selected) throws RemoteException {
+	public FormatSpan[] format(int index, Theme theme, Node node, String text, boolean selected) throws RemoteException {
 		switch (index) {
 		case 0: // Item
 			FormatSpan item = null;
@@ -102,30 +100,21 @@ public class LinkPlugin extends DefaultPlugin {
 			}
 			return new FormatSpan[] { item, new FormatSpan(text.substring(1), new ForegroundColorSpan(theme.colorText)) };
 		case 1: // Name
-			return new FormatSpan[] { new FormatSpan(text,
-					new ForegroundColorSpan(theme.caLGreen)) };
+			return new FormatSpan[] { new FormatSpan(text, new ForegroundColorSpan(theme.caLGreen)) };
 		case 2: // Activity
 			return new FormatSpan[] {
-					new FormatSpan(text.substring(0, text.length() - 1),
-							new ForegroundColorSpan(theme.ceLCyan)),
-					new FormatSpan(":",
-							new ForegroundColorSpan(theme.colorText)) };
+					new FormatSpan(text.substring(0, text.length() - 1), new ForegroundColorSpan(theme.ceLCyan)),
+					new FormatSpan(":", new ForegroundColorSpan(theme.colorText)) };
 		case 3: // Project
 			String project = text.substring(0, text.indexOf(','));
-			return new FormatSpan[] {
-					new FormatSpan(project, new ForegroundColorSpan(
-							theme.c9LRed)),
-					new FormatSpan(", ", new ForegroundColorSpan(
-							theme.colorText)) };
+			return new FormatSpan[] { new FormatSpan(project, new ForegroundColorSpan(theme.c9LRed)),
+					new FormatSpan(", ", new ForegroundColorSpan(theme.colorText)) };
 		case 4: // Tag
-			return new FormatSpan[] { new FormatSpan(text,
-					new ForegroundColorSpan(theme.ccLBlue)) };
+			return new FormatSpan[] { new FormatSpan(text, new ForegroundColorSpan(theme.ccLBlue)) };
 		case 5: // Link
-			return new FormatSpan[] { new FormatSpan(getLinkCaption(text),
-					new ForegroundColorSpan(theme.cbLYellow)) };
+			return new FormatSpan[] { new FormatSpan(getLinkCaption(text), new ForegroundColorSpan(theme.cbLYellow)) };
 		case 6: // Time
-			return new FormatSpan[] { new FormatSpan(text,
-					new ForegroundColorSpan(theme.cdLPurple)) };
+			return new FormatSpan[] { new FormatSpan(text, new ForegroundColorSpan(theme.cdLPurple)) };
 		case 7: // Progress bar
 			List<FormatSpan> spans = new ArrayList<FormatSpan>();
 			spans.add(new FormatSpan("[", new ForegroundColorSpan(theme.c3Yellow)));
@@ -146,9 +135,9 @@ public class LinkPlugin extends DefaultPlugin {
 			return spans.toArray(new FormatSpan[0]);
 		case 8: // property:
 			int colonIndex = text.indexOf(":");
-			return new FormatSpan[] { new FormatSpan(text.substring(0, colonIndex),
-					new ForegroundColorSpan(theme.c5Purple)), new FormatSpan(text.substring(colonIndex),
-					new ForegroundColorSpan(theme.colorText)) };
+			return new FormatSpan[] {
+					new FormatSpan(text.substring(0, colonIndex), new ForegroundColorSpan(theme.c5Purple)),
+					new FormatSpan(text.substring(colonIndex), new ForegroundColorSpan(theme.colorText)) };
 		}
 		return null;
 	}
@@ -157,8 +146,7 @@ public class LinkPlugin extends DefaultPlugin {
 	public MenuItemInfo[] getMenu(int id, Node node) throws RemoteException {
 		Matcher m = linkPattern.matcher(node.text);
 		if (m.find()) { // Open link
-			return new MenuItemInfo[] { new MenuItemInfo(0,
-					MenuItemInfo.MENU_ITEM_ACTION, "Open attachment...") };
+			return new MenuItemInfo[] { new MenuItemInfo(0, MenuItemInfo.MENU_ITEM_ACTION, "Open attachment...") };
 		}
 		return null;
 	}
@@ -190,8 +178,7 @@ public class LinkPlugin extends DefaultPlugin {
 				Map<String, String> geo = parseGeo(link.substring(4));
 				if (geo.containsKey("lat") && geo.containsKey("lon")) {
 					// Have coords
-					String uri = String.format("geo:%s,%s", geo.get("lat"),
-							geo.get("lon"));
+					String uri = String.format("geo:%s,%s", geo.get("lat"), geo.get("lon"));
 					i.setData(Uri.parse(uri));
 					App.getInstance().startActivity(i);
 					return true;
@@ -202,10 +189,8 @@ public class LinkPlugin extends DefaultPlugin {
 					return false;
 				}
 				Uri uri = Uri.fromFile(file);
-				String extension = MimeTypeMap.getFileExtensionFromUrl(uri
-						.toString());
-				String mimetype = MimeTypeMap.getSingleton()
-						.getMimeTypeFromExtension(extension);
+				String extension = MimeTypeMap.getFileExtensionFromUrl(uri.toString());
+				String mimetype = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
 				i.setDataAndType(uri, mimetype);
 				App.getInstance().startActivity(i);
 				return true;
@@ -220,11 +205,7 @@ public class LinkPlugin extends DefaultPlugin {
 	}
 
 	@Override
-	public String getPattern(int index, Node node, boolean selected)
-			throws RemoteException {
-		if (Node.TYPE_TEXT != node.type) { // Only for texts
-			return null;
-		}
+	public String getPattern(int index, Node node, boolean selected) throws RemoteException {
 		switch (index) {
 		case 0: // Item
 			return "^\\s*[\\+-\\?\\*]\\ .+$";
@@ -248,13 +229,13 @@ public class LinkPlugin extends DefaultPlugin {
 		return null;
 	}
 
-	@Override
-	public void parse(Node node, Node parent) throws RemoteException {
-		if (node.type == Node.TYPE_TEXT) { // Text
+	/*
+		@Override
+		public void parse(Node node, Node parent) throws RemoteException {
 			if (node.text.endsWith(" /-")) { // Collapse
 				node.collapsed = true;
 			}
-			ParseInfo info = parseInfos.get(node.file);
+			ParseInfo info = parseInfos.get(node.text);
 			if (null != info) { // Have info
 				String collapse = info.params.get("collapse");
 				if (null != collapse) { // Have collapse
@@ -273,50 +254,38 @@ public class LinkPlugin extends DefaultPlugin {
 					}
 				}
 			}
-		}
-		if (node.type == Node.TYPE_TEXT && node.text.startsWith("#")) { // Comment
-			if (node.text.startsWith("##")) { // Special config
-				node.visible = false;
-				String[] pairs = node.text.substring(2).split(",");
-				ParseInfo info = new ParseInfo();
-				info.level = node.level;
-				for (String pair : pairs) { // split by =
-					String[] nameValue = pair.split("=");
-					if (nameValue.length == 2) { // Have nameValue
-						info.params.put(nameValue[0].trim(),
-								nameValue[1].trim());
+			if (node.text.startsWith("#")) { // Comment
+				if (node.text.startsWith("##")) { // Special config
+					node.visible = false;
+					String[] pairs = node.text.substring(2).split(",");
+					ParseInfo info = new ParseInfo();
+					info.level = node.level;
+					for (String pair : pairs) { // split by =
+						String[] nameValue = pair.split("=");
+						if (nameValue.length == 2) { // Have nameValue
+							info.params.put(nameValue[0].trim(), nameValue[1].trim());
+						}
 					}
+					parseInfos.put(node.file, info);
 				}
-				parseInfos.put(node.file, info);
 			}
 		}
-	}
-
+	*/
 	private File findFile(Node node, String link) {
 		File file = null;
 		if (link.startsWith("/")) { // From root
-			try {
-				String root = controller.getRootService().getRoot();
-				File rootFile = new File(root);
-				if (!rootFile.exists()) { // Invalid root
-					return null;
-				}
-				file = new File(rootFile, link.substring(1));
-			} catch (Exception e) {
-				return null;
-			}
+			return null;
 		} else {
 			// Relative path
+			/*
 			File rootFile = new File(node.file);
 			if (!rootFile.exists()) { // Invalid root
 				return null;
 			}
 			file = new File(rootFile.getParent(), link);
+			*/
+			return null;
 		}
-		if (null != file && file.exists() && file.isFile()) { // File is OK
-			return file;
-		}
-		return null;
 	}
 
 	private File getLink(Node node) {
@@ -360,14 +329,12 @@ public class LinkPlugin extends DefaultPlugin {
 			// Not found
 			return false;
 		}
-		boolean isImage = file.toLowerCase().endsWith(".jpg")
-				|| file.toLowerCase().endsWith(".png");
+		boolean isImage = file.toLowerCase().endsWith(".jpg") || file.toLowerCase().endsWith(".png");
 		return isImage;
 	}
 
 	@Override
-	public RemoteViews render(Node node, Theme theme, int width)
-			throws RemoteException {
+	public RemoteViews render(Node node, Theme theme, int width) throws RemoteException {
 		File file = getLink(node);
 		// Log.i(TAG, "render: " + node.text + ", " + file);
 		if (null == file) {
@@ -382,35 +349,27 @@ public class LinkPlugin extends DefaultPlugin {
 		if (null == image) { // Not a bitmap
 			return null;
 		}
-		RemoteViews rv = new RemoteViews(App.getInstance().getPackageName(),
-				R.layout.link_image);
+		RemoteViews rv = new RemoteViews(App.getInstance().getPackageName(), R.layout.link_image);
 		rv.setImageViewBitmap(R.id.link_image_image, image);
 		return rv;
 	}
 
 	@Override
-	public MenuItemInfo[] getEditorMenu(int id, Node node)
-			throws RemoteException {
-		return new MenuItemInfo[] {
-				new MenuItemInfo(0, MenuItemInfo.MENU_ITEM_INSERT_TEXT,
-						"Insert date and time"),
-				new MenuItemInfo(1, MenuItemInfo.MENU_ITEM_INSERT_TEXT,
-						"Insert time") };
+	public MenuItemInfo[] getEditorMenu(int id, Node node) throws RemoteException {
+		return new MenuItemInfo[] { new MenuItemInfo(0, MenuItemInfo.MENU_ITEM_INSERT_TEXT, "Insert date and time"),
+				new MenuItemInfo(1, MenuItemInfo.MENU_ITEM_INSERT_TEXT, "Insert time") };
 	}
 
 	@Override
-	public String executeEditAction(int id, String text, Node node)
-			throws RemoteException {
+	public String executeEditAction(int id, String text, Node node) throws RemoteException {
 		String format = "";
 		switch (id) {
 		case 0: // Date time
-			format = App.getInstance().getStringPreference(
-					R.string.template_insertDateTime,
+			format = App.getInstance().getStringPreference(R.string.template_insertDateTime,
 					R.string.template_insertDateTimeDefault);
 			break;
 		case 1: // Time
-			format = App.getInstance().getStringPreference(
-					R.string.template_insertTime,
+			format = App.getInstance().getStringPreference(R.string.template_insertTime,
 					R.string.template_insertTimeDefault);
 			break;
 		}

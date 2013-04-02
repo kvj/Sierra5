@@ -1,5 +1,6 @@
 package org.kvj.sierra5.plugins.ui.widget.show;
 
+import java.util.List;
 import java.util.Map;
 
 import org.kvj.bravo7.widget.WidgetUpdateReceiver;
@@ -78,24 +79,17 @@ public class ShowWidgetController extends AppWidgetProvider {
 				break;
 			}
 			widget.setImageViewResource(R.id.show_widget_bg, bgResource);
-			String file = prefs.getString("file", "");
-			String path = prefs.getString("path", "");
+			String file = prefs.getString("id", "");
 			String pattern = prefs.getString(App.getInstance().getResources().getString(R.string.show_pattern), App
 					.getInstance().getResources().getString(R.string.show_patternDefault));
-			String[] pathArray = null;
-			if (!TextUtils.isEmpty(path)) { // Have path
-				pathArray = path.split("/");
-			}
 			// Log.i(TAG, "Loading: " + file + ", " + path);
-			Node node = rootService.getNode(file, pathArray, true);
+			Node node = rootService.getNode(controller.pathFromString(file));
 			if (null == node) { // Error
-				Log.w(TAG, "Error loading node " + file + ", " + path);
+				Log.w(TAG, "Error loading node " + file);
 				throw new Exception("Node not found");
 			}
 			Intent launchIntent = new Intent(Constants.SHOW_EDIT_ITEM_NS);
-			launchIntent.putExtra(Constants.LIST_INTENT_ROOT, node.file);
-			launchIntent.putExtra(Constants.LIST_INTENT_FILE, node.file);
-			launchIntent.putExtra(Constants.LIST_INTENT_ITEM, Node.list2array(node.textPath, new String[0]));
+			launchIntent.putExtra(Constants.LIST_INTENT_ID, node.id);
 			PendingIntent intent = PendingIntent.getActivity(App.getInstance(), id, launchIntent,
 					PendingIntent.FLAG_UPDATE_CURRENT);
 			widget.setOnClickPendingIntent(R.id.show_widget_subroot, intent);
@@ -146,7 +140,8 @@ public class ShowWidgetController extends AppWidgetProvider {
 			// ", " + node.children);
 			widget.addView(R.id.show_widget_list, line);
 			if (null != node.children && !node.collapsed) { // Have children
-				for (Node ch : node.children) { // Render children
+				List<Node> children = node.children;
+				for (Node ch : children) { // Render children
 					renderLine(ch, rootService, level + 1, widget, themeCode);
 				}
 			}

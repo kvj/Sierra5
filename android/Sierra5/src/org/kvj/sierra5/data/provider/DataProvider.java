@@ -3,6 +3,7 @@ package org.kvj.sierra5.data.provider;
 import java.util.List;
 
 import org.kvj.sierra5.common.data.Node;
+import org.kvj.sierra5.common.data.provider.NodeID;
 
 public interface DataProvider<E extends NodeID> {
 
@@ -31,4 +32,6 @@ public interface DataProvider<E extends NodeID> {
 	public boolean upload(Node<E> node, String resource, String location);
 
 	public String download(Node<E> node, String resource);
+
+	public Node<E> getParent(Node<E> node);
 }

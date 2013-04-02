@@ -141,7 +141,9 @@ public class ClipboardPlugin extends DefaultPlugin implements LocalPlugin {
 			return;
 		}
 		for (Node sel : selected) {
-			text.setSpan(new ForegroundColorSpan(theme.ceLCyan), 0, 2, 0);
+			if (node.id.equals(sel.id)) { // In selection
+				text.setSpan(new ForegroundColorSpan(theme.ceLCyan), 0, 2, 0);
+			}
 		}
 	}
 

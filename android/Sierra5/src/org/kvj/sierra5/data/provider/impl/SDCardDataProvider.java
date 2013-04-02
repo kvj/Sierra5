@@ -12,7 +12,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -23,13 +22,11 @@ import java.util.regex.Pattern;
 import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
 import org.kvj.sierra5.common.data.Node;
+import org.kvj.sierra5.common.data.provider.NodeID;
+import org.kvj.sierra5.common.data.provider.SDCardProviderID;
 import org.kvj.sierra5.data.provider.DataProvider;
-import org.kvj.sierra5.data.provider.NodeID;
-import org.kvj.sierra5.data.provider.impl.SDCardDataProvider.SDCardProviderID;
 
 import android.os.Environment;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -40,91 +37,16 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 	private static final int TYPE_TEXT = 2;
 	private static final String TAG = "SDCard";
 
-	class Node_ extends Node<SDCardProviderID> {
-		public Node_(SDCardProviderID id) {
-			super();
-			this.id = id;
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if (null == o) { // One is null - false
-				return false;
-			}
-			Node_ other = (Node_) o;
-			if (other.id.path.length != id.path.length) {
-				// Size is wrong - false
-				return false;
-			}
-			for (int i = 0; i < id.path.length; i++) { // Compare path items
-				if (!id.path[i].equals(other.id.path[i])) {
-					// Not same - stop and return false
-					return false;
-				}
-			}
-			return true; // Everything is same
-		}
-
-		public Node_ createChild(int type, String text) {
-			SDCardProviderID newID = new SDCardProviderID();
-			newID.path = new String[id.path.length + 1];
-			newID.path[id.path.length] = text;
-			System.arraycopy(id.path, 0, newID.path, 0, id.path.length);
-			Node_ child = new Node_(newID);
-			child.id.type = type;
-			child.level = level + 1;
-			child.text = text;
-			return child;
-		}
-	}
-
-	static class SDCardProviderID implements NodeID {
-
-		public String[] path = new String[0];
-		public int type = TYPE_FOLDER;
-		public String raw = null;
-
-		@Override
-		public int describeContents() {
-			return 0;
-		}
-
-		@Override
-		public String toString() {
-			StringBuilder sb = new StringBuilder();
-			sb.append("ID: " + type);
-			for (String item : path) { // Add path
-				sb.append(", " + item);
-			}
-			return sb.toString();
-		}
-
-		@Override
-		public void writeToParcel(Parcel dest, int flags) {
-			dest.writeStringArray(path);
-		}
-
-		public static final Parcelable.Creator<SDCardProviderID> CREATOR = new Creator<SDCardProviderID>() {
-
-			@Override
-			public SDCardProviderID createFromParcel(Parcel source) {
-				SDCardProviderID id = new SDCardProviderID();
-				id.path = source.createStringArray();
-				return id;
-			}
-
-			@Override
-			public SDCardProviderID[] newArray(int size) {
-				return new SDCardProviderID[size];
-			}
-
-		};
-
-		@Override
-		public String getProviderID() {
-			return "sdcard";
-		}
-
+	public Node<SDCardProviderID> createChild(Node<SDCardProviderID> node, int type, String text) {
+		SDCardProviderID newID = new SDCardProviderID();
+		newID.path = new String[node.id.path.length + 1];
+		newID.path[node.id.path.length] = text;
+		System.arraycopy(node.id.path, 0, newID.path, 0, node.id.path.length);
+		Node<SDCardProviderID> child = new Node<SDCardProviderID>(newID);
+		child.id.type = type;
+		child.level = node.level + 1;
+		child.text = text;
+		return child;
 	}
 
 	private class ItemPattern {
@@ -203,8 +125,8 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 	}
 
 	@Override
-	public Node_ getRoot() {
-		Node_ root = new Node_(new SDCardProviderID());
+	public Node<SDCardProviderID> getRoot() {
+		Node<SDCardProviderID> root = new Node<SDCardProviderID>(new SDCardProviderID());
 		root.capabilities = new int[] { Node.CAPABILITY_ROOT };
 		root.id.type = TYPE_FOLDER;
 		root.text = "Root";
@@ -212,29 +134,30 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 	}
 
 	class SearchResult {
-		Node_ fileNode = null;
-		Node_ node = null;
+		Node<SDCardProviderID> fileNode = null;
+		Node<SDCardProviderID> node = null;
 	}
 
 	private SearchResult searchNode(SDCardProviderID id) {
 		SearchResult result = new SearchResult();
-		Node_ node = getRoot();
+		Node<SDCardProviderID> node = getRoot();
 		int index = 0; // Index in path
 		while (id.path.length > node.id.path.length) {
 			// Search until path will be same
-			Collection<Node<SDCardProviderID>> children = expand(node, Node.EXPAND_ONE);
+			List<Node<SDCardProviderID>> children = expand(node, Node.EXPAND_ONE);
 			if (null == children) { // Expand failed
 				return result;
 			}
 			boolean found = false;
+			node.children = children;
 			for (Node<SDCardProviderID> child : children) { // Search by name
 				if (child.text.equals(id.path[index])) { // Found
 					if (child.id.type == TYPE_FILE) { // Found file
-						result.fileNode = (Node_) child;
+						result.fileNode = child;
 					}
 					index++;
 					found = true;
-					node = (Node_) child;
+					node = child;
 					break;
 				}
 			}
@@ -251,7 +174,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 	}
 
 	@Override
-	public Node_ find(NodeID id) {
+	public Node<SDCardProviderID> find(NodeID id) {
 		SearchResult result = searchNode((SDCardProviderID) id);
 		return result.node;
 	}
@@ -297,9 +220,8 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 
 	@Override
 	public List<Node<SDCardProviderID>> expand(Node<SDCardProviderID> node, int type) {
-		Node_ node_ = (Node_) node;
 		List<Node<SDCardProviderID>> result = new ArrayList<Node<SDCardProviderID>>();
-		if (null != node.children) { // Have children
+		if (null != node.children && type != Node.EXPAND_FORCE) { // Have children
 			return node.children;
 		}
 		if (node.id.type == TYPE_FILE) {
@@ -310,7 +232,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 				return null;
 			}
 			try {
-				boolean parseResult = parseFile(new FileInputStream(file), (Node_) node, result);
+				boolean parseResult = parseFile(new FileInputStream(file), node, result);
 				if (!parseResult) { // Not parsed
 					Log.e(TAG, "Parse failed: " + node.text);
 					return null;
@@ -344,7 +266,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 				return null;
 			}
 			for (File f : files) { // Convert files to Nodes
-				Node_ n = node_.createChild(f.isDirectory() ? TYPE_FOLDER : TYPE_FILE, f.getName());
+				Node<SDCardProviderID> n = createChild(node, f.isDirectory() ? TYPE_FOLDER : TYPE_FILE, f.getName());
 				if (f.isDirectory()) { // Folder
 					n.capabilities = new int[] { Node.CAPABILITY_ROOT };
 					n.style = Node.STYLE_1; // Folder
@@ -367,7 +289,6 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 	}
 
 	private File getFile(SDCardProviderID id) {
-		Log.i(TAG, "Get file: " + id.type + ", " + id.path.length);
 		File file = new File(getRootFolder());
 		int index = 0; // In path
 		while (file.exists()) { // Break when file not exists - error
@@ -406,7 +327,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 	}
 
 	@Override
-	public Node<SDCardProviderID> edit(EditType type, Node<SDCardProviderID> node, String text) {
+	public Node<SDCardProviderID> edit(EditType type, Node<SDCardProviderID> node, String raw) {
 		SearchResult result = searchNode(node.id);
 		if (null == result.node) { // Not found
 			Log.e(TAG, "Node not found for remove: " + node.text);
@@ -417,9 +338,8 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 			Log.e(TAG, "File not found: " + file);
 			return null;
 		}
-		Log.i(TAG, "edit: " + type + ", " + node.text + ", " + file.getAbsolutePath() + ", " + result.fileNode.text);
 		try {
-			Node_ n = null;
+			Node<SDCardProviderID> n = null;
 			switch (type) {
 			case Append:
 				if (null == result.node.children) { // Not expanded
@@ -430,13 +350,14 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 					}
 					result.node.children = children;
 				}
-				n = result.node.createChild(TYPE_TEXT, "");
+				n = createChild(result.node, TYPE_TEXT, "");
 				n.children = new ArrayList<Node<SDCardProviderID>>();
-				n.id.raw = text;
+				n.id.raw = raw;
 				result.node.children.add(n);
 				break;
 			case Replace:
-				result.node.id.raw = text;
+				result.node.id.raw = raw;
+				result.node.text = node.text;
 				break;
 			}
 			boolean saveResult = saveFile(new FileOutputStream(file), result.fileNode, null);
@@ -465,7 +386,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 		}
 		result.add(node);
 		for (int i = node.id.path.length - 1; i > 0; i--) {
-			Node_ parent = new Node_(new SDCardProviderID());
+			Node<SDCardProviderID> parent = new Node<SDCardProviderID>(new SDCardProviderID());
 			parent.id.path = new String[i];
 			System.arraycopy(node.id.path, 0, parent.id.path, 0, i);
 			parent.level = i;
@@ -485,20 +406,20 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 
 	@Override
 	public String getEditable(Node<SDCardProviderID> node) {
-		return getEditableContents((Node_) node);
+		return getEditableContents(node);
 	}
 
 	public static interface LineEater {
 
-		public void eat(int index, Node_ node, String left, String line);
+		public void eat(int index, Node<SDCardProviderID> node, String left, String line);
 
-		public boolean filter(int index, Node_ node);
+		public boolean filter(int index, Node<SDCardProviderID> node);
 	}
 
 	private Pattern left = Pattern.compile("^\\s*");
 
-	private int writeOneNode(int index, int startLevel, Node_ node, LineEater eater) {
-		Log.i(TAG, "WriteOne: " + node + ", " + node.id.raw);
+	private int writeOneNode(int index, int startLevel, Node<SDCardProviderID> node, LineEater eater) {
+		// Log.i(TAG, "WriteOne: " + node + ", " + node.id.raw + ", " + node.children);
 		StringBuilder spaces = new StringBuilder();
 		String[] lines = null;
 		if (!eater.filter(index, node)) { // Filtered out
@@ -536,7 +457,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 				if (m.find()) { // Have spaces
 					leftSpaces = m.group(0);
 				}
-				Log.i(TAG, "WriteOne eat: " + line);
+				// Log.i(TAG, "WriteOne eat: " + line);
 				eater.eat(result, node, spaces.toString() + leftSpaces, line.trim());
 			}
 			result++;
@@ -549,7 +470,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 			for (int i = 0; i < node.children.size(); i++) {
 				// Write every child
 				result = writeOneNode(result, node.id.type == TYPE_FILE ? startLevel + 1 : startLevel,
-						(Node_) node.children.get(i), eater);
+						node.children.get(i), eater);
 			}
 		}
 		if (null != node.id.raw && node.id.type == TYPE_TEXT) {
@@ -561,16 +482,16 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 		return result;
 	}
 
-	private void writeNode(Node_ node, LineEater eater) {
+	private void writeNode(Node<SDCardProviderID> node, LineEater eater) {
 		writeOneNode(0, node.level, node, eater);
 	}
 
-	private String getEditableContents(final Node_ parent) {
+	private String getEditableContents(final Node<SDCardProviderID> parent) {
 		final StringBuilder buffer = new StringBuilder();
 		writeNode(parent, new LineEater() {
 
 			@Override
-			public void eat(int index, Node_ node, String left, String line) {
+			public void eat(int index, Node<SDCardProviderID> node, String left, String line) {
 				if (index > 0) { // Have data - CR
 					buffer.append('\n');
 				}
@@ -579,7 +500,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 			}
 
 			@Override
-			public boolean filter(int index, Node_ node) {
+			public boolean filter(int index, Node<SDCardProviderID> node) {
 				return true;
 			}
 		});
@@ -590,7 +511,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 		return App.getInstance().getIntPreference(R.string.tabSize, R.string.tabSizeDefault);
 	}
 
-	private boolean saveFile(OutputStream stream, Node_ node, final Node_ remove) {
+	private boolean saveFile(OutputStream stream, Node<SDCardProviderID> node, final Node<SDCardProviderID> remove) {
 		try { // Catch save errors
 			final String crlf = App.getInstance().getBooleanPreference(R.string.useCRLF, false) ? "\r\n" : "\n";
 			final boolean expandTab = App.getInstance().getBooleanPreference(R.string.expandTabs, false);
@@ -610,7 +531,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 			writeNode(node, new LineEater() {
 
 				@Override
-				public void eat(int index, Node_ node, String left, String line) {
+				public void eat(int index, Node<SDCardProviderID> node, String left, String line) {
 					try {
 						if (!expandTab) {
 							// Need tabs
@@ -623,7 +544,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 				}
 
 				@Override
-				public boolean filter(int index, Node_ node) {
+				public boolean filter(int index, Node<SDCardProviderID> node) {
 					if (node.equals(remove)) { // We need to remove it - skip
 						return false;
 					}
@@ -638,7 +559,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 		return false; // Not implemented
 	}
 
-	private boolean parseFile(InputStream stream, Node_ node, List<Node<SDCardProviderID>> children) {
+	private boolean parseFile(InputStream stream, Node<SDCardProviderID> node, List<Node<SDCardProviderID>> children) {
 		try { // Catch all stream errors
 			int spacesInTab = getTabSize();
 			StringBuilder tabReplacement = new StringBuilder();
@@ -648,7 +569,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 			// Log.i(TAG, "Parse file: " + node.file);
 			BufferedReader br = new BufferedReader(new InputStreamReader(stream, "utf-8"));
 			// Reset children
-			Stack<Node_> parents = new Stack<Node_>();
+			Stack<Node<SDCardProviderID>> parents = new Stack<Node<SDCardProviderID>>();
 			String line = null;
 			while ((line = br.readLine()) != null) {
 				if (TextUtils.isEmpty(line.trim())) {
@@ -661,7 +582,8 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 					leftChars = m.group(0).replace("\t", tabReplacement);
 				}
 				int level = leftChars.length() / spacesInTab;
-				Node_ parent = null;
+				// Log.i(TAG, "Parsed: " + line + ", " + level);
+				Node<SDCardProviderID> parent = null;
 				List<Node<SDCardProviderID>> parentChildren = new ArrayList<Node<SDCardProviderID>>();
 				boolean fromParents = false;
 				// Log.i(TAG, "Search parent: " + n.text + ", " +
@@ -684,7 +606,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 						break;
 					}
 				} while (true);
-				Node_ n = parent.createChild(TYPE_TEXT, line.trim());
+				Node<SDCardProviderID> n = createChild(parent, TYPE_TEXT, line.trim());
 				n.capabilities = new int[] { Node.CAPABILITY_ADD, Node.CAPABILITY_EDIT, Node.CAPABILITY_REMOVE };
 				n.collapsed = false; // All files are expanded by default
 				n.children = new ArrayList<Node<SDCardProviderID>>();
@@ -693,8 +615,7 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 					parents.push(parent);
 				}
 				parents.push(n);
-				// Log.i(TAG, "Line: " + n.text + ", " + n.level + ", "
-				// + parent.text);
+				// Log.i(TAG, "Line: " + n.text + ", " + n.level + ", " + parent.text);
 			}
 			br.close();
 			return true;
@@ -702,5 +623,14 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 			Log.e(TAG, "Error reading file:", e);
 		}
 		return false; // Not implemented
+	}
+
+	@Override
+	public Node<SDCardProviderID> getParent(Node<SDCardProviderID> node) {
+		List<Node<SDCardProviderID>> path = getPath(node);
+		if (path.size() > 1) { // At least two items
+			return path.get(path.size() - 2);
+		}
+		return null;
 	}
 }

@@ -18,13 +18,13 @@ import org.kvj.sierra5.App;
 import org.kvj.sierra5.R;
 import org.kvj.sierra5.common.Constants;
 import org.kvj.sierra5.common.data.Node;
+import org.kvj.sierra5.common.data.provider.NodeID;
 import org.kvj.sierra5.common.plugin.Plugin;
 import org.kvj.sierra5.common.plugin.PluginInfo;
 import org.kvj.sierra5.common.root.Root;
 import org.kvj.sierra5.common.theme.Theme;
 import org.kvj.sierra5.data.provider.DataProvider;
 import org.kvj.sierra5.data.provider.DataProvider.EditType;
-import org.kvj.sierra5.data.provider.NodeID;
 import org.kvj.sierra5.data.provider.impl.SDCardDataProvider;
 import org.kvj.sierra5.ui.adapter.ListViewAdapter;
 import org.kvj.sierra5.ui.adapter.theme.ThemeProvider;
@@ -159,7 +159,7 @@ public class Controller<E> {
 		return provider.edit(type, node, raw);
 	}
 
-	private Node expandTo(DataProvider provider, Node root, String[] selectPath) {
+	private Node expandTo(DataProvider provider, Node root, String[] selectPath, int expandType) {
 		String[] rootPath = getPath(root);
 		Node node = root; // Will use in cycle
 		for (int i = 0; i < selectPath.length; i++) { // Check every item
@@ -170,7 +170,7 @@ public class Controller<E> {
 				}
 			} else {
 				// After root - expand
-				List<Node> children = provider.expand(node, Node.EXPAND_ONE);
+				List<Node> children = provider.expand(node, expandType);
 				if (null == children) { // Failed to expand
 					Log.e(TAG, "Expand failed: " + node.text);
 					return null;
@@ -180,6 +180,7 @@ public class Controller<E> {
 				boolean found = false;
 				for (Node ch : children) { // Search by text
 					if (ch.text.equals(selectPath[i])) { // Found
+						Log.i(TAG, "Found child: " + selectPath[i]);
 						found = true;
 						node = ch;
 						break;
@@ -191,10 +192,16 @@ public class Controller<E> {
 				}
 			}
 		}
+		if (null == node.children) { // No children loaded
+			node.children = provider.expand(node, expandType);
+		}
+		if (null != node.children) { // Have children - expand
+			node.collapsed = false;
+		}
 		return node;
 	}
 
-	public boolean expandTo(Node root, Node select) {
+	public boolean expandTo(Node root, Node select, int expandType) {
 		DataProvider provider = getProvider((NodeID) root.id);
 		if (null == provider) { // Not found
 			Log.e(TAG, "Provider not found");
@@ -207,7 +214,7 @@ public class Controller<E> {
 			Log.e(TAG, "Path is invalid: " + rootPath + ", " + selectPath);
 			return false;
 		}
-		return null != expandTo(provider, root, selectPath);
+		return null != expandTo(provider, root, selectPath, expandType);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -218,6 +225,15 @@ public class Controller<E> {
 			return false;
 		}
 		return provider.remove(removeMe);
+	}
+
+	public Node getParent(Node node) {
+		DataProvider provider = getProvider((NodeID) node.id);
+		if (null == provider) { // Not found
+			Log.e(TAG, "Provider not found");
+			return null;
+		}
+		return provider.getParent(node);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -301,11 +317,14 @@ public class Controller<E> {
 		public Node getNode(String[] path) throws RemoteException {
 			DataProvider provider = providers.values().iterator().next();
 			Node root = provider.getRoot();
-			return expandTo(provider, root, path);
+			return expandTo(provider, root, path, Node.EXPAND_ONE);
 		}
 
 		@Override
-		public boolean update(Node node, String raw) throws RemoteException {
+		public boolean update(Node node, String text, String raw) throws RemoteException {
+			if (null != text) { // Update text
+				node.text = text;
+			}
 			return editNode(EditType.Replace, node, raw) != null;
 		}
 

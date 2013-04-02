@@ -19,10 +19,9 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
-public class NodeSelectPreference extends WidgetPreference implements
-		ControllerReceiver<WidgetController> {
+public class NodeSelectPreference extends WidgetPreference implements ControllerReceiver<WidgetController> {
 
-	TextView fileEdit = null, pathEdit = null;
+	TextView fileEdit = null;
 	Button selectButton = null;
 	ControllerConnector<App, WidgetController, UIService> cc = null;
 	private WidgetController controller = null;
@@ -34,8 +33,7 @@ public class NodeSelectPreference extends WidgetPreference implements
 	@Override
 	protected void onAttachedToActivity() {
 		super.onAttachedToActivity();
-		cc = new ControllerConnector<App, WidgetController, UIService>(
-				getContext(), this);
+		cc = new ControllerConnector<App, WidgetController, UIService>(getContext(), this);
 		cc.connectController(UIService.class);
 	}
 
@@ -49,7 +47,6 @@ public class NodeSelectPreference extends WidgetPreference implements
 	protected View onCreateView(ViewGroup parent) {
 		View view = super.onCreateView(parent);
 		fileEdit = (TextView) view.findViewById(R.id.bmark_file);
-		pathEdit = (TextView) view.findViewById(R.id.bmark_item);
 		selectButton = (Button) view.findViewById(R.id.bmark_select);
 		selectButton.setOnClickListener(new OnClickListener() {
 
@@ -58,10 +55,7 @@ public class NodeSelectPreference extends WidgetPreference implements
 				selectNode();
 			}
 		});
-		fileEdit.setText(getPreferenceManager().getSharedPreferences()
-				.getString("file", ""));
-		pathEdit.setText(getPreferenceManager().getSharedPreferences()
-				.getString("path", ""));
+		fileEdit.setText(getPreferenceManager().getSharedPreferences().getString("id", ""));
 		return view;
 	}
 
@@ -80,28 +74,14 @@ public class NodeSelectPreference extends WidgetPreference implements
 		if (requestCode != 0) { // Not our case
 			return false;
 		}
-		fileEdit.setText(data.getStringExtra(Constants.SELECT_ITEM_FILE));
-		String[] path = data.getStringArrayExtra(Constants.SELECT_ITEM_ITEM);
-		if (null != path) { // Create string
-			StringBuffer sb = new StringBuffer();
-			for (int i = 0; i < path.length; i++) { // Add with /
-				if (i > 0) { // Not first
-					sb.append('/');
-				}
-				sb.append(path[i]);
-			}
-			pathEdit.setText(sb);
-		} else { // Empty path
-			pathEdit.setText("");
-		}
+		fileEdit.setText(controller.pathFromIntent(data.getExtras(), Constants.SELECT_ITEM_PATH));
 		return true;
 	}
 
 	@Override
 	protected void onFinish() {
 		Editor editor = getPreferenceManager().getSharedPreferences().edit();
-		editor.putString("file", fileEdit.getText().toString().trim());
-		editor.putString("path", pathEdit.getText().toString().trim());
+		editor.putString("id", fileEdit.getText().toString().trim());
 		editor.commit();
 		cc.disconnectController();
 	}

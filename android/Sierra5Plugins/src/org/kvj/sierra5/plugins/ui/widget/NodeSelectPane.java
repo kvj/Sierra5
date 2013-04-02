@@ -4,6 +4,8 @@ import org.kvj.bravo7.SuperActivity;
 import org.kvj.sierra5.common.Constants;
 import org.kvj.sierra5.plugins.App;
 import org.kvj.sierra5.plugins.R;
+import org.kvj.sierra5.plugins.WidgetController;
+import org.kvj.sierra5.plugins.service.UIService;
 
 import android.app.Activity;
 import android.content.Context;
@@ -18,10 +20,14 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 
-public class NodeSelectPane extends Activity {
+public class NodeSelectPane extends SuperActivity<App, WidgetController, UIService> {
+
+	public NodeSelectPane() {
+		super(UIService.class);
+	}
 
 	private static final String TAG = "NodeSelect";
-	TextView fileEdit = null, pathEdit = null;
+	TextView fileEdit = null;
 	Button selectButton = null;
 	SharedPreferences prefs = null;
 	String prefix = "";
@@ -32,8 +38,7 @@ public class NodeSelectPane extends Activity {
 		Bundle dataProvided = SuperActivity.getData(this, data);
 		Log.i(TAG, "node for " + dataProvided.getInt("id"));
 		if (dataProvided.containsKey("id")) { // Have id
-			prefs = App.getInstance().getWidgetConfig(
-					dataProvided.getInt("id"), dataProvided.getString("type"));
+			prefs = App.getInstance().getWidgetConfig(dataProvided.getInt("id"), dataProvided.getString("type"));
 		} else {
 			prefs = PreferenceManager.getDefaultSharedPreferences(this);
 		}
@@ -42,7 +47,6 @@ public class NodeSelectPane extends Activity {
 		}
 		setContentView(R.layout.select_node);
 		fileEdit = (TextView) findViewById(R.id.bmark_file);
-		pathEdit = (TextView) findViewById(R.id.bmark_item);
 		selectButton = (Button) findViewById(R.id.bmark_select);
 		selectButton.setOnClickListener(new OnClickListener() {
 
@@ -56,8 +60,7 @@ public class NodeSelectPane extends Activity {
 			SuperActivity.notifyUser(this, "Invalid config");
 			return;
 		}
-		fileEdit.setText(prefs.getString(prefix + "file", ""));
-		pathEdit.setText(prefs.getString(prefix + "path", ""));
+		fileEdit.setText(prefs.getString(prefix + "id", ""));
 	};
 
 	protected void selectNode() {
@@ -69,21 +72,7 @@ public class NodeSelectPane extends Activity {
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (resultCode == Activity.RESULT_OK && 0 == requestCode) {
 			// Our case
-			fileEdit.setText(data.getStringExtra(Constants.SELECT_ITEM_FILE));
-			String[] path = data
-					.getStringArrayExtra(Constants.SELECT_ITEM_ITEM);
-			if (null != path) { // Create string
-				StringBuffer sb = new StringBuffer();
-				for (int i = 0; i < path.length; i++) { // Add with /
-					if (i > 0) { // Not first
-						sb.append('/');
-					}
-					sb.append(path[i]);
-				}
-				pathEdit.setText(sb);
-			} else { // Empty path
-				pathEdit.setText("");
-			}
+			fileEdit.setText(controller.pathFromIntent(data.getExtras(), Constants.SELECT_ITEM_PATH));
 		}
 	}
 
@@ -94,14 +83,12 @@ public class NodeSelectPane extends Activity {
 			return;
 		}
 		Editor editor = prefs.edit();
-		editor.putString(prefix + "file", fileEdit.getText().toString().trim());
-		editor.putString(prefix + "path", pathEdit.getText().toString().trim());
+		editor.putString(prefix + "id", fileEdit.getText().toString().trim());
 		editor.commit();
 		super.onBackPressed();
 	}
 
-	public static void showConfig(Context context, Integer widgetID,
-			String type, String prefix) {
+	public static void showConfig(Context context, Integer widgetID, String type, String prefix) {
 		Intent intent = new Intent(context, NodeSelectPane.class);
 		if (null != widgetID) { // This is for widget
 			intent.putExtra("id", widgetID);

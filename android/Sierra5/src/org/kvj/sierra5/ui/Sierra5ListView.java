@@ -17,14 +17,14 @@ import org.kvj.sierra5.ui.fragment.ListViewFragment.ListViewFragmentListener;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.KeyEvent;
 
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Window;
 
-public class Sierra5ListView extends SherlockFragmentActivity implements
-		ControllerReceiver<Controller>, ListViewFragmentListener,
-		EditorViewFragmentListener {
+public class Sierra5ListView extends SherlockFragmentActivity implements ControllerReceiver<Controller>,
+		ListViewFragmentListener, EditorViewFragmentListener {
 
 	private static final String TAG = "ListView";
 	ControllerConnector<App, Controller, ControllerService> conn = null;
@@ -39,6 +39,7 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 	@Override
 	protected void onCreate(final Bundle inData) {
 		requestWindowFeature(Window.FEATURE_PROGRESS);
+		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		super.onCreate(inData);
 		if (null != inData) { // Have data - restore state
 			this.data = inData;
@@ -57,13 +58,11 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 			setContentView(R.layout.listview);
 		}
 		setSupportProgressBarIndeterminateVisibility(false);
-		listViewFragment = (ListViewFragment) getSupportFragmentManager()
-				.findFragmentById(R.id.listview_left);
+		listViewFragment = (ListViewFragment) getSupportFragmentManager().findFragmentById(R.id.listview_left);
 		if (null != listViewFragment && !listViewFragment.isInLayout()) {
 			listViewFragment = null;
 		}
-		editorViewFragment = (EditorViewFragment) getSupportFragmentManager()
-				.findFragmentById(R.id.listview_right);
+		editorViewFragment = (EditorViewFragment) getSupportFragmentManager().findFragmentById(R.id.listview_right);
 		if (null != editorViewFragment && !editorViewFragment.isInLayout()) {
 			editorViewFragment = null;
 		}
@@ -86,8 +85,7 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 	@Override
 	protected void onStart() {
 		super.onStart();
-		conn = new ControllerConnector<App, Controller, ControllerService>(
-				this, this);
+		conn = new ControllerConnector<App, Controller, ControllerService>(this, this);
 		conn.connectController(ControllerService.class);
 	}
 
@@ -100,8 +98,7 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
-		outState.putBoolean(Constants.LIST_FORCE_EDITOR,
-				listViewFragment == null);
+		outState.putBoolean(Constants.LIST_FORCE_EDITOR, listViewFragment == null);
 		if (null != listViewFragment) { // Have list
 			listViewFragment.onSaveState(outState);
 		}
@@ -120,8 +117,7 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 	private void ifEditorNotChanged(Runnable ok) {
 		if (editorViewFragment.isModified()) {
 			// Editor modified - ask
-			SuperActivity.showQuestionDialog(this, "Discard changes?",
-					"Are sure want to discard changes?", ok);
+			SuperActivity.showQuestionDialog(this, "Discard changes?", "Are sure want to discard changes?", ok);
 		} else {
 			ok.run();
 		}
@@ -148,17 +144,14 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 
 				@Override
 				public void run() {
-					editorViewFragment.loadNode(
-							node,
-							editType == EditType.Add);
+					editorViewFragment.loadNode(node, editType == EditType.Add);
 				}
 			});
 		} else { // Single pane - new Activity
 			Intent intent = new Intent(this, Sierra5ListView.class);
 			intent.putExtra(Constants.LIST_FORCE_EDITOR, true);
 			intent.putExtra(Constants.EDITOR_INTENT_ID, node.id);
-			intent.putExtra(Constants.EDITOR_INTENT_ADD,
-					editType == EditType.Add);
+			intent.putExtra(Constants.EDITOR_INTENT_ADD, editType == EditType.Add);
 			startActivityForResult(intent, RESULT_DONE);
 		}
 	}
@@ -170,8 +163,7 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 				Node changedNode = null;
 				if (null != intent && null != intent.getExtras()) {
 					// Have extras
-					changedNode = controller.nodeFromParcelable(intent
-							.getParcelableExtra(Constants.LIST_INTENT_ID));
+					changedNode = controller.nodeFromParcelable(intent.getParcelableExtra(Constants.LIST_INTENT_ID));
 				}
 				listViewFragment.refresh(changedNode);
 			}
@@ -183,28 +175,27 @@ public class Sierra5ListView extends SherlockFragmentActivity implements
 		if (null == node || !node.can(Node.CAPABILITY_REMOVE)) { // Invalid node
 			return;
 		}
-		SuperActivity.showQuestionDialog(this, "Remove?", "Remove item ["
-				+ node.text + "]?", new Runnable() {
+		SuperActivity.showQuestionDialog(this, "Remove?", "Remove item [" + node.text + "]?", new Runnable() {
 
 			@Override
 			public void run() {
 				if (!controller.removeNode(node)) { // Error removing
-					SuperActivity.notifyUser(Sierra5ListView.this,
-							"Error removing item");
+					SuperActivity.notifyUser(Sierra5ListView.this, "Error removing item");
 					return;
 				}
+				Node parent = controller.getParent(node);
 				if (null != listViewFragment) { // Reload list
-					listViewFragment.selectNode(node);
+					listViewFragment.selectNode(null != parent ? parent : node);
 				}
 			}
 		});
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Override
 	public void saved(Node node, boolean close) {
 		if (null != listViewFragment) { // Have list - update selection
-			// Log.i(TAG, "Reselect " + node.file + ", " + node.text + ", "
-			// + node.textPath);
+			Log.i(TAG, "Reselect " + node.text + ", " + node);
 			listViewFragment.selectNode(node);
 		}
 		Intent outData = new Intent();

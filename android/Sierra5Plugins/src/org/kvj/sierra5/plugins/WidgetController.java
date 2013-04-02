@@ -24,6 +24,7 @@ import org.kvj.sierra5.plugins.impl.widget.WidgetPlugin;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.text.TextUtils;
@@ -46,12 +47,8 @@ public class WidgetController {
 			@Override
 			public void onConnect() {
 				super.onConnect();
-				try {
-					Log.i(TAG, "Root interface connected: " + root.getRemote().getRoot());
-					App.getInstance().updateWidgets(-1);
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
+				Log.i(TAG, "Root interface connected: ");
+				App.getInstance().updateWidgets(-1);
 			}
 
 			@Override
@@ -239,11 +236,12 @@ public class WidgetController {
 		List<ItemInfo> items = parseItem(regexp, parts.get(index));
 		// Log.i(TAG, "parseOneNode: " + regexp + ", " + parts.get(index));
 		Pattern p = Pattern.compile(regexp.toString());
-		if (Node.TYPE_FILE == node.type && node.collapsed) { // File - expand
+		if (null == node.children) { // File - expand
 			getRootService().expand(node, true);
 		}
 		if (null != node.children) { // Have children
-			for (Node ch : node.children) { // ch = child
+			List<Node> children = node.children;
+			for (Node ch : children) { // ch = child
 				Matcher m = p.matcher(ch.text);
 				// Log.i(TAG, "Matching: " + ch.text + " vs " + regexp);
 				if (m.find()) { // Our case
@@ -343,8 +341,7 @@ public class WidgetController {
 		return q4Plugin;
 	}
 
-	public Node findNodeFromPreferences(SharedPreferences preferences, String fileName, String pathName) {
-		String file = preferences.getString(fileName, "");
+	public Node findNodeFromPreferences(SharedPreferences preferences, String pathName) {
 		String path = preferences.getString(pathName, "");
 		String[] pathArray = null;
 		if (!TextUtils.isEmpty(path)) { // Have path
@@ -357,10 +354,39 @@ public class WidgetController {
 			return null;
 		}
 		try {
-			return rootService.getNode(file, pathArray, true);
+			return rootService.getNode(pathArray);
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public String pathFromIntent(Bundle data, String key) {
+		String[] path = data.getStringArray(key);
+		if (null == path) { // Failed
+			return null;
+		}
+		StringBuilder sb = new StringBuilder();
+		for (String item : path) { // Copy
+			sb.append('/');
+			sb.append(item);
+		}
+		return sb.toString();
+	}
+
+	public String[] pathFromString(String path) {
+		if (!TextUtils.isEmpty(path)) { // Have path
+			String[] arr = path.split("/");
+			List<String> result = new ArrayList<String>();
+			for (int i = 0; i < arr.length; i++) { //
+				String item = arr[i];
+				if (i == 0 && TextUtils.isEmpty(item)) { // First item is empty - skip
+					continue;
+				}
+				result.add(item);
+			}
+			return result.toArray(new String[0]);
+		}
+		return new String[0];
 	}
 }

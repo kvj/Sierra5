@@ -1,6 +1,5 @@
 package org.kvj.sierra5.plugins.impl.quebec;
 
-import java.io.File;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -27,14 +26,12 @@ import org.kvj.sierra5.common.plugin.MenuItemInfo;
 import org.kvj.sierra5.common.plugin.PluginInfo;
 import org.kvj.sierra5.common.root.Root;
 import org.kvj.sierra5.plugins.App;
-import org.kvj.sierra5.plugins.R;
 import org.kvj.sierra5.plugins.WidgetController;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import android.os.IBinder;
 import android.os.RemoteException;
-import android.text.TextUtils;
 import android.util.Log;
 
 public class Q4Plugin extends DefaultPlugin {
@@ -45,8 +42,7 @@ public class Q4Plugin extends DefaultPlugin {
 
 	public Q4Plugin(WidgetController controller) {
 		this.controller = controller;
-		remote = new RemoteServiceConnector<Quebec4Service>(App.getInstance(),
-				Q4Constants.SERVICE_URI, null) {
+		remote = new RemoteServiceConnector<Quebec4Service>(App.getInstance(), Q4Constants.SERVICE_URI, null) {
 
 			@Override
 			public Quebec4Service castAIDL(IBinder binder) {
@@ -63,14 +59,13 @@ public class Q4Plugin extends DefaultPlugin {
 	@Override
 	public MenuItemInfo[] getMenu(int id, Node node) throws RemoteException {
 		// Log.i(TAG, "Get menu: " + id + ", " + node.type);
-		if (node.type == Node.TYPE_FOLDER) { // Not for folders
+		if (!node.can(Node.CAPABILITY_ADD)) { // Not for folders
 			return null;
 		}
 		Quebec4Service service = remote.getRemote();
 		if (null != service) { // Connected to quebec4
 			if (-1 == id) { // RootMenu
-				return new MenuItemInfo[] { new MenuItemInfo(0,
-						MenuItemInfo.MENU_ITEM_SUBMENU, "Import from Quebec4") };
+				return new MenuItemInfo[] { new MenuItemInfo(0, MenuItemInfo.MENU_ITEM_SUBMENU, "Import from Quebec4") };
 			} else { // Request tasks from Q4
 				List<TaskBean> tasks = service.getTasks();
 				// Log.i(TAG, "Tasks found: " + tasks.size());
@@ -80,8 +75,7 @@ public class Q4Plugin extends DefaultPlugin {
 					// Log.i(TAG, "Task: " + task.title + ", " + task.type +
 					// ", "
 					// + task.point);
-					menu[i] = new MenuItemInfo(task.id,
-							MenuItemInfo.MENU_ITEM_ACTION, task.title);
+					menu[i] = new MenuItemInfo(task.id, MenuItemInfo.MENU_ITEM_ACTION, task.title);
 				}
 				return menu;
 			}
@@ -108,6 +102,7 @@ public class Q4Plugin extends DefaultPlugin {
 				Log.w(TAG, "Task not found");
 				return false;
 			}
+			/*
 			String mediaChild = null;
 			String geoChild = null;
 			File folder = new File(node.file).getParentFile();
@@ -172,6 +167,7 @@ public class Q4Plugin extends DefaultPlugin {
 				boolean childCreated = root.append(child, geoChild) != null;
 			}
 			return true;
+			*/
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -221,26 +217,21 @@ public class Q4Plugin extends DefaultPlugin {
 			doc.appendChild(root);
 			Element document = createElement(doc, "Document", null);
 			root.appendChild(document);
-			append(document,
-					addText(createElement(doc, "name", null), task.title));
+			append(document, addText(createElement(doc, "name", null), task.title));
 			Element style = createElement(doc, "Style", null);
 			style.setAttribute("id", "line");
 			Element lineStyle = createElement(doc, "LineStyle", null);
-			append(lineStyle,
-					addText(createElement(doc, "color", null), "ffff0000"));
+			append(lineStyle, addText(createElement(doc, "color", null), "ffff0000"));
 			append(lineStyle, addText(createElement(doc, "width", null), "3"));
 			append(style, lineStyle);
 			append(document, style);
 			Element placemark = createElement(doc, "Placemark", null);
 			document.appendChild(placemark);
-			append(placemark,
-					addText(createElement(doc, "name", null), task.title));
-			append(placemark,
-					addText(createElement(doc, "styleUrl", null), "#line"));
+			append(placemark, addText(createElement(doc, "name", null), task.title));
+			append(placemark, addText(createElement(doc, "styleUrl", null), "#line"));
 			Element track = createElement(doc, "gx:Track", KML_GOOGLE_NS);
 			placemark.appendChild(track);
-			SimpleDateFormat dateFormat = new SimpleDateFormat(
-					"yyyy-MM-dd'T'HH:mm:ss'Z'");
+			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 			dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 			for (PointBean point : task.points) {
 				// Create when elements
@@ -251,8 +242,7 @@ public class Q4Plugin extends DefaultPlugin {
 			for (PointBean point : task.points) {
 				// Create when elements
 				Element coords = createElement(doc, "gx:coord", KML_GOOGLE_NS);
-				StringBuffer sb = new StringBuffer(String.format(
-						Locale.ENGLISH, "%f %f", point.lon, point.lat));
+				StringBuffer sb = new StringBuffer(String.format(Locale.ENGLISH, "%f %f", point.lon, point.lat));
 				if (point.altitude != 0) { // Add altitude
 					sb.append(" " + point.altitude);
 				}

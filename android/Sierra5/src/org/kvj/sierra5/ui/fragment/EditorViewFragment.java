@@ -95,6 +95,7 @@ public class EditorViewFragment extends SherlockFragment {
 		isAdding = data.getBoolean(Constants.EDITOR_INTENT_ADD, false);
 		node = controller.nodeFromParcelable(data.getParcelable(Constants.EDITOR_INTENT_ID));
 		if (null == node) { // Failed
+			Log.w(TAG, "Node not found: " + data.getParcelable(Constants.EDITOR_INTENT_ID));
 			SuperActivity.notifyUser(getActivity(), "Node not found");
 			return;
 		}
@@ -163,6 +164,8 @@ public class EditorViewFragment extends SherlockFragment {
 				if (isAdding) { // Added
 					saveMe = (Node) result.children.get(result.children.size() - 1);
 					// Last child
+				} else {
+					saveMe = result;
 				}
 				isAdding = false; // Edit existing from now
 				node = saveMe; // Save this

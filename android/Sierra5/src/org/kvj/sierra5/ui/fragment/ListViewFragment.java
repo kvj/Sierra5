@@ -317,13 +317,13 @@ public class ListViewFragment extends SherlockFragment implements ListViewAdapte
 	public void onSaveState(Bundle outState) {
 		// Save root, if have, file, +path
 		if (null != root) { // Save root
-			outState.putParcelable(Constants.LIST_INTENT_ROOT, root);
+			outState.putParcelable(Constants.LIST_INTENT_ID, root);
 		}
 		int selectedIndex = adapter.getSelectedIndex();
 		Log.i(TAG, "onSaveInstanceState: " + root + ", " + selectedIndex);
 		if (-1 != selectedIndex) { // Have selected
 			Node n = adapter.getItem(selectedIndex);
-			outState.putParcelable(Constants.LIST_INTENT_ID, n.id);
+			outState.putParcelable(Constants.LIST_INTENT_SELECTION, n.id);
 		}
 	}
 
@@ -336,7 +336,7 @@ public class ListViewFragment extends SherlockFragment implements ListViewAdapte
 		this.listener = listener;
 		this.controller = controller;
 		updateClipboardStatus();
-		Parcelable file = data.getParcelable(Constants.LIST_INTENT_ROOT);
+		Parcelable file = data.getParcelable(Constants.LIST_INTENT_ID);
 		boolean rootSet = false;
 		adapter.setController(controller);
 		if (null != file) { // Have file in Activity parameters
@@ -352,7 +352,8 @@ public class ListViewFragment extends SherlockFragment implements ListViewAdapte
 		adapter.setSelectedIndex(-1);
 		if (rootSet) { // Root set - expand root
 			actionBar.setTitle(adapter.getRoot().text);
-			expandTree(adapter.getRoot(), controller.nodeFromParcelable(data.getParcelable(Constants.LIST_INTENT_ID)));
+			expandTree(adapter.getRoot(),
+					controller.nodeFromParcelable(data.getParcelable(Constants.LIST_INTENT_SELECTION)));
 		} else {
 			SuperActivity.notifyUser(getActivity(), "Invalid file/folder");
 		}
@@ -423,30 +424,37 @@ public class ListViewFragment extends SherlockFragment implements ListViewAdapte
 			@SuppressWarnings({ "unchecked", "rawtypes" })
 			@Override
 			protected List<Node> doInBackground(Void... params) {
-				Log.i(TAG, "Expand: " + selectNode);
+				Log.i(TAG, "expandTree: from " + node + " to " + selectNode);
 				if (null == selectNode) { // Not found
-					return controller.expand(node, Node.EXPAND_ONE);
+					return controller.expand(node, Node.EXPAND_FORCE);
 				}
-				boolean found = controller.expandTo(node, selectNode);
+				boolean found = controller.expandTo(node, selectNode, Node.EXPAND_FORCE);
 				if (!found) { // Failed to expand
-					return controller.expand(node, Node.EXPAND_ONE);
+					Log.w(TAG, "Item not found in expandTo");
+					return controller.expand(node, Node.EXPAND_FORCE);
 				}
 				return node.children;
 			}
 
 			@Override
 			protected void onPostExecute(List<Node> result) {
-				Log.i(TAG, "Expand: " + result);
+				Log.i(TAG, "expandTree result: " + result);
 				if (result != null) { // State changed - notify adapter
 					node.children = result;
 					node.collapsed = false;
+					if (null != selectNode) { // Have node to search
+						int index = adapter.find(selectNode);
+						Log.i(TAG, "Found index: " + index);
+						if (-1 != index) { // Found - select
+							adapter.setSelectedIndex(index);
+						}
+					}
 					adapter.dataChanged();
 				} else {
 					SuperActivity.notifyUser(getActivity(), "Item not found");
 				}
 				toggleProgress(false);
 			}
-
 		};
 		task.execute();
 	}

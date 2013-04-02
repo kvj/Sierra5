@@ -23,6 +23,7 @@ public class Node<E extends Parcelable> implements Parcelable {
 
 	public static final int EXPAND_ONE = 1;
 	public static final int EXPAND_GROUP = 2;
+	public static final int EXPAND_FORCE = 3;
 
 	public E id = null;
 	public List<Node<E>> children = null;
@@ -40,6 +41,13 @@ public class Node<E extends Parcelable> implements Parcelable {
 			return zero;
 		}
 		return list.toArray(zero);
+	}
+
+	public Node() {
+	}
+
+	public Node(E id) {
+		this.id = id;
 	}
 
 	@Override
@@ -99,6 +107,15 @@ public class Node<E extends Parcelable> implements Parcelable {
 			}
 		}
 		return false; // Not found
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (null == o) { // One is null - false
+			return false;
+		}
+		Node<E> other = (Node<E>) o;
+		return other.id.equals(id);
 	}
 
 }

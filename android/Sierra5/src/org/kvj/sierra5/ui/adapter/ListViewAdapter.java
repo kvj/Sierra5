@@ -66,7 +66,10 @@ public class ListViewAdapter implements ListAdapter {
 
 		@Override
 		public Pattern getPattern(Node note, boolean selected) {
-			return null;
+			if (note.style == Node.STYLE_0) { // No style - let plugins decorate
+				return null;
+			}
+			return eatAll;
 		}
 
 		@Override
@@ -451,6 +454,18 @@ public class ListViewAdapter implements ListAdapter {
 		}
 		formatters.add(defaultTextFormatter);
 		textFormatter.setFormatters(formatters.toArray(new NodeTextFormatter[0]));
+	}
+
+	public int find(Node node) {
+		Log.i(TAG, "Search: " + node + ", " + getCount());
+		for (int i = 0; i < getCount(); i++) { // Search
+			Node n = getItem(i);
+			Log.i(TAG, "Compare: " + node + " and " + n);
+			if (n.id.equals(node.id)) { // Found
+				return i;
+			}
+		}
+		return -1;
 	}
 
 }
