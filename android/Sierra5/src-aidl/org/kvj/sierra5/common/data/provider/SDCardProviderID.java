@@ -1,6 +1,5 @@
 package org.kvj.sierra5.common.data.provider;
 
-
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -46,6 +45,7 @@ public class SDCardProviderID implements NodeID {
 	@Override
 	public void writeToParcel(Parcel dest, int flags) {
 		dest.writeStringArray(path);
+		dest.writeInt(type);
 	}
 
 	public static final Parcelable.Creator<SDCardProviderID> CREATOR = new Creator<SDCardProviderID>() {
@@ -54,6 +54,7 @@ public class SDCardProviderID implements NodeID {
 		public SDCardProviderID createFromParcel(Parcel source) {
 			SDCardProviderID id = new SDCardProviderID();
 			id.path = source.createStringArray();
+			id.type = source.readInt();
 			return id;
 		}
 

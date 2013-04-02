@@ -180,7 +180,7 @@ public class Controller<E> {
 				boolean found = false;
 				for (Node ch : children) { // Search by text
 					if (ch.text.equals(selectPath[i])) { // Found
-						Log.i(TAG, "Found child: " + selectPath[i]);
+						// Log.i(TAG, "Found child: " + selectPath[i]);
 						found = true;
 						node = ch;
 						break;
@@ -207,7 +207,7 @@ public class Controller<E> {
 			Log.e(TAG, "Provider not found");
 			return false;
 		}
-		Log.i(TAG, "Expand to: " + root.id + " and " + select.id);
+		// Log.i(TAG, "Expand to: " + root.id + " and " + select.id);
 		String[] rootPath = getPath(root);
 		String[] selectPath = getPath(select);
 		if (null == rootPath || null == selectPath) { // Invalid path
@@ -329,9 +329,8 @@ public class Controller<E> {
 		}
 
 		@Override
-		public boolean expand(Node node, boolean expand) throws RemoteException {
-			// TODO Auto-generated method stub
-			return false;
+		public List<Node> expand(Node node, boolean expand) throws RemoteException {
+			return Controller.this.expand(node, Node.EXPAND_FORCE);
 		}
 
 		@Override

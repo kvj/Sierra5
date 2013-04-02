@@ -394,7 +394,7 @@ public class ListViewFragment extends SherlockFragment implements ListViewAdapte
 			@SuppressWarnings("unchecked")
 			@Override
 			protected void onPostExecute(List<Node> result) {
-				Log.i(TAG, "collapseExpand: " + result);
+				// Log.i(TAG, "collapseExpand: " + result);
 				if (node.collapsed || (null != forceExpand && forceExpand)) { // Expand
 					node.collapsed = false;
 					if (null != result) { // Have data
@@ -424,7 +424,7 @@ public class ListViewFragment extends SherlockFragment implements ListViewAdapte
 			@SuppressWarnings({ "unchecked", "rawtypes" })
 			@Override
 			protected List<Node> doInBackground(Void... params) {
-				Log.i(TAG, "expandTree: from " + node + " to " + selectNode);
+				// Log.i(TAG, "expandTree: from " + node + " to " + selectNode);
 				if (null == selectNode) { // Not found
 					return controller.expand(node, Node.EXPAND_FORCE);
 				}
@@ -438,13 +438,12 @@ public class ListViewFragment extends SherlockFragment implements ListViewAdapte
 
 			@Override
 			protected void onPostExecute(List<Node> result) {
-				Log.i(TAG, "expandTree result: " + result);
+				// Log.i(TAG, "expandTree result: " + result);
 				if (result != null) { // State changed - notify adapter
 					node.children = result;
 					node.collapsed = false;
 					if (null != selectNode) { // Have node to search
 						int index = adapter.find(selectNode);
-						Log.i(TAG, "Found index: " + index);
 						if (-1 != index) { // Found - select
 							adapter.setSelectedIndex(index);
 						}

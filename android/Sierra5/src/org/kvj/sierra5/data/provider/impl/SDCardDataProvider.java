@@ -221,7 +221,8 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 	@Override
 	public List<Node<SDCardProviderID>> expand(Node<SDCardProviderID> node, int type) {
 		List<Node<SDCardProviderID>> result = new ArrayList<Node<SDCardProviderID>>();
-		if (null != node.children && type != Node.EXPAND_FORCE) { // Have children
+		if (null != node.children && type != Node.EXPAND_FORCE) { // Have
+																	// children
 			return node.children;
 		}
 		if (node.id.type == TYPE_FILE) {
@@ -419,7 +420,8 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 	private Pattern left = Pattern.compile("^\\s*");
 
 	private int writeOneNode(int index, int startLevel, Node<SDCardProviderID> node, LineEater eater) {
-		// Log.i(TAG, "WriteOne: " + node + ", " + node.id.raw + ", " + node.children);
+		// Log.i(TAG, "WriteOne: " + node + ", " + node.id.raw + ", " +
+		// node.children);
 		StringBuilder spaces = new StringBuilder();
 		String[] lines = null;
 		if (!eater.filter(index, node)) { // Filtered out
@@ -615,7 +617,8 @@ public class SDCardDataProvider implements DataProvider<SDCardProviderID> {
 					parents.push(parent);
 				}
 				parents.push(n);
-				// Log.i(TAG, "Line: " + n.text + ", " + n.level + ", " + parent.text);
+				// Log.i(TAG, "Line: " + n.text + ", " + n.level + ", " +
+				// parent.text);
 			}
 			br.close();
 			return true;

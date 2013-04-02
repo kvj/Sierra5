@@ -234,10 +234,16 @@ public class WidgetController {
 		StringBuffer regexp = new StringBuffer();
 		Map<String, Object> _values = new LinkedHashMap<String, Object>(values);
 		List<ItemInfo> items = parseItem(regexp, parts.get(index));
-		// Log.i(TAG, "parseOneNode: " + regexp + ", " + parts.get(index));
+		// Log.i(TAG, "parseOneNode: " + regexp + ", " + parts.get(index) + ", "
+		// + node.children + ", " + node.collapsed);
 		Pattern p = Pattern.compile(regexp.toString());
-		if (null == node.children) { // File - expand
-			getRootService().expand(node, true);
+
+		if (null == node.children || node.collapsed) { // File - expand
+			List<Node> children = getRootService().expand(node, true);
+			if (null != children) { // Expanded
+				node.children = children;
+				node.collapsed = false;
+			}
 		}
 		if (null != node.children) { // Have children
 			List<Node> children = node.children;
@@ -380,7 +386,8 @@ public class WidgetController {
 			List<String> result = new ArrayList<String>();
 			for (int i = 0; i < arr.length; i++) { //
 				String item = arr[i];
-				if (i == 0 && TextUtils.isEmpty(item)) { // First item is empty - skip
+				if (i == 0 && TextUtils.isEmpty(item)) { // First item is empty
+															// - skip
 					continue;
 				}
 				result.add(item);

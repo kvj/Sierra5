@@ -457,10 +457,8 @@ public class ListViewAdapter implements ListAdapter {
 	}
 
 	public int find(Node node) {
-		Log.i(TAG, "Search: " + node + ", " + getCount());
 		for (int i = 0; i < getCount(); i++) { // Search
 			Node n = getItem(i);
-			Log.i(TAG, "Compare: " + node + " and " + n);
 			if (n.id.equals(node.id)) { // Found
 				return i;
 			}

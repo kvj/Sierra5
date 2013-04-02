@@ -415,6 +415,9 @@ public class ContactSyncAdapter extends AbstractThreadedSyncAdapter {
 					if (!node.visible) { // Node not visible
 						return false;
 					}
+					if (node.text.startsWith("#")) { // Comment
+						return false;
+					}
 					if (finalItem) { // This is contact
 						parseContact((String) values.get("g"), node);
 					}
